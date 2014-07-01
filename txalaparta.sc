@@ -58,12 +58,13 @@ Timbre
 Ideas para supercollider txalaparta :
 - presets de settings de parámetros del interface
 - añadir sistema de toque interactivo (persona + máquina)
+      - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
-- incorporar escucha (en el caso de persona + máquina)
-- separar el loop del txakun y errena para que se mantenga el pulso independientemente del swing (git branch?)
+- separar el loop del txakun y errena para que se mantenga el pulso independientemente del swing (git branch?). para esto necesito dos Tasks independientes que no se influyan mutuamente con su swing particular y que solo hagan caso al tempo
 - standalone version supercollider
 - send OSC out
 - usar samples con filtros en vez de síntesis . diferentes materiales y tipos de madera. diferentes tamaños y diferentes notas.
+- sistema de feedback (cuatro sliders verticales subiendo y bajando). para esto se puede defer() todos los golpes incluido el primero y disparar la animacion de los sliders con antelacion a que suceda el golpe.
 */
 
 currentEnvironment;
@@ -100,6 +101,7 @@ var window, colorstates, beatbuttons, yfirstbuttons, classicBut, emphasysBut, ou
 ~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
 ~amp = 0.5;
 ~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
+~pulse = false; // should we keep stedy pulse in the tempo or not?
 ~freqs = [230, 231]; // num of tables and pitches available
 ~emphasis = [true,false,false,false]; // which one is stronger. actualy just using first or last
 ~enabled = [true, true]; // switch on/off txakun and errena
@@ -226,8 +228,12 @@ playF = Routine({
 	inf.do({ arg stepcounter; // txakun > errena cycle
 		var numbeats; // numbeats needs to be here to be nill each time
 
-		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); // between txakun and errena
-		localtempo.wait;
+		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
+
+		if (~pulse, // does tempo keep with pulse?
+			{(60/~tempo).wait},
+			{localtempo.wait}
+		);
 
 		if ( (~autopilot && (stepcounter >= nextautopilot)) , {
 			var sl;
@@ -265,7 +271,7 @@ playF = Routine({
 				hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
 
 				//{ Synth(~mode, [\amp, hitamp, \freq, hitfreq]) }.defer( hitstep * index);
-				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.005, 0.005), \bufnum, plank[0].bufnum]) }.defer( hitstep * index);
+				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.005, 0.005), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
 
 				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
 			});
@@ -434,6 +440,15 @@ emphasysBut = Button(window, Rect(110,yfirstbuttons+25,100,25))
         })
         .valueAction_(1);
 
+// PULSE
+Button(window, Rect(210,yfirstbuttons+25,100,25))
+        .states_([
+            ["maintain pulse", Color.white, Color.black],
+            ["maintain pulse", Color.black, Color.red],
+        ])
+        .action_({ arg butt;
+	         ~pulse = butt.value.asBoolean;
+        });
 
 // CLASSIC TXAKUN
 classicBut = Button(window, Rect(110,yfirstbuttons+50,100,25))
