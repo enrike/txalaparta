@@ -124,7 +124,7 @@ buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, e
 
 
 beatbuttons = [nil, nil, nil, nil, nil];
-sliders = [nil, nil, nil];
+sliders = [nil, nil, nil, nil];
 makilasliders = [[nil, nil], [nil, nil]];
 
 
@@ -178,7 +178,6 @@ playF = Routine({
 			);
 
 			localstep = (~gap/numbeats); // perfect step between makila hits before swing
-			//intermakilaswing = rrand(~swing/numbeats.neg, ~swing/numbeats);
 			intermakilaswing = rrand(~beatswing/numbeats.neg, ~beatswing/numbeats);
 
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
