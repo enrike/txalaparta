@@ -90,10 +90,12 @@ s.unmute
 
 ( // RUN ME HERE
 //vars
-var playF;
+var playF, makilaF;
 
 // GUI vars
-var window, colorstates, beatbuttons, yfirstbuttons, classicBut, emphasysBut, output, sliders, nextautopilot, sndpath, samples, buffer, buffers;
+var window, colorstates, beatbuttons, yfirstbuttons, classicBut, emphasysBut, output, sliders, makilasliders, nextautopilot, sndpath, samples, buffer, buffers;
+// GUI functions vars
+var doMakilas, doSliders; //not used yet
 
 //global vars
 ~tempo = 70; // tempo. txakun / errena
@@ -219,14 +221,17 @@ Pbind(\instrument, \tobera, \freq, 210, \sustain, 0.1, \amp, 0.6).play
 
 // TXALAPARTA ////////////////////
 playF = Routine({
-	var txakun; // classical txakun only is limited to two beats
+	var txakun, currentmakila; // classical txakun only is limited to two beats
 	var intermakilaswing, localstep, localtempo, localamp;
 
 	txakun = true; // play starts with txakun
 	nextautopilot = 0;
+	//currentmakila = [0,2];// 0/1 to 2/3
 
 	inf.do({ arg stepcounter; // txakun > errena cycle
 		var numbeats; // numbeats needs to be here to be nill each time
+
+		if (txakun, {currentmakila = [0,2]}); // RESET
 
 		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
 
@@ -266,15 +271,28 @@ playF = Routine({
 
 				plank = [nil, false]; //buffers.choose[0];
 				{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
-				plank.postln;
+				if (~verbose>2, {plank.postln});
+
 				hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
 				hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
 
-				//{ Synth(~mode, [\amp, hitamp, \freq, hitfreq]) }.defer( hitstep * index);
 				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.005, 0.005), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
 
+				if (txakun,
+					{
+						{makilaF.value(makilasliders[0].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) - 0.25);
+						//["txakun anim", currentmakila[0]].postln;
+						currentmakila[0] = currentmakila[0] + 1;
+						if (currentmakila[0] > 1, {currentmakila[0] = 0});
+					},
+					{
+						{makilaF.value(makilasliders[1].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) -0.25);
+					}
+				);
+
 				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
-			});
+			}); // END NUMBEATS LOOP
+
 			output.string = {if (txakun, {"txakun"},{"errena"})}.value + numbeats.asString;
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
 			if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
@@ -285,6 +303,11 @@ playF = Routine({
 });
 
 
+
+
+
+
+
 // GUI /////////////////////////////////////////
 window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
 window.alwaysOnTop = true;
@@ -292,8 +315,39 @@ window.onClose = {AppClock.clear};
 window.front;
 beatbuttons = [nil, nil, nil, nil, nil];
 sliders = [nil, nil, nil];
+makilasliders = [[nil, nil], [nil, nil]];
 
 s.boot; //////// BOOT SERVER //////////////////
+
+
+
+// MAKILA PLAYING ANIMATION //
+makilaF = {arg sl, time;
+	var steps, stepvalue, gap=0.05, loopF;
+	steps = (time/gap).asInt;
+	stepvalue = 1/steps;
+
+	//sl.postln;
+
+	//["INIT:", steps, stepvalue].postln;
+
+	sl.value = 1;
+
+	loopF =  Routine({
+		sl.knobColor = Color.red;
+		(steps*2).do({ arg i;
+			sl.value = sl.value - stepvalue;
+			if (i == (steps-1), { stepvalue = stepvalue.neg });
+			gap.wait;
+		});
+		sl.knobColor = Color.black;
+	});
+
+	AppClock.play(loopF);
+	//"GO".postln;
+};
+
+
 
 // TIME CONTROLS
 sliders[0] = EZSlider( window,         // parent
@@ -307,7 +361,7 @@ sliders[0] = EZSlider( window,         // parent
 	       );
 
 sliders[1] = EZSlider( window,         // parent
-              Rect(-10,35,350,20),    // bounds
+              Rect(-10,30,350,20),    // bounds
               "swing",  // label
               ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
 		      { arg ez;
@@ -317,7 +371,7 @@ sliders[1] = EZSlider( window,         // parent
 	       );
 
 sliders[2] = EZSlider( window,         // parent
-              Rect(-10,65,350,20),    // bounds
+              Rect(-10,55,350,20),    // bounds
               "gap",  // label
               ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
 		      { arg ez;
@@ -328,7 +382,7 @@ sliders[2] = EZSlider( window,         // parent
 
 // but dont store the amplitude!
 EZSlider( window,         // parent
-              Rect(-10,95,350,20),    // bounds
+              Rect(-10,80,350,20),   // bounds
               "amp",  // label
               ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,     // controlSpec
 		      { arg ez;
@@ -337,10 +391,25 @@ EZSlider( window,         // parent
               initVal: ~amp
 	       );
 
+// MAKILAS
+c = 0; // dont like doing this
+d = 0;
+makilasliders.do({arg list;
+	list.do({arg item, i;
+		list[i] = Slider(window, Rect(300+d+(20*c), 160, 20, 150));
+		list[i].orientation = \vertical;
+		list[i].thumbSize = 80;
+		list[i].value = 1;
+		c = c + 1;
+	});
+	d = 10;
+});
 
 
 
-yfirstbuttons = 125;
+// inial Y location
+
+yfirstbuttons = 110;
 
 
 // TXAKUN
@@ -378,9 +447,8 @@ yfirstbuttons = 125;
         });
         //.valueAction_(0);
 
+
 // BEATS
-
-
 beatbuttons[0] = Button(window, Rect(10,yfirstbuttons+25,20,25))
         .states_([
             ["0", Color.white, Color.black],
