@@ -95,7 +95,7 @@ var playF, makilaF;
 // GUI vars
 var window, colorstates, beatbuttons, yfirstbuttons, classicBut, emphasysBut, output, sliders, makilasliders, nextautopilot, sndpath, samples, buffer, buffers;
 // GUI functions vars
-var doMakilas, doSliders; //not used yet
+var doWindow, doMakilas, doTimeControls, doButtons, doPlanks;
 
 //global vars
 ~tempo = 70; // tempo. txakun / errena
@@ -104,27 +104,30 @@ var doMakilas, doSliders; //not used yet
 ~amp = 0.5;
 ~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
 ~pulse = false; // should we keep stedy pulse in the tempo or not?
-~freqs = [230, 231]; // num of tables and pitches available
+~freqs = [230, 231]; //
 ~emphasis = [true,false,false,false]; // which one is stronger. actualy just using first or last
 ~enabled = [true, true]; // switch on/off txakun and errena
 ~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 ~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
 ~autopilot = false;
 ~autopilotrange = [5, 10]; // for instance
-//~modes = [\txalaparta, \txalaparta2, \tobera, \plastic, \stone, \sine, \sample];
-//~mode = ~modes[0];
+
 // utility
 ~verbose = 1;
-
 
 sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
 samples = (sndpath++"*").pathMatch;
 ("sndpath is" + sndpath).postln;
 ("samples are" + samples).postln;
 buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, enabled]
-//~samples = List.newUsing( SoundFile.collect(thisProcess.nowExecutingPath.dirname ++ "/sounds/*") ); //
 
 
+beatbuttons = [nil, nil, nil, nil, nil];
+sliders = [nil, nil, nil];
+makilasliders = [[nil, nil], [nil, nil]];
+
+
+s.boot; //////// BOOT SERVER //////////////////
 
 
 // THE SYNTHDEF
@@ -136,87 +139,6 @@ SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
 }).add;
 
 
-/* partials = [21.0, 258, 409, 581, 800, 1033, 1291, 1894, 2088]
-[x/partials[1] for x in partials]
-// en base al segundo parcial que es el mas fuerte
-[0.08139534883720931, 1.0, 1.5852713178294573, 2.251937984496124, 3.10077519379845, 4.003875968992248, 5.003875968992248, 7.341085271317829, 8.093023255813954]
-durs = [2.63, 3.00, 2.80, 2.60, 2.83, 3.00, 2.90, 1.38, 1.60]
-*/
-/*
-SynthDef(\txalaparta, { arg freq=55, amp=1;
-	var signal, parts, durs, amps, sust;
-
-	parts = [0.08139534883720931, 1.0, 1.5852713178294573, 2.251937984496124, 3.10077519379845, 4.003875968992248, 5.003875968992248, 7.341085271317829, 8.093023255813954];
-	durs = [0.263, 0.3, 0.28, 0.26, 0.283, 0.3, 0.29, 0.138, 0.16];
-	amps = [0.1, 0.2, 0.05, 0.3, 0.3, 0.35, 0.08, 0.05, 0.05];
-	sust = ExpRand(0.8, 1.2);
-
-	signal =
-	(WhiteNoise.ar(0.1)*EnvGen.ar(Env.perc(0.001, Rand(0.02, 0.035) ))) +
-	(SinOsc.ar(freq*parts[0], 0, amps[0])*EnvGen.ar(Env.perc(0.001, durs[0]*sust)))+
-	(SinOsc.ar(freq*parts[1], 0, amps[1])*EnvGen.ar(Env.perc(0.001, durs[1]*sust), doneAction:2))+
-	(SinOsc.ar(freq*parts[2], 0, amps[2])*EnvGen.ar(Env.perc(0.001, durs[2]*sust)))+
-	(SinOsc.ar(freq*parts[3], 0, amps[3])*EnvGen.ar(Env.perc(0.001, durs[3]*sust)))+
-	(SinOsc.ar(freq*parts[4], 0, amps[4])*EnvGen.ar(Env.perc(0.001, durs[4]*sust)))+
-	(SinOsc.ar(freq*parts[5], 0, amps[5])*EnvGen.ar(Env.perc(0.001, durs[5]*sust)))+
-	(SinOsc.ar(freq*parts[6], 0, amps[6])*EnvGen.ar(Env.perc(0.001, durs[6]*sust)))+
-	(SinOsc.ar(freq*parts[7], 0, amps[7])*EnvGen.ar(Env.perc(0.001, durs[7]*sust)))+
-	(SinOsc.ar(freq*parts[8], 0, amps[8])*EnvGen.ar(Env.perc(0.001, durs[8]*sust)));
-	Out.ar(0, Pan2.ar(signal*amp, 0));
-}).add;
-
-
-SynthDef(\txalaparta2, { arg freq=55, amp=1;
-	var signal, parts, durs, amps, sust;
-
-	parts = [0.26875, 1.0, 1.875, 2.825, 4.5625, 5.91875, 7.53125, 9.525, 10.975];
-	durs = [0.263, 0.3, 0.28, 0.26, 0.283, 0.3, 0.29, 0.138, 0.16];
-	amps = [0.1, 0.2, 0.05, 0.3, 0.3, 0.35, 0.08, 0.05, 0.05];
-	sust = ExpRand(0.8, 1.2);
-
-	signal =
-	(WhiteNoise.ar(0.07)*EnvGen.ar(Env.perc(0.001, Rand(0.02, 0.04) ))) +
-	(PinkNoise.ar(0.11)*EnvGen.ar(Env.perc(0.001, Rand(0.02, 0.06) ))) +
-	(SinOsc.ar(freq*parts[0], 0, amps[0])*EnvGen.ar(Env.perc(0.001, durs[0]*sust)))+
-	(SinOsc.ar(freq*parts[1], 0, amps[1])*EnvGen.ar(Env.perc(0.001, durs[1]*sust), doneAction:2))+
-	(SinOsc.ar(freq*parts[2], 0, amps[2])*EnvGen.ar(Env.perc(0.001, durs[2]*sust)))+
-	(SinOsc.ar(freq*parts[3], 0, amps[3])*EnvGen.ar(Env.perc(0.001, durs[3]*sust)))+
-	(SinOsc.ar(freq*parts[4], 0, amps[4])*EnvGen.ar(Env.perc(0.001, durs[4]*sust)))+
-	(SinOsc.ar(freq*parts[5], 0, amps[5])*EnvGen.ar(Env.perc(0.001, durs[5]*sust)))+
-	(SinOsc.ar(freq*parts[6], 0, amps[6])*EnvGen.ar(Env.perc(0.001, durs[6]*sust)))+
-	(SinOsc.ar(freq*parts[7], 0, amps[7])*EnvGen.ar(Env.perc(0.001, durs[7]*sust)))+
-	(SinOsc.ar(freq*parts[8], 0, amps[8])*EnvGen.ar(Env.perc(0.001, durs[8]*sust)));
-	Out.ar(0, Pan2.ar(signal*amp, 0));
-}).add;
-
-
-SynthDef(\tobera, { arg freq=55, amp=1;
-	var signal, parts, durs, amps;
-
-	parts = [0.08139534883720931, 1.0, 1.5852713178294573, 2.251937984496124, 3.10077519379845, 4.003875968992248, 5.003875968992248, 7.341085271317829, 8.093023255813954];
-	durs = [2.63, 3, 2.8, 2.6, 2.83, 3, 2.9, 1.38, 1.6];
-	amps = [0.1, 0.2, 0.05, 0.3, 0.3, 0.35, 0.08, 0.05, 0.05];
-
-	signal =
-	(BrownNoise.ar(0.2)*EnvGen.ar(Env.perc(0.001, 0.035 ))) +
-	(SinOsc.ar(freq*parts[0], 0, amps[0])*EnvGen.ar(Env.perc(0.001, durs[0])))+
-	(SinOsc.ar(freq*parts[1], 0, amps[1])*EnvGen.ar(Env.perc(0.001, durs[1]), doneAction:2))+
-	(SinOsc.ar(freq*parts[2], 0, amps[2])*EnvGen.ar(Env.perc(0.001, durs[2])))+
-	(SinOsc.ar(freq*parts[3], 0, amps[3])*EnvGen.ar(Env.perc(0.001, durs[3])))+
-	(SinOsc.ar(freq*parts[4], 0, amps[4])*EnvGen.ar(Env.perc(0.001, durs[4])))+
-	(SinOsc.ar(freq*parts[5], 0, amps[5])*EnvGen.ar(Env.perc(0.001, durs[5])))+
-	(SinOsc.ar(freq*parts[6], 0, amps[6])*EnvGen.ar(Env.perc(0.001, durs[6])))+
-	(SinOsc.ar(freq*parts[7], 0, amps[7])*EnvGen.ar(Env.perc(0.001, durs[7])))+
-	(SinOsc.ar(freq*parts[8], 0, amps[8])*EnvGen.ar(Env.perc(0.001, durs[8])));
-	Out.ar(0, Pan2.ar(signal*amp, 0));
-}).add;
-
-*/
-
-
-/*
-Pbind(\instrument, \tobera, \freq, 210, \sustain, 0.1, \amp, 0.6).play
-*/
 
 
 // TXALAPARTA ////////////////////
@@ -226,7 +148,6 @@ playF = Routine({
 
 	txakun = true; // play starts with txakun
 	nextautopilot = 0;
-	//currentmakila = [0,2];// 0/1 to 2/3
 
 	inf.do({ arg stepcounter; // txakun > errena cycle
 		var numbeats; // numbeats needs to be here to be nill each time
@@ -309,16 +230,12 @@ playF = Routine({
 
 
 // GUI /////////////////////////////////////////
-window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
-window.alwaysOnTop = true;
-window.onClose = {AppClock.clear};
-window.front;
-beatbuttons = [nil, nil, nil, nil, nil];
-sliders = [nil, nil, nil];
-makilasliders = [[nil, nil], [nil, nil]];
-
-s.boot; //////// BOOT SERVER //////////////////
-
+doWindow = {
+	window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
+	window.alwaysOnTop = true;
+	window.onClose = {AppClock.clear};
+	window.front;
+};
 
 
 // MAKILA PLAYING ANIMATION //
@@ -348,266 +265,278 @@ makilaF = {arg sl, time;
 };
 
 
-
 // TIME CONTROLS
-sliders[0] = EZSlider( window,         // parent
-              Rect(-10,5,350,20),    // bounds
-              "tempo",  // label
-              ControlSpec(30, 250, \lin, 1, ~tempo, "BPMs"),     // controlSpec
-		      { arg ez;
-		        ~tempo = ez.value;
-		      },
-              initVal: ~tempo
-	       );
+doTimeControls = {
+	sliders[0] = EZSlider( window,         // parent
+		Rect(-10,5,350,20),    // bounds
+		"tempo",  // label
+		ControlSpec(30, 250, \lin, 1, ~tempo, "BPMs"),     // controlSpec
+		{ arg ez;
+			~tempo = ez.value;
+		},
+		initVal: ~tempo
+	);
 
-sliders[1] = EZSlider( window,         // parent
-              Rect(-10,30,350,20),    // bounds
-              "swing",  // label
-              ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
-		      { arg ez;
-                ~swing = ez.value;
-		      },
-              initVal: ~swing
-	       );
+	sliders[1] = EZSlider( window,         // parent
+		Rect(-10,30,350,20),    // bounds
+		"swing",  // label
+		ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
+		{ arg ez;
+			~swing = ez.value;
+		},
+		initVal: ~swing
+	);
 
-sliders[2] = EZSlider( window,         // parent
-              Rect(-10,55,350,20),    // bounds
-              "gap",  // label
-              ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
-		      { arg ez;
-                ~gap = ez.value;
-		      },
-              initVal: ~gap
-	       );
+	sliders[2] = EZSlider( window,         // parent
+		Rect(-10,55,350,20),    // bounds
+		"gap",  // label
+		ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
+		{ arg ez;
+			~gap = ez.value;
+		},
+		initVal: ~gap
+	);
 
-// but dont store the amplitude!
-EZSlider( window,         // parent
-              Rect(-10,80,350,20),   // bounds
-              "amp",  // label
-              ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,     // controlSpec
-		      { arg ez;
-                ~amp = ez.value;
-		      },
-              initVal: ~amp
-	       );
+	// but dont store the amplitude!
+	EZSlider( window,         // parent
+		Rect(-10,80,350,20),   // bounds
+		"amp",  // label
+		ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,     // controlSpec
+		{ arg ez;
+			~amp = ez.value;
+		},
+		initVal: ~amp
+	);
+};
+
+
 
 // MAKILAS
-c = 0; // dont like doing this
-d = 0;
-makilasliders.do({arg list;
-	list.do({arg item, i;
-		list[i] = Slider(window, Rect(300+d+(20*c), 160, 20, 150));
-		list[i].orientation = \vertical;
-		list[i].thumbSize = 80;
-		list[i].value = 1;
-		c = c + 1;
+doMakilas = { arg xloc=300, yloc=190, gap=10;
+	var ind = 0, thegap = 0;
+
+	output = StaticText(window, Rect(xloc, yloc, 200, 20));
+	yloc = yloc + 18;
+
+	makilasliders.do({arg list;
+		list.do({arg item, i;
+			list[i] = Slider(window, Rect(xloc+thegap+(20*ind), yloc, 20, 150));
+			list[i].orientation = \vertical;
+			list[i].thumbSize = 80;
+			list[i].value = 1;
+			ind = ind + 1;
+		});
+		thegap = gap;
 	});
-	d = 10;
-});
+};
 
 
 
-// inial Y location
+doButtons = { arg yfirstbuttons = 110;
+	// inial Y location
+//yfirstbuttons = 110;
 
-yfirstbuttons = 110;
-
-
-// TXAKUN
+	// TXAKUN
 	Button(window, Rect(10,yfirstbuttons,100,25))
-        .states_([
-            ["txakun", Color.white, Color.black],
-            ["txakun", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	       ~enabled[0] = butt.value.asBoolean;
-        })
-        .valueAction_(1);
+	.states_([
+		["txakun", Color.white, Color.black],
+		["txakun", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~enabled[0] = butt.value.asBoolean;
+	})
+	.valueAction_(1);
 
-// ERRENA
+	// ERRENA
 	Button(window, Rect(110,yfirstbuttons,100,25))
-        .states_([
-            ["errena", Color.white, Color.black],
-            ["errena", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	      	~enabled[1] = butt.value.asBoolean;
-        })
-        .valueAction_(1);
+	.states_([
+		["errena", Color.white, Color.black],
+		["errena", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~enabled[1] = butt.value.asBoolean;
+	})
+	.valueAction_(1);
 
-// AUTOPILOT
+	// AUTOPILOT
 	Button(window, Rect(210,yfirstbuttons,100,25))
-        .states_([
-            ["Autopilot", Color.white, Color.black],
-            ["Autopilot", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	       ~autopilot = butt.value.asBoolean;
-	       nextautopilot = 0; // force go next round
-          if (~verbose>0 && ~autopilot, {("next autopilot scheduled for step" + nextautopilot).postln});
-        });
-        //.valueAction_(0);
+	.states_([
+		["Autopilot", Color.white, Color.black],
+		["Autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~autopilot = butt.value.asBoolean;
+		nextautopilot = 0; // force go next round
+		if (~verbose>0 && ~autopilot, {("next autopilot scheduled for step" + nextautopilot).postln});
+	});
+	//.valueAction_(0);
 
 
-// BEATS
-beatbuttons[0] = Button(window, Rect(10,yfirstbuttons+25,20,25))
-        .states_([
-            ["0", Color.white, Color.black],
-            ["0", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	        if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
-        });
-beatbuttons[0].valueAction = 1;
+	// BEATS
+	beatbuttons[0] = Button(window, Rect(10,yfirstbuttons+25,20,25))
+	.states_([
+		["0", Color.white, Color.black],
+		["0", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
+	});
+	beatbuttons[0].valueAction = 1;
 
-beatbuttons[1] = Button(window, Rect(30,yfirstbuttons+25,20,25))
-        .states_([
-            ["1", Color.white, Color.black],
-            ["1", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	        if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
-        });
-beatbuttons[1].valueAction = 1;
+	beatbuttons[1] = Button(window, Rect(30,yfirstbuttons+25,20,25))
+	.states_([
+		["1", Color.white, Color.black],
+		["1", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
+	});
+	beatbuttons[1].valueAction = 1;
 
-beatbuttons[2] = Button(window, Rect(50,yfirstbuttons+25,20,25))
-        .states_([
-            ["2", Color.black, Color.red],
-        ])
-        .action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
-beatbuttons[2].valueAction = 1;
+	beatbuttons[2] = Button(window, Rect(50,yfirstbuttons+25,20,25))
+	.states_([
+		["2", Color.black, Color.red],
+	])
+	.action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
+	beatbuttons[2].valueAction = 1;
 
-beatbuttons[3] = Button(window, Rect(70,yfirstbuttons+25,20,25))
-        .states_([
-            ["3", Color.white, Color.black],
-            ["3", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	        if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
-        });
-beatbuttons[3].valueAction = 0;
+	beatbuttons[3] = Button(window, Rect(70,yfirstbuttons+25,20,25))
+	.states_([
+		["3", Color.white, Color.black],
+		["3", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
+	});
+	beatbuttons[3].valueAction = 0;
 
-beatbuttons[4] =  Button(window, Rect(90,yfirstbuttons+25,20,25))
-        .states_([
-            ["4", Color.white, Color.black],
-            ["4", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	        if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
-        });
-beatbuttons[4].valueAction = 0;
-
-
-// EMPHASIS
-emphasysBut = Button(window, Rect(110,yfirstbuttons+25,100,25))
-        .states_([
-            ["last emphasis", Color.white, Color.black],
-            ["last emphasis", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	        ~emphasis = [butt.value.asBoolean.not, butt.value.asBoolean];
-        })
-        .valueAction_(1);
-
-// PULSE
-Button(window, Rect(210,yfirstbuttons+25,100,25))
-        .states_([
-            ["maintain pulse", Color.white, Color.black],
-            ["maintain pulse", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	         ~pulse = butt.value.asBoolean;
-        });
-
-// CLASSIC TXAKUN
-classicBut = Button(window, Rect(110,yfirstbuttons+50,100,25))
-        .states_([
-            ["classic txakun", Color.white, Color.black],
-            ["classic txakun", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	         ~classictxakun = butt.value.asBoolean;
-        });
-classicBut.valueAction = 0;
+	beatbuttons[4] =  Button(window, Rect(90,yfirstbuttons+25,20,25))
+	.states_([
+		["4", Color.white, Color.black],
+		["4", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
+	});
+	beatbuttons[4].valueAction = 0;
 
 
-// MODE
+	// EMPHASIS
+	emphasysBut = Button(window, Rect(110,yfirstbuttons+25,100,25))
+	.states_([
+		["last emphasis", Color.white, Color.black],
+		["last emphasis", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~emphasis = [butt.value.asBoolean.not, butt.value.asBoolean];
+	})
+	.valueAction_(1);
+
+	// PULSE
+	Button(window, Rect(210,yfirstbuttons+25,100,25))
+	.states_([
+		["maintain pulse", Color.white, Color.black],
+		["maintain pulse", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~pulse = butt.value.asBoolean;
+	});
+
+	// CLASSIC TXAKUN
+	classicBut = Button(window, Rect(110,yfirstbuttons+50,100,25))
+	.states_([
+		["classic txakun", Color.white, Color.black],
+		["classic txakun", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~classictxakun = butt.value.asBoolean;
+	});
+	classicBut.valueAction = 0;
+
+
+	// MODE
 	Button(window, Rect(10,yfirstbuttons+50,100,25))
-        .states_([
-            ["zaharra", Color.white, Color.black],
-            ["zaharra", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	      	~classictxakun = butt.value.asBoolean.not;
-	        beatbuttons.do({arg but, ind;
-		       if ( but != nil, {
-			    if ( butt.value.asBoolean,
-				   {
-					if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
-					classicBut.valueAction = 1;
-					emphasysBut.valueAction = 1
-				   },
-				   {
-					but.valueAction = 1;
-					classicBut.valueAction = 0;
-					emphasysBut.valueAction = 0
-				  });
-               });
-	        });
-        })
-        .valueAction_(1);
+	.states_([
+		["zaharra", Color.white, Color.black],
+		["zaharra", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~classictxakun = butt.value.asBoolean.not;
+		beatbuttons.do({arg but, ind;
+			if ( but != nil, {
+				if ( butt.value.asBoolean,
+					{
+						if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
+						classicBut.valueAction = 1;
+						emphasysBut.valueAction = 1
+					},
+					{
+						but.valueAction = 1;
+						classicBut.valueAction = 0;
+						emphasysBut.valueAction = 0
+				});
+			});
+		});
+	})
+	.valueAction_(1);
 
 
-/*PopUpMenu(window,Rect(210,yfirstbuttons+25,100,20))
-    .items_(~modes)
-    .action_({ arg pop;
-	    ~mode = ~modes[pop.value];
-     });*/
+	/*PopUpMenu(window,Rect(210,yfirstbuttons+25,100,20))
+	.items_(~modes)
+	.action_({ arg pop;
+	~mode = ~modes[pop.value];
+	});*/
 
 
-// PLAY
+	// PLAY
 	Button(window, Rect(10,yfirstbuttons+75,200,25))
-        .states_([
-            ["play/stop", Color.white, Color.black],
-            ["play/stop", Color.black, Color.red],
-        ])
-        .action_({ arg butt;
-	       if ( butt.value.asBoolean, { AppClock.play(playF)}, {AppClock.clear});
-        });
-        //.valueAction_(0);
+	.states_([
+		["play/stop", Color.white, Color.black],
+		["play/stop", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if ( butt.value.asBoolean, { AppClock.play(playF)}, {AppClock.clear});
+	});
+	//.valueAction_(0);
 
-// SERVER
+	// SERVER
 	Button(window, Rect(10,yfirstbuttons+100,100,25))
-        .states_([
-            ["server window", Color.white, Color.grey],
-        ])
-        .action_({ arg butt;
-	       s.makeGui;
-        });
-        //.valueAction_(0);
+	.states_([
+		["server window", Color.white, Color.grey],
+	])
+	.action_({ arg butt;
+		s.makeGui;
+	});
+	//.valueAction_(0);
 
-// VERBOSE
+	// VERBOSE
 	Button(window, Rect(110,yfirstbuttons+100,20,25))
-        .states_([
-            ["V", Color.white, Color.grey],
-	        ["V", Color.white, Color.blue],
-	        ["V", Color.white, Color.green],
-	        ["V", Color.white, Color.red]
-        ])
-        .action_({ arg butt;
-	       ~verbose = butt.value;
-        })
-        .valueAction_(~verbose);
+	.states_([
+		["V", Color.white, Color.grey],
+		["V", Color.white, Color.blue],
+		["V", Color.white, Color.green],
+		["V", Color.white, Color.red]
+	])
+	.action_({ arg butt;
+		~verbose = butt.value;
+	})
+	.valueAction_(~verbose);
+};
+
+
+
 
 
 // PLANKS - OHOLAK //////////////////////////////////
+doPlanks = { arg yloc = 260;
 //1
-	Button(window, Rect(10,yfirstbuttons+150,20,20))
+	Button(window, Rect(10,yloc,20,20))
         .states_([
             ["1", Color.black, Color.red],
         ])
         .action_({ arg butt; }); // NO ACTION. THIS IS ALWAYS ON
 
-	PopUpMenu(window,Rect(35,yfirstbuttons+150,250,20))
+	PopUpMenu(window,Rect(35,yloc,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -616,7 +545,7 @@ classicBut.valueAction = 0;
 	     })
 	.valueAction_(0);
 //2
-	Button(window, Rect(10,yfirstbuttons+170,20,20))
+	Button(window, Rect(10,yloc+20,20,20))
         .states_([
             ["2", Color.white, Color.black],
             ["2", Color.black, Color.red],
@@ -624,7 +553,7 @@ classicBut.valueAction = 0;
         .action_({ arg butt;
 	       buffers[1][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yfirstbuttons+170,250,20))
+	PopUpMenu(window,Rect(35,yloc+20,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -633,7 +562,7 @@ classicBut.valueAction = 0;
 	     })
 	.valueAction_(1);
 //3
-	Button(window, Rect(10,yfirstbuttons+190,20,20))
+	Button(window, Rect(10,yloc+40,20,20))
         .states_([
             ["3", Color.white, Color.black],
             ["3", Color.black, Color.red],
@@ -641,7 +570,7 @@ classicBut.valueAction = 0;
         .action_({ arg butt;
              buffers[2][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yfirstbuttons+190,250,20))
+	PopUpMenu(window,Rect(35,yloc+40,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -650,7 +579,7 @@ classicBut.valueAction = 0;
 	     })
 	.valueAction_(2);
 //4
-	Button(window, Rect(10,yfirstbuttons+210,20,20))
+	Button(window, Rect(10,yloc+60,20,20))
         .states_([
             ["4", Color.white, Color.black],
             ["4", Color.black, Color.red],
@@ -658,7 +587,7 @@ classicBut.valueAction = 0;
         .action_({ arg butt;
              buffers[3][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yfirstbuttons+210,250,20))
+	PopUpMenu(window,Rect(35,yloc+60,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -666,9 +595,15 @@ classicBut.valueAction = 0;
 	           ("loading" + menu.item + "with bufnum" + buffers[3][0].bufnum).postln;
 	     })
 	.valueAction_(3);
+};
 
 
-output = StaticText(window, Rect(10, yfirstbuttons+125, 200, 20));
+doWindow.value();
+doMakilas.value();
+doTimeControls.value();
+doButtons.value();
+doPlanks.value();
+
 
 if (~verbose>0, {currentEnvironment.postln});
 if (~verbose>0, {buffers});
