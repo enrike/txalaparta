@@ -301,7 +301,7 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 	);
 	// beat swing
 	yloc = yloc+25;
-	sliders[1] = EZSlider( window,         // parent
+	sliders[2] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"beat swing",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~beatswing, "ms"),     // controlSpec
@@ -313,7 +313,7 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 	);
 	// gap
 	yloc = yloc+25;
-	sliders[2] = EZSlider( window,         // parent
+	sliders[3] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"gap",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
