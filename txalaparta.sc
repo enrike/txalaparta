@@ -93,13 +93,14 @@ s.unmute
 var playF, makilaF;
 
 // GUI vars
-var window, colorstates, beatbuttons, yfirstbuttons, classicBut, emphasysBut, output, sliders, makilasliders, nextautopilot, sndpath, samples, buffer, buffers;
+var window, colorstates, beatbuttons, yloc, classicBut, emphasysBut, output, sliders, makilasliders, nextautopilot, sndpath, samples, buffer, buffers;
 // GUI functions vars
 var doWindow, doMakilas, doTimeControls, doButtons, doPlanks;
 
 //global vars
 ~tempo = 70; // tempo. txakun / errena
 ~swing = 0.1;
+~beatswing = 0.1;
 ~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
 ~amp = 0.5;
 ~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
@@ -176,8 +177,9 @@ playF = Routine({
 				{ { numbeats == nil }.while( {numbeats = ~allowedbeats.wchoose(~beatchance)} ) } // avoid nil
 			);
 
-			localstep = (~gap/numbeats); // * localtempo  // perfect step between makila hits before swing
-			intermakilaswing = rrand(~swing/numbeats.neg, ~swing/numbeats);
+			localstep = (~gap/numbeats); // perfect step between makila hits before swing
+			//intermakilaswing = rrand(~swing/numbeats.neg, ~swing/numbeats);
+			intermakilaswing = rrand(~beatswing/numbeats.neg, ~beatswing/numbeats);
 
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 
@@ -230,12 +232,6 @@ playF = Routine({
 
 
 // GUI /////////////////////////////////////////
-doWindow = {
-	window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
-	window.alwaysOnTop = true;
-	window.onClose = {AppClock.clear};
-	window.front;
-};
 
 
 // MAKILA PLAYING ANIMATION //
@@ -265,48 +261,82 @@ makilaF = {arg sl, time;
 };
 
 
+
+// GUI ELEMENTS ////
+
+// WINDOW
+doWindow = {
+	window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
+	window.alwaysOnTop = true;
+	window.onClose = {AppClock.clear};
+	window.front;
+};
+
+
+
 // TIME CONTROLS
-doTimeControls = {
+doTimeControls = { arg xloc = 10, yloc=5, width=360;
+
+	// tempo
 	sliders[0] = EZSlider( window,         // parent
-		Rect(-10,5,350,20),    // bounds
+		Rect(xloc,yloc,width,20),    // bounds
 		"tempo",  // label
 		ControlSpec(30, 250, \lin, 1, ~tempo, "BPMs"),     // controlSpec
 		{ arg ez;
 			~tempo = ez.value;
 		},
-		initVal: ~tempo
+		initVal: ~tempo,
+		labelWidth: 80;
 	);
-
+	// swing
+	yloc = yloc+25;
 	sliders[1] = EZSlider( window,         // parent
-		Rect(-10,30,350,20),    // bounds
-		"swing",  // label
+		Rect(xloc,yloc,width,20),    // bounds
+		"tempo swing",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
 		{ arg ez;
 			~swing = ez.value;
 		},
-		initVal: ~swing
+		initVal: ~swing,
+		labelWidth: 80;
 	);
-
+	// beat swing
+	yloc = yloc+25;
+	sliders[1] = EZSlider( window,         // parent
+		Rect(xloc,yloc,width,20),    // bounds
+		"beat swing",  // label
+		ControlSpec(0.001, 1, \lin, 0.001, ~beatswing, "ms"),     // controlSpec
+		{ arg ez;
+			~beatswing = ez.value;
+		},
+		initVal: ~swing,
+		labelWidth: 80;
+	);
+	// gap
+	yloc = yloc+25;
 	sliders[2] = EZSlider( window,         // parent
-		Rect(-10,55,350,20),    // bounds
+		Rect(xloc,yloc,width,20),    // bounds
 		"gap",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
 		{ arg ez;
 			~gap = ez.value;
 		},
-		initVal: ~gap
+		initVal: ~gap,
+		labelWidth: 80;
 	);
-
-	// but dont store the amplitude!
+	// amplitude
+	yloc = yloc+25;
 	EZSlider( window,         // parent
-		Rect(-10,80,350,20),   // bounds
+		Rect(xloc,yloc,width,20),   // bounds
 		"amp",  // label
 		ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,     // controlSpec
 		{ arg ez;
 			~amp = ez.value;
 		},
-		initVal: ~amp
+		initVal: ~amp,
+		labelWidth: 80;
 	);
+	// do NOT store the amplitude! into the array. dont need a ref to it.
 };
 
 
@@ -331,13 +361,11 @@ doMakilas = { arg xloc=300, yloc=190, gap=10;
 };
 
 
-
-doButtons = { arg yfirstbuttons = 110;
-	// inial Y location
-//yfirstbuttons = 110;
+// BOTONES
+doButtons = { arg xloc=10, yloc = 110;
 
 	// TXAKUN
-	Button(window, Rect(10,yfirstbuttons,100,25))
+	Button(window, Rect(xloc,yloc,100,25))
 	.states_([
 		["txakun", Color.white, Color.black],
 		["txakun", Color.black, Color.red],
@@ -348,7 +376,7 @@ doButtons = { arg yfirstbuttons = 110;
 	.valueAction_(1);
 
 	// ERRENA
-	Button(window, Rect(110,yfirstbuttons,100,25))
+	Button(window, Rect(xloc+100,yloc,100,25))
 	.states_([
 		["errena", Color.white, Color.black],
 		["errena", Color.black, Color.red],
@@ -359,7 +387,7 @@ doButtons = { arg yfirstbuttons = 110;
 	.valueAction_(1);
 
 	// AUTOPILOT
-	Button(window, Rect(210,yfirstbuttons,100,25))
+	Button(window, Rect(xloc+200,yloc,100,25))
 	.states_([
 		["Autopilot", Color.white, Color.black],
 		["Autopilot", Color.black, Color.red],
@@ -371,9 +399,8 @@ doButtons = { arg yfirstbuttons = 110;
 	});
 	//.valueAction_(0);
 
-
 	// BEATS
-	beatbuttons[0] = Button(window, Rect(10,yfirstbuttons+25,20,25))
+	beatbuttons[0] = Button(window, Rect(xloc,yloc+25,20,25))
 	.states_([
 		["0", Color.white, Color.black],
 		["0", Color.black, Color.red],
@@ -383,7 +410,7 @@ doButtons = { arg yfirstbuttons = 110;
 	});
 	beatbuttons[0].valueAction = 1;
 
-	beatbuttons[1] = Button(window, Rect(30,yfirstbuttons+25,20,25))
+	beatbuttons[1] = Button(window, Rect(xloc+20,yloc+25,20,25))
 	.states_([
 		["1", Color.white, Color.black],
 		["1", Color.black, Color.red],
@@ -393,14 +420,14 @@ doButtons = { arg yfirstbuttons = 110;
 	});
 	beatbuttons[1].valueAction = 1;
 
-	beatbuttons[2] = Button(window, Rect(50,yfirstbuttons+25,20,25))
+	beatbuttons[2] = Button(window, Rect(xloc+40,yloc+25,20,25))
 	.states_([
 		["2", Color.black, Color.red],
 	])
 	.action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
 	beatbuttons[2].valueAction = 1;
 
-	beatbuttons[3] = Button(window, Rect(70,yfirstbuttons+25,20,25))
+	beatbuttons[3] = Button(window, Rect(xloc+60,yloc+25,20,25))
 	.states_([
 		["3", Color.white, Color.black],
 		["3", Color.black, Color.red],
@@ -410,7 +437,7 @@ doButtons = { arg yfirstbuttons = 110;
 	});
 	beatbuttons[3].valueAction = 0;
 
-	beatbuttons[4] =  Button(window, Rect(90,yfirstbuttons+25,20,25))
+	beatbuttons[4] =  Button(window, Rect(xloc+80,yloc+25,20,25))
 	.states_([
 		["4", Color.white, Color.black],
 		["4", Color.black, Color.red],
@@ -422,7 +449,7 @@ doButtons = { arg yfirstbuttons = 110;
 
 
 	// EMPHASIS
-	emphasysBut = Button(window, Rect(110,yfirstbuttons+25,100,25))
+	emphasysBut = Button(window, Rect(xloc+100,yloc+25,100,25))
 	.states_([
 		["last emphasis", Color.white, Color.black],
 		["last emphasis", Color.black, Color.red],
@@ -433,7 +460,7 @@ doButtons = { arg yfirstbuttons = 110;
 	.valueAction_(1);
 
 	// PULSE
-	Button(window, Rect(210,yfirstbuttons+25,100,25))
+	Button(window, Rect(xloc+200,yloc+25,100,25))
 	.states_([
 		["maintain pulse", Color.white, Color.black],
 		["maintain pulse", Color.black, Color.red],
@@ -443,7 +470,7 @@ doButtons = { arg yfirstbuttons = 110;
 	});
 
 	// CLASSIC TXAKUN
-	classicBut = Button(window, Rect(110,yfirstbuttons+50,100,25))
+	classicBut = Button(window, Rect(xloc+100,yloc+50,100,25))
 	.states_([
 		["classic txakun", Color.white, Color.black],
 		["classic txakun", Color.black, Color.red],
@@ -455,7 +482,7 @@ doButtons = { arg yfirstbuttons = 110;
 
 
 	// MODE
-	Button(window, Rect(10,yfirstbuttons+50,100,25))
+	Button(window, Rect(xloc,yloc+50,100,25))
 	.states_([
 		["zaharra", Color.white, Color.black],
 		["zaharra", Color.black, Color.red],
@@ -481,7 +508,7 @@ doButtons = { arg yfirstbuttons = 110;
 	.valueAction_(1);
 
 
-	/*PopUpMenu(window,Rect(210,yfirstbuttons+25,100,20))
+	/*PopUpMenu(window,Rect(210,yloc+25,100,20))
 	.items_(~modes)
 	.action_({ arg pop;
 	~mode = ~modes[pop.value];
@@ -489,7 +516,7 @@ doButtons = { arg yfirstbuttons = 110;
 
 
 	// PLAY
-	Button(window, Rect(10,yfirstbuttons+75,200,25))
+	Button(window, Rect(xloc,yloc+75,200,25))
 	.states_([
 		["play/stop", Color.white, Color.black],
 		["play/stop", Color.black, Color.red],
@@ -500,7 +527,7 @@ doButtons = { arg yfirstbuttons = 110;
 	//.valueAction_(0);
 
 	// SERVER
-	Button(window, Rect(10,yfirstbuttons+100,100,25))
+	Button(window, Rect(xloc,yloc+100,100,25))
 	.states_([
 		["server window", Color.white, Color.grey],
 	])
@@ -510,7 +537,7 @@ doButtons = { arg yfirstbuttons = 110;
 	//.valueAction_(0);
 
 	// VERBOSE
-	Button(window, Rect(110,yfirstbuttons+100,20,25))
+	Button(window, Rect(xloc+100,yloc+100,20,25))
 	.states_([
 		["V", Color.white, Color.grey],
 		["V", Color.white, Color.blue],
@@ -528,15 +555,16 @@ doButtons = { arg yfirstbuttons = 110;
 
 
 // PLANKS - OHOLAK //////////////////////////////////
-doPlanks = { arg yloc = 260;
+doPlanks = { arg xloc=10, yloc = 260;
+	var menuXloc = xloc + 25;
 //1
-	Button(window, Rect(10,yloc,20,20))
+	Button(window, Rect(xloc,yloc,20,20))
         .states_([
             ["1", Color.black, Color.red],
         ])
         .action_({ arg butt; }); // NO ACTION. THIS IS ALWAYS ON
 
-	PopUpMenu(window,Rect(35,yloc,250,20))
+	PopUpMenu(window,Rect(menuXloc,yloc,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -545,7 +573,7 @@ doPlanks = { arg yloc = 260;
 	     })
 	.valueAction_(0);
 //2
-	Button(window, Rect(10,yloc+20,20,20))
+	Button(window, Rect(xloc,yloc+20,20,20))
         .states_([
             ["2", Color.white, Color.black],
             ["2", Color.black, Color.red],
@@ -553,7 +581,7 @@ doPlanks = { arg yloc = 260;
         .action_({ arg butt;
 	       buffers[1][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yloc+20,250,20))
+	PopUpMenu(window,Rect(menuXloc,yloc+20,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -562,7 +590,7 @@ doPlanks = { arg yloc = 260;
 	     })
 	.valueAction_(1);
 //3
-	Button(window, Rect(10,yloc+40,20,20))
+	Button(window, Rect(xloc,yloc+40,20,20))
         .states_([
             ["3", Color.white, Color.black],
             ["3", Color.black, Color.red],
@@ -570,7 +598,7 @@ doPlanks = { arg yloc = 260;
         .action_({ arg butt;
              buffers[2][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yloc+40,250,20))
+	PopUpMenu(window,Rect(menuXloc,yloc+40,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -579,7 +607,7 @@ doPlanks = { arg yloc = 260;
 	     })
 	.valueAction_(2);
 //4
-	Button(window, Rect(10,yloc+60,20,20))
+	Button(window, Rect(xloc,yloc+60,20,20))
         .states_([
             ["4", Color.white, Color.black],
             ["4", Color.black, Color.red],
@@ -587,7 +615,7 @@ doPlanks = { arg yloc = 260;
         .action_({ arg butt;
              buffers[3][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(35,yloc+60,250,20))
+	PopUpMenu(window,Rect(menuXloc,yloc+60,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 		     //buffer = Buffer.read(s, sndpath ++ menu.item);
@@ -598,11 +626,12 @@ doPlanks = { arg yloc = 260;
 };
 
 
+// Now position all different groups of GUI elements
 doWindow.value();
-doMakilas.value();
-doTimeControls.value();
-doButtons.value();
-doPlanks.value();
+doMakilas.value(300, 190, 10);
+doTimeControls.value(10, 5);
+doButtons.value(10, 140);
+doPlanks.value(10, 275);
 
 
 if (~verbose>0, {currentEnvironment.postln});
