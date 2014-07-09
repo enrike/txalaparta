@@ -52,19 +52,23 @@ Timbre
     table being hit (per hit)
     location of each hit within the table’s length
     pitch (per hit)
+
+Pan (stereo)
+    hits could be pan along the planks
 */
 
 /*
 Ideas para supercollider txalaparta :
+- autopilot each of the time sliders with a button for each
 - presets de settings de parámetros del interface
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
-- separar el loop del txakun y errena para que se mantenga el pulso independientemente del swing (git branch?). para esto necesito dos Tasks independientes que no se influyan mutuamente con su swing particular y que solo hagan caso al tempo
-- standalone version supercollider
 - send OSC out
 - usar samples con filtros en vez de síntesis . diferentes materiales y tipos de madera. diferentes tamaños y diferentes notas.
-- sistema de feedback (cuatro sliders verticales subiendo y bajando). para esto se puede defer() todos los golpes incluido el primero y disparar la animacion de los sliders con antelacion a que suceda el golpe.
+- allow pan each part?
+- should pan be mapped to the length of the virtual planks? so that as the hit moves
+along the plank the pan changes but also the filter affects the sound.
 */
 
 currentEnvironment;
@@ -89,15 +93,14 @@ s.unmute
 
 
 ( // RUN ME HERE
-//vars
 var playF, makilaF;
 
 // GUI vars
-var window, colorstates, beatbuttons, yloc, classicBut, emphasysBut, output, sliders, makilasliders, nextautopilot, sndpath, samples, buffer, buffers;
+var window, beatbuttons, classicBut, emphasysBut, pulseBut, output, sliders, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething;
 // GUI functions vars
 var doWindow, doMakilas, doTimeControls, doButtons, doPlanks;
 
-//global vars
+// GLOBAL vars
 ~tempo = 70; // tempo. txakun / errena
 ~swing = 0.1;
 ~beatswing = 0.1;
@@ -110,29 +113,28 @@ var doWindow, doMakilas, doTimeControls, doButtons, doPlanks;
 ~enabled = [true, true]; // switch on/off txakun and errena
 ~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 ~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
-~autopilot = false;
 ~autopilotrange = [5, 10]; // for instance
 
 // utility
 ~verbose = 1;
 
+
 sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
 samples = (sndpath++"*").pathMatch;
 ("sndpath is" + sndpath).postln;
-("samples are" + samples).postln;
+("available samples are" + samples).postln;
 buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, enabled]
-
 
 beatbuttons = [nil, nil, nil, nil, nil];
 sliders = [nil, nil, nil, nil];
+slidersauto = List[nil,nil,nil,nil]; //keep a ref to the ones available for autopilot
 makilasliders = [[nil, nil], [nil, nil]];
 
 
 s.boot; //////// BOOT SERVER //////////////////
 
 
-// THE SYNTHDEF
-
+// THE BASIC SYNTHDEF
 SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
     Out.ar(outbus,
         amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
@@ -141,37 +143,45 @@ SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
 
 
 
+/* return true if any of the items in the array or list is not nil
+*/
+istheresomething = {arg alist;
+	var values = List[];
+	alist.do({arg item;
+		if (item!=nil, {values.add(true)});
+	});
+	if(values.size>0, true, false);
+};
+
+
 
 // TXALAPARTA ////////////////////
 playF = Routine({
-	var txakun, currentmakila; // classical txakun only is limited to two beats
+	var txakun; // classical txakun only is limited to two beats
 	var intermakilaswing, localstep, localtempo, localamp;
 
 	txakun = true; // play starts with txakun
 	nextautopilot = 0;
 
 	inf.do({ arg stepcounter; // txakun > errena cycle
-		var numbeats; // numbeats needs to be here to be nill each time
-
-		if (txakun, {currentmakila = [0,2]}); // RESET
+		var numbeats, outstr; // numbeats needs to be here to be nill each time
 
 		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
 
-		if (~pulse, // does tempo keep with pulse?
-			{(60/~tempo).wait},
-			{localtempo.wait}
-		);
+		if (~pulse, {(60/~tempo).wait}, {localtempo.wait});
 
-		if ( (~autopilot && (stepcounter >= nextautopilot)) , {
+		// autopilot
+		if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 			var sl;
-			sl = sliders.choose;
+			{ sl == nil }.while( {sl = slidersauto.choose} ) ;
 			sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval);
 			nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
-			if (~verbose>0, {("autopilot! next autopilot scheduled for step" + nextautopilot).postln});
+			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
 
-		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), {
-
+		// beats
+		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]),
+		{
 			if (~classictxakun && txakun, // how many hits this time?
 				{ numbeats = 2 },
 				{ { numbeats == nil }.while( {numbeats = ~allowedbeats.wchoose(~beatchance)} ) } // avoid nil
@@ -200,12 +210,10 @@ playF = Routine({
 
 				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.005, 0.005), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
 
+				// animation
 				if (txakun,
 					{
 						{makilaF.value(makilasliders[0].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) - 0.25);
-						//["txakun anim", currentmakila[0]].postln;
-						currentmakila[0] = currentmakila[0] + 1;
-						if (currentmakila[0] > 1, {currentmakila[0] = 0});
 					},
 					{
 						{makilaF.value(makilasliders[1].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) -0.25);
@@ -215,10 +223,12 @@ playF = Routine({
 				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
 			}); // END NUMBEATS LOOP
 
-			output.string = {if (txakun, {"txakun"},{"errena"})}.value + numbeats.asString;
+			outstr = stepcounter+":"+if (txakun, "txakun","errena")+numbeats;
+			{output.string = outstr}.defer(localtempo);
+
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
 			if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
-		});
+		}); //end if beats
 
 		txakun = txakun.not;
 	}) // end inf loop
@@ -264,8 +274,8 @@ makilaF = {arg sl, time;
 // GUI ELEMENTS ////
 
 // WINDOW
-doWindow = {
-	window = Window("Txalaparta. www.ixi-audio.net");//, Rect(100, 100, 350, 400));
+doWindow = {arg width, height, caption;
+	window = Window(caption, Rect(100, 100, width, height));
 	window.alwaysOnTop = true;
 	window.onClose = {AppClock.clear};
 	window.front;
@@ -274,9 +284,10 @@ doWindow = {
 
 
 // TIME CONTROLS
-doTimeControls = { arg xloc = 10, yloc=5, width=360;
+doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
+	var buttonxloc = xloc + width + 5;
 
-	// tempo
+	// tempo //
 	sliders[0] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"tempo",  // label
@@ -287,8 +298,20 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 		initVal: ~tempo,
 		labelWidth: 80;
 	);
-	// swing
-	yloc = yloc+25;
+
+	Button(window, Rect(buttonxloc,yloc,60,20))
+	.states_([
+	["autopilot", Color.white, Color.black],
+	["autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+	if (butt.value.asBoolean,
+	{slidersauto.put(0, sliders[0])}, {slidersauto.put(0, nil)});
+	})
+	.valueAction_(0);
+
+	// swing //
+	yloc = yloc+gap;
 	sliders[1] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"tempo swing",  // label
@@ -299,8 +322,20 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 		initVal: ~swing,
 		labelWidth: 80;
 	);
-	// beat swing
-	yloc = yloc+25;
+
+	Button(window, Rect(buttonxloc,yloc,60,20))
+	.states_([
+		["autopilot", Color.white, Color.black],
+		["autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean,
+			{slidersauto.put(1, sliders[1])}, {slidersauto.put(1, nil)});
+	})
+	.valueAction_(0);
+
+	// beat swing //
+	yloc = yloc+gap;
 	sliders[2] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"beat swing",  // label
@@ -311,8 +346,20 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 		initVal: ~swing,
 		labelWidth: 80;
 	);
-	// gap
-	yloc = yloc+25;
+
+	Button(window, Rect(buttonxloc,yloc,60,20))
+	.states_([
+		["autopilot", Color.white, Color.black],
+		["autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean,
+			{slidersauto.put(2, sliders[2])}, {slidersauto.put(2, nil)});
+	})
+	.valueAction_(0);
+
+	// gap //
+	yloc = yloc+gap;
 	sliders[3] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"gap",  // label
@@ -323,8 +370,20 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 		initVal: ~gap,
 		labelWidth: 80;
 	);
+
+	Button(window, Rect(buttonxloc,yloc,60,20))
+	.states_([
+		["autopilot", Color.white, Color.black],
+		["autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean,
+			{slidersauto.put(3, sliders[3])}, {slidersauto.put(3, nil)});
+	})
+	.valueAction_(0);
+
 	// amplitude
-	yloc = yloc+25;
+	yloc = yloc+gap;
 	EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),   // bounds
 		"amp",  // label
@@ -340,53 +399,15 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360;
 
 
 
-// MAKILAS
-doMakilas = { arg xloc=300, yloc=190, gap=10;
-	var ind = 0, thegap = 0;
-
-	output = StaticText(window, Rect(xloc, yloc, 200, 20));
-	yloc = yloc + 18;
-
-	makilasliders.do({arg list;
-		list.do({arg item, i;
-			list[i] = Slider(window, Rect(xloc+thegap+(20*ind), yloc, 20, 150));
-			list[i].orientation = \vertical;
-			list[i].thumbSize = 80;
-			list[i].value = 1;
-			ind = ind + 1;
-		});
-		thegap = gap;
-	});
-};
 
 
 // BOTONES
 doButtons = { arg xloc=10, yloc = 110;
+	var beatsxloc = 250;
 
-	// TXAKUN
-	Button(window, Rect(xloc,yloc,100,25))
-	.states_([
-		["txakun", Color.white, Color.black],
-		["txakun", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		~enabled[0] = butt.value.asBoolean;
-	})
-	.valueAction_(1);
-
-	// ERRENA
-	Button(window, Rect(xloc+100,yloc,100,25))
-	.states_([
-		["errena", Color.white, Color.black],
-		["errena", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		~enabled[1] = butt.value.asBoolean;
-	})
-	.valueAction_(1);
 
 	// AUTOPILOT
-	Button(window, Rect(xloc+200,yloc,100,25))
+	/*Button(window, Rect(xloc+200,yloc,100,25))
 	.states_([
 		["Autopilot", Color.white, Color.black],
 		["Autopilot", Color.black, Color.red],
@@ -395,60 +416,22 @@ doButtons = { arg xloc=10, yloc = 110;
 		~autopilot = butt.value.asBoolean;
 		nextautopilot = 0; // force go next round
 		if (~verbose>0 && ~autopilot, {("next autopilot scheduled for step" + nextautopilot).postln});
-	});
+	});*/
 	//.valueAction_(0);
 
-	// BEATS
-	beatbuttons[0] = Button(window, Rect(xloc,yloc+25,20,25))
+
+	// PULSE
+	pulseBut = Button(window, Rect(xloc,yloc,100,25))
 	.states_([
-		["0", Color.white, Color.black],
-		["0", Color.black, Color.red],
+		["maintain pulse", Color.white, Color.black],
+		["maintain pulse", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
+		~pulse = butt.value.asBoolean;
 	});
-	beatbuttons[0].valueAction = 1;
-
-	beatbuttons[1] = Button(window, Rect(xloc+20,yloc+25,20,25))
-	.states_([
-		["1", Color.white, Color.black],
-		["1", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
-	});
-	beatbuttons[1].valueAction = 1;
-
-	beatbuttons[2] = Button(window, Rect(xloc+40,yloc+25,20,25))
-	.states_([
-		["2", Color.black, Color.red],
-	])
-	.action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
-	beatbuttons[2].valueAction = 1;
-
-	beatbuttons[3] = Button(window, Rect(xloc+60,yloc+25,20,25))
-	.states_([
-		["3", Color.white, Color.black],
-		["3", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
-	});
-	beatbuttons[3].valueAction = 0;
-
-	beatbuttons[4] =  Button(window, Rect(xloc+80,yloc+25,20,25))
-	.states_([
-		["4", Color.white, Color.black],
-		["4", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
-	});
-	beatbuttons[4].valueAction = 0;
-
 
 	// EMPHASIS
-	emphasysBut = Button(window, Rect(xloc+100,yloc+25,100,25))
+	emphasysBut = Button(window, Rect(xloc+100,yloc,100,25))
 	.states_([
 		["last emphasis", Color.white, Color.black],
 		["last emphasis", Color.black, Color.red],
@@ -458,30 +441,8 @@ doButtons = { arg xloc=10, yloc = 110;
 	})
 	.valueAction_(1);
 
-	// PULSE
-	Button(window, Rect(xloc+200,yloc+25,100,25))
-	.states_([
-		["maintain pulse", Color.white, Color.black],
-		["maintain pulse", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		~pulse = butt.value.asBoolean;
-	});
-
-	// CLASSIC TXAKUN
-	classicBut = Button(window, Rect(xloc+100,yloc+50,100,25))
-	.states_([
-		["classic txakun", Color.white, Color.black],
-		["classic txakun", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		~classictxakun = butt.value.asBoolean;
-	});
-	classicBut.valueAction = 0;
-
-
 	// MODE
-	Button(window, Rect(xloc,yloc+50,100,25))
+	Button(window, Rect(xloc,yloc+25,100,25))
 	.states_([
 		["zaharra", Color.white, Color.black],
 		["zaharra", Color.black, Color.red],
@@ -494,28 +455,87 @@ doButtons = { arg xloc=10, yloc = 110;
 					{
 						if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
 						classicBut.valueAction = 1;
-						emphasysBut.valueAction = 1
+						emphasysBut.valueAction = 1;
+						pulseBut.valueAction = 0
 					},
 					{
 						but.valueAction = 1;
 						classicBut.valueAction = 0;
-						emphasysBut.valueAction = 0
+						emphasysBut.valueAction = 0;
+						pulseBut.valueAction = 1
 				});
 			});
 		});
 	})
 	.valueAction_(1);
 
+	// CLASSIC TXAKUN
+	classicBut = Button(window, Rect(xloc+100,yloc+25,100,25))
+	.states_([
+		["classic txakun", Color.white, Color.black],
+		["classic txakun", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~classictxakun = butt.value.asBoolean;
+	});
+	classicBut.valueAction = 1;
 
-	/*PopUpMenu(window,Rect(210,yloc+25,100,20))
-	.items_(~modes)
-	.action_({ arg pop;
-	~mode = ~modes[pop.value];
-	});*/
+
+
+	// BEATS
+	StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Allowed beats";
+
+	beatbuttons[0] = Button(window, Rect(beatsxloc,yloc,20,25))
+	.states_([
+		["0", Color.white, Color.black],
+		["0", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
+	});
+	beatbuttons[0].valueAction = 1;
+
+	beatbuttons[1] = Button(window, Rect(beatsxloc+20,yloc,20,25))
+	.states_([
+		["1", Color.white, Color.black],
+		["1", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
+	});
+	beatbuttons[1].valueAction = 1;
+
+	beatbuttons[2] = Button(window, Rect(beatsxloc+40,yloc,20,25))
+	.states_([
+		["2", Color.black, Color.red],
+	])
+	.action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
+	beatbuttons[2].valueAction = 1;
+
+	beatbuttons[3] = Button(window, Rect(beatsxloc+60,yloc,20,25))
+	.states_([
+		["3", Color.white, Color.black],
+		["3", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
+	});
+	beatbuttons[3].valueAction = 0;
+
+	beatbuttons[4] =  Button(window, Rect(beatsxloc+80,yloc,20,25))
+	.states_([
+		["4", Color.white, Color.black],
+		["4", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
+	});
+	beatbuttons[4].valueAction = 0;
+
 
 
 	// PLAY
-	Button(window, Rect(xloc,yloc+75,200,25))
+	Button(window, Rect(xloc,yloc+50,200,25))
 	.states_([
 		["play/stop", Color.white, Color.black],
 		["play/stop", Color.black, Color.red],
@@ -526,7 +546,7 @@ doButtons = { arg xloc=10, yloc = 110;
 	//.valueAction_(0);
 
 	// SERVER
-	Button(window, Rect(xloc,yloc+100,100,25))
+	Button(window, Rect(xloc,yloc+75,100,25))
 	.states_([
 		["server window", Color.white, Color.grey],
 	])
@@ -536,7 +556,7 @@ doButtons = { arg xloc=10, yloc = 110;
 	//.valueAction_(0);
 
 	// VERBOSE
-	Button(window, Rect(xloc+100,yloc+100,20,25))
+	Button(window, Rect(xloc+100,yloc+75,20,25))
 	.states_([
 		["V", Color.white, Color.grey],
 		["V", Color.white, Color.blue],
@@ -556,6 +576,9 @@ doButtons = { arg xloc=10, yloc = 110;
 // PLANKS - OHOLAK //////////////////////////////////
 doPlanks = { arg xloc=10, yloc = 260;
 	var menuXloc = xloc + 25;
+
+	StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Oholak/Planks";
+
 //1
 	Button(window, Rect(xloc,yloc,20,20))
         .states_([
@@ -566,7 +589,6 @@ doPlanks = { arg xloc=10, yloc = 260;
 	PopUpMenu(window,Rect(menuXloc,yloc,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
-		     //buffer = Buffer.read(s, sndpath ++ menu.item);
 	         buffers[0][0] = Buffer.read(s, sndpath ++ menu.item);
 	         ("loading" + menu.item + "with bufnum" + buffers[0][0].bufnum).postln;
 	     })
@@ -583,7 +605,6 @@ doPlanks = { arg xloc=10, yloc = 260;
 	PopUpMenu(window,Rect(menuXloc,yloc+20,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
-		     //buffer = Buffer.read(s, sndpath ++ menu.item);
 	           buffers[1][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[1][0].bufnum).postln;
 	     })
@@ -600,7 +621,6 @@ doPlanks = { arg xloc=10, yloc = 260;
 	PopUpMenu(window,Rect(menuXloc,yloc+40,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
-		     //buffer = Buffer.read(s, sndpath ++ menu.item);
 	           buffers[2][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[2][0].bufnum).postln;
 	     })
@@ -617,7 +637,6 @@ doPlanks = { arg xloc=10, yloc = 260;
 	PopUpMenu(window,Rect(menuXloc,yloc+60,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
-		     //buffer = Buffer.read(s, sndpath ++ menu.item);
 	           buffers[3][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[3][0].bufnum).postln;
 	     })
@@ -625,12 +644,57 @@ doPlanks = { arg xloc=10, yloc = 260;
 };
 
 
+
+// MAKILAS
+doMakilas = { arg xloc=300, yloc=190, gap=45;
+	var ind = 0, thegap = 0;
+
+	output = StaticText(window, Rect(xloc, yloc, 200, 20));
+	yloc = yloc + 18;
+
+	makilasliders.do({arg list;
+		thegap.postln;
+		list.do({arg item, i;
+			list[i] = Slider(window, Rect(xloc+thegap+(21*ind), yloc, 20, 150));
+			list[i].orientation = \vertical;
+			list[i].thumbSize = 80;
+			list[i].value = 1;
+			ind = ind + 1;
+		});
+		thegap = gap;
+	});
+
+	// TXAKUN
+	Button(window, Rect(xloc,yloc+150,50,25))
+	.states_([
+		["txakun", Color.white, Color.black],
+		["txakun", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~enabled[0] = butt.value.asBoolean;
+	})
+	.valueAction_(1);
+
+	// ERRENA
+	Button(window, Rect(xloc+50,yloc+150,50,25))
+	.states_([
+		["errena", Color.white, Color.black],
+		["errena", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~enabled[1] = butt.value.asBoolean;
+	})
+	.valueAction_(1);
+};
+
+
+
 // Now position all different groups of GUI elements
-doWindow.value();
-doMakilas.value(300, 190, 10);
-doTimeControls.value(10, 5);
+doWindow.value(435, 380, "Txalaparta. www.ixi-audio.net");
+doTimeControls.value(2, 5);
 doButtons.value(10, 140);
-doPlanks.value(10, 275);
+doPlanks.value(10, 270);
+doMakilas.value(330, 170, 16);
 
 
 if (~verbose>0, {currentEnvironment.postln});
