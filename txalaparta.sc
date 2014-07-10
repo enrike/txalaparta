@@ -60,7 +60,6 @@ Pan (stereo)
 /*
 Ideas para supercollider txalaparta :
 - gap should adapt to 3 and 4 hits beats to be a bit longer
-- presets de settings de parámetros del interface (JSON)
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
@@ -71,33 +70,6 @@ Ideas para supercollider txalaparta :
 along the plank the pan changes but also the filter affects the sound.
 */
 
-/* JSON presets
-tempo INT , autopilot BOOL
-tempo swing FLOAT , autopilot BOOL
-gap FLOAT , autopilot BOOL
-gap swing FLOAT , autopilot BOOL
-amp FLOAT
-allowed beats ARRAY 5
-maintainpulse BOOL
-last emphasis BOOL
-classic txakun BOOL
-Planks ARRAY 4 --> enabled BOOL, file STRING
-txakun_errena ARRAY 2 --> [BOOL, BOOL]
-
-{
-	"tempo": [70, false],
-	"temposwing": [0.2, false],
-	"gap": [0.2, false],
-	"gapswing": [0.2, false],
-	"amp": 0.6,
-	"allowedbeats": [0,1,2,3,4],
-	"maintainpulse": false,
-	"lastemphasis": true,
-	"classictxakun": true,
-	"txakunerrena": [true, true],
-	"planks": [[true, "path/to/file"], [false, "path/to/file"], [false, "path/to/file"], [false, "path/to/file"]]
-}
-*/
 
 
 currentEnvironment;
@@ -442,8 +414,7 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 
 // BOTONES
 doButtons = { arg xloc=10, yloc = 110;
-	var beatsxloc = 250;
-
+	var beatsxloc = 220;
 
 	// AUTOPILOT
 	/*Button(window, Rect(xloc+200,yloc,100,25))
@@ -767,9 +738,9 @@ doPresets = { arg xloc, yloc;
 	.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
 	.mouseDownAction_({arg menu;
 		presets = (presetspath++"*").pathMatch;
+		//presets.insert(0, "---");
 		menu.items = presets.asArray.collect({arg item;
 			PathName.new(item).fileName});
-		menu.items.postln;
 	})
 	.action_({ arg menu;
 		var data;
@@ -873,20 +844,6 @@ doPresets = { arg xloc, yloc;
 		newpreset.string = ""; //clean field
 	});
 
-	//popupmenu.items = presets.asArray.collect({arg item;
-	//		PathName.new(item).fileName});
-
-	//.valueAction_(1);
-
-/*	// ERRENA
-	Button(window, Rect(xloc+80,yloc+22,70,25))
-	.states_([
-		["load", Color.white, Color.grey],
-	])
-	.action_({ arg butt;
-		//~enabled[1] = butt.value.asBoolean;
-	})
-	.valueAction_(1);*/
 };
 
 
@@ -894,9 +851,9 @@ doPresets = { arg xloc, yloc;
 // Now position all different groups of GUI elements
 doWindow.value(435, 430, "Txalaparta. www.ixi-audio.net");
 doTimeControls.value(2, 5);
-doButtons.value(10, 140);
-doPlanks.value(10, 270);
-doMakilas.value(330, 170, 16);
+doButtons.value(10, 250);
+doPlanks.value(10, 150);
+doMakilas.value(330, 130, 16);
 doPresets.value(10, 375);
 
 
