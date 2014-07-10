@@ -59,8 +59,7 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
-- autopilot each of the time sliders with a button for each
-- presets de settings de parámetros del interface
+- presets de settings de parámetros del interface (json files?)
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
@@ -575,7 +574,7 @@ doButtons = { arg xloc=10, yloc = 110;
 
 // PLANKS - OHOLAK //////////////////////////////////
 doPlanks = { arg xloc=10, yloc = 260;
-	var menuXloc = xloc + 25;
+	var menuxloc = xloc + 22, playxloc = menuxloc+250+2;
 
 	StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 
@@ -586,13 +585,20 @@ doPlanks = { arg xloc=10, yloc = 260;
         ])
         .action_({ arg butt; }); // NO ACTION. THIS IS ALWAYS ON
 
-	PopUpMenu(window,Rect(menuXloc,yloc,250,20))
+	PopUpMenu(window,Rect(menuxloc,yloc,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	         buffers[0][0] = Buffer.read(s, sndpath ++ menu.item);
 	         ("loading" + menu.item + "with bufnum" + buffers[0][0].bufnum).postln;
 	     })
 	.valueAction_(0);
+	Button(window, Rect(playxloc,yloc,20,20))
+    .states_([
+		[">", Color.white, Color.black]
+    ])
+    .action_({ arg butt;
+		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[0][0].bufnum])
+    });
 //2
 	Button(window, Rect(xloc,yloc+20,20,20))
         .states_([
@@ -602,13 +608,21 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
 	       buffers[1][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuXloc,yloc+20,250,20))
+	PopUpMenu(window,Rect(menuxloc,yloc+20,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[1][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[1][0].bufnum).postln;
 	     })
 	.valueAction_(1);
+	Button(window, Rect(playxloc,yloc+20,20,20))
+    .states_([
+		[">", Color.white, Color.black]
+    ])
+    .action_({ arg butt;
+		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[1][0].bufnum])
+    });
+
 //3
 	Button(window, Rect(xloc,yloc+40,20,20))
         .states_([
@@ -618,13 +632,20 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
              buffers[2][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuXloc,yloc+40,250,20))
+	PopUpMenu(window,Rect(menuxloc,yloc+40,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[2][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[2][0].bufnum).postln;
 	     })
 	.valueAction_(2);
+	Button(window, Rect(playxloc,yloc+40,20,20))
+    .states_([
+		[">", Color.white, Color.black]
+    ])
+    .action_({ arg butt;
+		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[2][0].bufnum])
+    });
 //4
 	Button(window, Rect(xloc,yloc+60,20,20))
         .states_([
@@ -634,13 +655,20 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
              buffers[3][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuXloc,yloc+60,250,20))
+	PopUpMenu(window,Rect(menuxloc,yloc+60,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[3][0] = Buffer.read(s, sndpath ++ menu.item);
 	           ("loading" + menu.item + "with bufnum" + buffers[3][0].bufnum).postln;
 	     })
 	.valueAction_(3);
+	Button(window, Rect(playxloc,yloc+60,20,20))
+    .states_([
+		[">", Color.white, Color.black]
+    ])
+    .action_({ arg butt;
+		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[3][0].bufnum])
+    });
 };
 
 
