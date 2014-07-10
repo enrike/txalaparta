@@ -59,7 +59,8 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
-- presets de settings de parámetros del interface (json files?)
+- gap should adapt to 3 and 4 hits beats to be a bit longer
+- presets de settings de parámetros del interface (JSON)
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
@@ -69,6 +70,35 @@ Ideas para supercollider txalaparta :
 - should pan be mapped to the length of the virtual planks? so that as the hit moves
 along the plank the pan changes but also the filter affects the sound.
 */
+
+/* JSON presets
+tempo INT , autopilot BOOL
+tempo swing FLOAT , autopilot BOOL
+gap FLOAT , autopilot BOOL
+gap swing FLOAT , autopilot BOOL
+amp FLOAT
+allowed beats ARRAY 5
+maintainpulse BOOL
+last emphasis BOOL
+classic txakun BOOL
+Planks ARRAY 4 --> enabled BOOL, file STRING
+txakun_errena ARRAY 2 --> [BOOL, BOOL]
+
+{
+	"tempo": [70, false],
+	"temposwing": [0.2, false],
+	"gap": [0.2, false],
+	"gapswing": [0.2, false],
+	"amp": 0.6,
+	"allowedbeats": [0,1,2,3,4],
+	"maintainpulse": false,
+	"lastemphasis": true,
+	"classictxakun": true,
+	"txakunerrena": [true, true],
+	"planks": [[true, "path/to/file"], [false, "path/to/file"], [false, "path/to/file"], [false, "path/to/file"]]
+}
+*/
+
 
 currentEnvironment;
 
@@ -95,14 +125,16 @@ s.unmute
 var playF, makilaF;
 
 // GUI vars
-var window, beatbuttons, classicBut, emphasysBut, pulseBut, output, sliders, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething;
+var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath, newpreset;
+// GUI widgets
+var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, enabledButs;
 // GUI functions vars
-var doWindow, doMakilas, doTimeControls, doButtons, doPlanks;
+var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets;
 
 // GLOBAL vars
 ~tempo = 70; // tempo. txakun / errena
 ~swing = 0.1;
-~beatswing = 0.1;
+~gapswing = 0.1;
 ~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
 ~amp = 0.5;
 ~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
@@ -122,12 +154,18 @@ sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
 samples = (sndpath++"*").pathMatch;
 ("sndpath is" + sndpath).postln;
 ("available samples are" + samples).postln;
+
 buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, enabled]
 
+presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
+presets = (presetspath++"*").pathMatch;
+
 beatbuttons = [nil, nil, nil, nil, nil];
-sliders = [nil, nil, nil, nil];
-slidersauto = List[nil,nil,nil,nil]; //keep a ref to the ones available for autopilot
+sliders = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];
+slidersauto = [nil,nil,nil,nil]; //keep a ref to the ones available for autopilot
 makilasliders = [[nil, nil], [nil, nil]];
+planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];
+enabledButs = [nil, nil];
 
 
 s.boot; //////// BOOT SERVER //////////////////
@@ -149,8 +187,18 @@ istheresomething = {arg alist;
 	alist.do({arg item;
 		if (item!=nil, {values.add(true)});
 	});
-	if(values.size>0, true, false);
+	if(values.size>0, {true}, {false});
 };
+
+findIndex = {arg plankmenu, path;
+	var returnval=0;
+	//path.postln;
+	plankmenu.items.do({arg file, i;
+		//[i, (sndpath++apath==path)].postln;
+		if (sndpath++file==path,{returnval = i});
+	});
+	returnval;
+}; //.value(plank[1], buffers[i][0].path);
 
 
 
@@ -187,7 +235,7 @@ playF = Routine({
 			);
 
 			localstep = (~gap/numbeats); // perfect step between makila hits before swing
-			intermakilaswing = rrand(~beatswing/numbeats.neg, ~beatswing/numbeats);
+			intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats);
 
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 
@@ -212,17 +260,17 @@ playF = Routine({
 				// animation
 				if (txakun,
 					{
-						{makilaF.value(makilasliders[0].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) - 0.25);
+						{makilaF.value(makilasliders[0].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
 					},
 					{
-						{makilaF.value(makilasliders[1].wrapAt(index), 0.25)}.defer( localtempo + (hitstep * index) -0.25);
+						{makilaF.value(makilasliders[1].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) -0.2);
 					}
 				);
 
 				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
 			}); // END NUMBEATS LOOP
 
-			outstr = stepcounter+":"+if (txakun, "txakun","errena")+numbeats;
+			outstr = stepcounter+":"+if (txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtempo);
 
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
@@ -248,13 +296,9 @@ makilaF = {arg sl, time;
 	steps = (time/gap).asInt;
 	stepvalue = 1/steps;
 
-	//sl.postln;
-
-	//["INIT:", steps, stepvalue].postln;
-
 	sl.value = 1;
 
-	loopF =  Routine({
+	loopF = Routine({
 		sl.knobColor = Color.red;
 		(steps*2).do({ arg i;
 			sl.value = sl.value - stepvalue;
@@ -265,7 +309,6 @@ makilaF = {arg sl, time;
 	});
 
 	AppClock.play(loopF);
-	//"GO".postln;
 };
 
 
@@ -287,10 +330,10 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 	var buttonxloc = xloc + width + 5;
 
 	// tempo //
-	sliders[0] = EZSlider( window,         // parent
+	sliders[0][0] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"tempo",  // label
-		ControlSpec(30, 250, \lin, 1, ~tempo, "BPMs"),     // controlSpec
+		ControlSpec(30, 450, \lin, 1, ~tempo, "BPMs"),     // controlSpec
 		{ arg ez;
 			~tempo = ez.value;
 		},
@@ -298,20 +341,19 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 		labelWidth: 80;
 	);
 
-	Button(window, Rect(buttonxloc,yloc,60,20))
+	sliders[0][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 	.states_([
-	["autopilot", Color.white, Color.black],
-	["autopilot", Color.black, Color.red],
+		["autopilot", Color.white, Color.black],
+		["autopilot", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-	if (butt.value.asBoolean,
-	{slidersauto.put(0, sliders[0])}, {slidersauto.put(0, nil)});
+		if (butt.value.asBoolean,{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
 	})
 	.valueAction_(0);
 
 	// swing //
 	yloc = yloc+gap;
-	sliders[1] = EZSlider( window,         // parent
+	sliders[1][0] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"tempo swing",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
@@ -322,44 +364,20 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 		labelWidth: 80;
 	);
 
-	Button(window, Rect(buttonxloc,yloc,60,20))
+	sliders[1][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 	.states_([
 		["autopilot", Color.white, Color.black],
 		["autopilot", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		if (butt.value.asBoolean,
-			{slidersauto.put(1, sliders[1])}, {slidersauto.put(1, nil)});
+		if (butt.value.asBoolean,{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
 	})
 	.valueAction_(0);
 
-	// beat swing //
-	yloc = yloc+gap;
-	sliders[2] = EZSlider( window,         // parent
-		Rect(xloc,yloc,width,20),    // bounds
-		"beat swing",  // label
-		ControlSpec(0.001, 1, \lin, 0.001, ~beatswing, "ms"),     // controlSpec
-		{ arg ez;
-			~beatswing = ez.value;
-		},
-		initVal: ~swing,
-		labelWidth: 80;
-	);
-
-	Button(window, Rect(buttonxloc,yloc,60,20))
-	.states_([
-		["autopilot", Color.white, Color.black],
-		["autopilot", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		if (butt.value.asBoolean,
-			{slidersauto.put(2, sliders[2])}, {slidersauto.put(2, nil)});
-	})
-	.valueAction_(0);
 
 	// gap //
 	yloc = yloc+gap;
-	sliders[3] = EZSlider( window,         // parent
+	sliders[3][0] = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),    // bounds
 		"gap",  // label
 		ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
@@ -370,20 +388,43 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 		labelWidth: 80;
 	);
 
-	Button(window, Rect(buttonxloc,yloc,60,20))
+	sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 	.states_([
 		["autopilot", Color.white, Color.black],
 		["autopilot", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		if (butt.value.asBoolean,
-			{slidersauto.put(3, sliders[3])}, {slidersauto.put(3, nil)});
+		if (butt.value.asBoolean, {slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
 	})
 	.valueAction_(0);
 
-	// amplitude
+	// gap swing //
 	yloc = yloc+gap;
-	EZSlider( window,         // parent
+	sliders[2][0] = EZSlider( window,         // parent
+		Rect(xloc,yloc,width,20),    // bounds
+		"gap swing",  // label
+		ControlSpec(0.001, 1, \lin, 0.001, ~gapswing, "ms"),     // controlSpec
+		{ arg ez;
+			~gapswing = ez.value;
+		},
+		initVal: ~gapswing,
+		labelWidth: 80;
+	);
+
+	sliders[2][1] = Button(window, Rect(buttonxloc,yloc,60,20))
+	.states_([
+		["autopilot", Color.white, Color.black],
+		["autopilot", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		if (butt.value.asBoolean,{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
+	})
+	.valueAction_(0);
+
+
+	// amplitude does not go with autopilot and therefore is stored in its own var
+	yloc = yloc+gap;
+	ampBut = EZSlider( window,         // parent
 		Rect(xloc,yloc,width,20),   // bounds
 		"amp",  // label
 		ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,     // controlSpec
@@ -393,7 +434,6 @@ doTimeControls = { arg xloc = 10, yloc=5, width=360, gap=24;
 		initVal: ~amp,
 		labelWidth: 80;
 	);
-	// do NOT store the amplitude! into the array. dont need a ref to it.
 };
 
 
@@ -430,7 +470,7 @@ doButtons = { arg xloc=10, yloc = 110;
 	});
 
 	// EMPHASIS
-	emphasysBut = Button(window, Rect(xloc+100,yloc,100,25))
+	emphasisBut = Button(window, Rect(xloc+100,yloc,100,25))
 	.states_([
 		["last emphasis", Color.white, Color.black],
 		["last emphasis", Color.black, Color.red],
@@ -443,26 +483,26 @@ doButtons = { arg xloc=10, yloc = 110;
 	// MODE
 	Button(window, Rect(xloc,yloc+25,100,25))
 	.states_([
-		["zaharra", Color.white, Color.black],
-		["zaharra", Color.black, Color.red],
+		["go zaharra", Color.white, Color.black],
+		//["zaharra", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		~classictxakun = butt.value.asBoolean.not;
+		~classictxakun = true; //butt.value.asBoolean.not;
 		beatbuttons.do({arg but, ind;
 			if ( but != nil, {
-				if ( butt.value.asBoolean,
-					{
+				//if ( butt.value.asBoolean,
+				//	{
 						if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
 						classicBut.valueAction = 1;
-						emphasysBut.valueAction = 1;
+						emphasisBut.valueAction = 1;
 						pulseBut.valueAction = 0
-					},
+			/*		},
 					{
 						but.valueAction = 1;
 						classicBut.valueAction = 0;
-						emphasysBut.valueAction = 0;
+						emphasisBut.valueAction = 0;
 						pulseBut.valueAction = 1
-				});
+				});*/
 			});
 		});
 	})
@@ -579,13 +619,13 @@ doPlanks = { arg xloc=10, yloc = 260;
 	StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 
 //1
-	Button(window, Rect(xloc,yloc,20,20))
+	planksMenus[0][0] = Button(window, Rect(xloc,yloc,20,20))
         .states_([
             ["1", Color.black, Color.red],
         ])
         .action_({ arg butt; }); // NO ACTION. THIS IS ALWAYS ON
 
-	PopUpMenu(window,Rect(menuxloc,yloc,250,20))
+	planksMenus[0][1] = PopUpMenu(window,Rect(menuxloc,yloc,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	         buffers[0][0] = Buffer.read(s, sndpath ++ menu.item);
@@ -600,7 +640,7 @@ doPlanks = { arg xloc=10, yloc = 260;
 		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[0][0].bufnum])
     });
 //2
-	Button(window, Rect(xloc,yloc+20,20,20))
+	planksMenus[1][0] = Button(window, Rect(xloc,yloc+20,20,20))
         .states_([
             ["2", Color.white, Color.black],
             ["2", Color.black, Color.red],
@@ -608,7 +648,7 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
 	       buffers[1][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuxloc,yloc+20,250,20))
+	planksMenus[1][1] = PopUpMenu(window,Rect(menuxloc,yloc+20,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[1][0] = Buffer.read(s, sndpath ++ menu.item);
@@ -624,7 +664,7 @@ doPlanks = { arg xloc=10, yloc = 260;
     });
 
 //3
-	Button(window, Rect(xloc,yloc+40,20,20))
+	planksMenus[2][0] = Button(window, Rect(xloc,yloc+40,20,20))
         .states_([
             ["3", Color.white, Color.black],
             ["3", Color.black, Color.red],
@@ -632,7 +672,7 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
              buffers[2][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuxloc,yloc+40,250,20))
+	planksMenus[2][1] = PopUpMenu(window,Rect(menuxloc,yloc+40,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[2][0] = Buffer.read(s, sndpath ++ menu.item);
@@ -647,7 +687,7 @@ doPlanks = { arg xloc=10, yloc = 260;
 		Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[2][0].bufnum])
     });
 //4
-	Button(window, Rect(xloc,yloc+60,20,20))
+	planksMenus[3][0] = Button(window, Rect(xloc,yloc+60,20,20))
         .states_([
             ["4", Color.white, Color.black],
             ["4", Color.black, Color.red],
@@ -655,7 +695,7 @@ doPlanks = { arg xloc=10, yloc = 260;
         .action_({ arg butt;
              buffers[3][1] = butt.value.asBoolean;
         });
-	PopUpMenu(window,Rect(menuxloc,yloc+60,250,20))
+	planksMenus[3][1] = PopUpMenu(window,Rect(menuxloc,yloc+60,250,20))
 	.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
 	     .action_({ arg menu;
 	           buffers[3][0] = Buffer.read(s, sndpath ++ menu.item);
@@ -693,7 +733,7 @@ doMakilas = { arg xloc=300, yloc=190, gap=45;
 	});
 
 	// TXAKUN
-	Button(window, Rect(xloc,yloc+150,50,25))
+	enabledButs[0] = Button(window, Rect(xloc,yloc+150,50,25))
 	.states_([
 		["txakun", Color.white, Color.black],
 		["txakun", Color.black, Color.red],
@@ -704,7 +744,7 @@ doMakilas = { arg xloc=300, yloc=190, gap=45;
 	.valueAction_(1);
 
 	// ERRENA
-	Button(window, Rect(xloc+50,yloc+150,50,25))
+	enabledButs[1] = Button(window, Rect(xloc+50,yloc+150,50,25))
 	.states_([
 		["errena", Color.white, Color.black],
 		["errena", Color.black, Color.red],
@@ -717,12 +757,147 @@ doMakilas = { arg xloc=300, yloc=190, gap=45;
 
 
 
+
+doPresets = { arg xloc, yloc;
+	var popupmenu;
+
+	StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Presets";
+
+	PopUpMenu(window,Rect(xloc,yloc,200,20))
+	.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
+	.mouseDownAction_({arg menu;
+		presets = (presetspath++"*").pathMatch;
+		menu.items = presets.asArray.collect({arg item;
+			PathName.new(item).fileName});
+		menu.items.postln;
+	})
+	.action_({ arg menu;
+		var data;
+		(presetspath ++ menu.item).postln;
+		 data = Object.readArchive(presetspath ++ menu.item);
+		 data.asCompileString.postln;
+
+		~tempo = data[\tempo];
+		sliders[0][0].value = ~tempo;
+		sliders[0][1].value = data[\slidersauto][0];
+		if (data[\slidersauto][0]!=nil,
+			{slidersauto[0]=sliders[0]}, {slidersauto[0]=nil});
+
+		~swing = data[\swing];
+		sliders[1][0].value = ~swing;
+		sliders[1][1].value = data[\slidersauto][1];
+		if (data[\slidersauto][1]!=nil,
+			{slidersauto[1]=sliders[1]}, {slidersauto[1]=nil});
+
+		~gap = data[\gap];
+		sliders[2][0].value = ~gap;
+		sliders[2][1].value = data[\slidersauto][2];
+		if (data[\slidersauto][2]!=nil,
+			{slidersauto[2]=sliders[2]}, {slidersauto[2]=nil});
+
+		~gapswing = data[\gapswing];
+		sliders[3][0].value = ~gapswing;
+		sliders[3][1].value = data[\slidersauto][3];
+		if (data[\slidersauto][3]!=nil,
+			{slidersauto[3]=sliders[3]}, {slidersauto[3]=nil});
+
+		~amp = data[\amp];
+		ampBut.value = ~amp;
+
+		~allowedbeats = data[\allowedbeats];
+		beatbuttons.do({arg but, i;
+			if (~allowedbeats[i]!=nil, {but.value = 1}, {but.value = 0});
+		});
+
+		~pulse = data[\pulse];
+		pulseBut.value = ~pulse;
+
+		~emphasis = data[\emphasis];
+		emphasisBut.value = ~emphasis;
+
+		~classictxakun = data[\classictxakun];
+		classicBut.value = ~classictxakun;
+
+		~enabled = data[\enabled];
+		enabledButs[0].value = ~enabled[0];
+		enabledButs[1].value = ~enabled[1];
+		// txakun-errena buttons
+		~autopilotrange = data[\autopilotrange]; // no widget!
+
+		planksMenus.do({arg plank, i;
+			plank[0].valueAction = data[\buffers][i][1];
+			plank[1].valueAction = findIndex.value(plank[1], data[\buffers][i][0]);
+		});
+	});
+	//.valueAction_(0);
+
+	newpreset = TextField(window, Rect(xloc, yloc+22, 125, 25));
+
+	Button(window, Rect(xloc+130,yloc+22,70,25))
+	.states_([
+		["save", Color.white, Color.grey]
+	])
+	.action_({ arg butt;
+		var filename, data;
+		if (newpreset.string == "",
+			{filename = Date.getDate.stamp++".preset"},
+			{filename = newpreset.string++".preset"}
+		);
+
+		data = Dictionary.new;
+		data.put(\tempo, ~tempo);
+		data.put(\swing, ~swing);
+		data.put(\gap, ~gap);
+		data.put(\gapswing, ~gapswing);
+		data.put(\amp, ~amp);
+		data.put(\allowedbeats, ~allowedbeats);
+		data.put(\pulse, ~pulse);
+		data.put(\emphasis, ~emphasis);
+		data.put(\classictxakun, ~classictxakun);
+		data.put(\enabled, ~enabled);
+		data.put(\autopilotrange, ~autopilotrange);
+		data.put(\slidersauto, [
+			slidersauto[0]!=nil,
+			slidersauto[1]!=nil,
+			slidersauto[2]!=nil,
+			slidersauto[3]!=nil,
+		]);
+		data.put(\buffers, [
+			[ buffers[0][0].path, buffers[0][1] ],
+			[ buffers[1][0].path, buffers[1][1] ],
+			[ buffers[2][0].path, buffers[2][1] ],
+			[ buffers[3][0].path, buffers[3][1] ],
+		]);
+		data.writeArchive(presetspath++filename);
+
+		newpreset.string = ""; //clean field
+	});
+
+	//popupmenu.items = presets.asArray.collect({arg item;
+	//		PathName.new(item).fileName});
+
+	//.valueAction_(1);
+
+/*	// ERRENA
+	Button(window, Rect(xloc+80,yloc+22,70,25))
+	.states_([
+		["load", Color.white, Color.grey],
+	])
+	.action_({ arg butt;
+		//~enabled[1] = butt.value.asBoolean;
+	})
+	.valueAction_(1);*/
+};
+
+
+
 // Now position all different groups of GUI elements
-doWindow.value(435, 380, "Txalaparta. www.ixi-audio.net");
+doWindow.value(435, 430, "Txalaparta. www.ixi-audio.net");
 doTimeControls.value(2, 5);
 doButtons.value(10, 140);
 doPlanks.value(10, 270);
 doMakilas.value(330, 170, 16);
+doPresets.value(10, 375);
 
 
 if (~verbose>0, {currentEnvironment.postln});
