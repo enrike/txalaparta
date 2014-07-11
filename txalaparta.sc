@@ -60,7 +60,7 @@ Pan (stereo)
 /*
 Ideas para supercollider txalaparta :
 - expose the weight of the chance for the beats
-- gap should adapt to 3 and 4 hits beats to be a bit longer
+- should correct the gap between hits. slow tempo faster hits, fast tempo slower hits than it is now. sounds weird now.
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
@@ -90,7 +90,6 @@ s.volume = -20 //-90 <> 5.5
 s.mute
 s.unmute
 */
-
 
 
 
@@ -165,14 +164,11 @@ istheresomething = {arg alist;
 
 findIndex = {arg plankmenu, path;
 	var returnval=0;
-	//path.postln;
 	plankmenu.items.do({arg file, i;
-		//[i, (sndpath++apath==path)].postln;
 		if (sndpath++file==path,{returnval = i});
 	});
 	returnval;
-}; //.value(plank[1], buffers[i][0].path);
-
+};
 
 
 // TXALAPARTA ////////////////////
