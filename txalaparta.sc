@@ -59,6 +59,7 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
+- expose the weight of the chance for the beats
 - gap should adapt to 3 and 4 hits beats to be a bit longer
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
@@ -193,7 +194,7 @@ playF = Routine({
 		if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 			var sl;
 			{ sl == nil }.while( {sl = slidersauto.choose} ) ;
-			sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval);
+			{sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval)}.defer;
 			nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
 			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
@@ -227,7 +228,7 @@ playF = Routine({
 				hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
 				hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
 
-				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.005, 0.005), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
+				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
 
 				// animation
 				if (txakun,
@@ -291,7 +292,7 @@ makilaF = {arg sl, time;
 doWindow = {arg width, height, caption;
 	window = Window(caption, Rect(100, 100, width, height));
 	window.alwaysOnTop = true;
-	window.onClose = {AppClock.clear};
+	window.onClose = {AppClock.clear;SystemClock.clear};
 	window.front;
 };
 
@@ -451,36 +452,26 @@ doButtons = { arg xloc=10, yloc = 110;
 	})
 	.valueAction_(1);
 
-	// MODE
-	Button(window, Rect(xloc,yloc+25,100,25))
+	// ZAHARRA MODE
+	Button(window, Rect(beatsxloc,yloc+70,100,25))
 	.states_([
 		["go zaharra", Color.white, Color.black],
-		//["zaharra", Color.black, Color.red],
 	])
 	.action_({ arg butt;
 		~classictxakun = true; //butt.value.asBoolean.not;
 		beatbuttons.do({arg but, ind;
 			if ( but != nil, {
-				//if ( butt.value.asBoolean,
-				//	{
-						if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
-						classicBut.valueAction = 1;
-						emphasisBut.valueAction = 1;
-						pulseBut.valueAction = 0
-			/*		},
-					{
-						but.valueAction = 1;
-						classicBut.valueAction = 0;
-						emphasisBut.valueAction = 0;
-						pulseBut.valueAction = 1
-				});*/
+				if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
+				classicBut.valueAction = 1;
+				emphasisBut.valueAction = 1;
+				pulseBut.valueAction = 0
 			});
 		});
 	})
 	.valueAction_(1);
 
 	// CLASSIC TXAKUN
-	classicBut = Button(window, Rect(xloc+100,yloc+25,100,25))
+	classicBut = Button(window, Rect(beatsxloc,yloc+25,100,25))
 	.states_([
 		["classic txakun", Color.white, Color.black],
 		["classic txakun", Color.black, Color.red],
@@ -545,18 +536,18 @@ doButtons = { arg xloc=10, yloc = 110;
 
 
 	// PLAY
-	Button(window, Rect(xloc,yloc+50,200,25))
+	Button(window, Rect(xloc,yloc+25,200,25))
 	.states_([
 		["play/stop", Color.white, Color.black],
 		["play/stop", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		if ( butt.value.asBoolean, { AppClock.play(playF)}, {AppClock.clear});
+		//if ( butt.value.asBoolean, { AppClock.play(playF)}, {AppClock.clear});
+		if ( butt.value.asBoolean, { SystemClock.play(playF)}, {SystemClock.clear});
 	});
-	//.valueAction_(0);
 
 	// SERVER
-	Button(window, Rect(xloc,yloc+75,100,25))
+	Button(window, Rect(xloc,yloc+50,100,25))
 	.states_([
 		["server window", Color.white, Color.grey],
 	])
@@ -566,7 +557,7 @@ doButtons = { arg xloc=10, yloc = 110;
 	//.valueAction_(0);
 
 	// VERBOSE
-	Button(window, Rect(xloc+100,yloc+75,20,25))
+	Button(window, Rect(xloc+100,yloc+50,20,25))
 	.states_([
 		["V", Color.white, Color.grey],
 		["V", Color.white, Color.blue],
@@ -738,7 +729,7 @@ doPresets = { arg xloc, yloc;
 	.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
 	.mouseDownAction_({arg menu;
 		presets = (presetspath++"*").pathMatch;
-		//presets.insert(0, "---");
+		presets.insert(0, "---");
 		menu.items = presets.asArray.collect({arg item;
 			PathName.new(item).fileName});
 	})
@@ -828,7 +819,7 @@ doPresets = { arg xloc, yloc;
 		data.put(\enabled, ~enabled);
 		data.put(\autopilotrange, ~autopilotrange);
 		data.put(\slidersauto, [
-			slidersauto[0]!=nil,
+			slidersauto[0]!=nil, // store true or false
 			slidersauto[1]!=nil,
 			slidersauto[2]!=nil,
 			slidersauto[3]!=nil,
@@ -849,12 +840,12 @@ doPresets = { arg xloc, yloc;
 
 
 // Now position all different groups of GUI elements
-doWindow.value(435, 430, "Txalaparta. www.ixi-audio.net");
+doWindow.value(435, 400, "Txalaparta. www.ixi-audio.net");
 doTimeControls.value(2, 5);
 doButtons.value(10, 250);
 doPlanks.value(10, 150);
 doMakilas.value(330, 130, 16);
-doPresets.value(10, 375);
+doPresets.value(10, 350);
 
 
 if (~verbose>0, {currentEnvironment.postln});
