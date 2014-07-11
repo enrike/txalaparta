@@ -742,26 +742,26 @@ doPresets = { arg xloc, yloc;
 		~tempo = data[\tempo];
 		sliders[0][0].value = ~tempo;
 		sliders[0][1].value = data[\slidersauto][0];
-		if (data[\slidersauto][0]!=nil,
-			{slidersauto[0]=sliders[0]}, {slidersauto[0]=nil});
+		if (data[\slidersauto][0]==true,
+			{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
 
 		~swing = data[\swing];
 		sliders[1][0].value = ~swing;
 		sliders[1][1].value = data[\slidersauto][1];
-		if (data[\slidersauto][1]!=nil,
-			{slidersauto[1]=sliders[1]}, {slidersauto[1]=nil});
+		if (data[\slidersauto][1]==true,
+			{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
 
 		~gap = data[\gap];
-		sliders[2][0].value = ~gap;
-		sliders[2][1].value = data[\slidersauto][2];
-		if (data[\slidersauto][2]!=nil,
-			{slidersauto[2]=sliders[2]}, {slidersauto[2]=nil});
+		sliders[3][0].value = ~gap;
+		sliders[3][1].value = data[\slidersauto][2];
+		if (data[\slidersauto][3]==true,
+			{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
 
 		~gapswing = data[\gapswing];
-		sliders[3][0].value = ~gapswing;
-		sliders[3][1].value = data[\slidersauto][3];
-		if (data[\slidersauto][3]!=nil,
-			{slidersauto[3]=sliders[3]}, {slidersauto[3]=nil});
+		sliders[2][0].value = ~gapswing;
+		sliders[2][1].value = data[\slidersauto][3];
+		if (data[\slidersauto][2]==true,
+			{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
 
 		~amp = data[\amp];
 		ampBut.value = ~amp;
