@@ -1,0 +1,50 @@
+var o, p;
+o = [
+	Dictionary.prNew,  Array.prNew(64),  Array.prNew(5),  Array.prNew(2),  
+	Array.prNew(2),  Array.prNew(4),  Array.prNew(4),  Array.prNew(2),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra01.wav",  Array.prNew(2),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra02.wav",  Array.prNew(2),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra04.wav",  Array.prNew(2),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra05.wav",  Array.prNew(2)
+];
+p = [
+	// Dictionary
+	0, [ array: o[1],  size: 13 ],  
+	// Array
+	1, [ 'allowedbeats',  o[2],  'emphasis',  o[3],  
+		'autopilotrange',  o[4],  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		'amp',  0.500000,  'classictxakun',  true,  
+		'slidersauto',  o[5],  nil,  nil,  
+		'gap',  0.207000,  'gapswing',  0.015000,  
+		'buffers',  o[6],  nil,  nil,  
+		nil,  nil,  'enabled',  o[15],  
+		'swing',  0.030000,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'pulse',  true,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'tempo',  321.000000,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	2, [ nil,  nil,  2,  nil,  
+		nil ],  
+	// Array
+	3, [ false,  true ],  
+	// Array
+	4, [ 5,  10 ],  
+	// Array
+	5, [ false,  false,  false,  false ],  
+	// Array
+	6, [ o[7],  o[9],  o[11],  o[13] ],  
+	// Array
+	7, [ o[8],  true ],  
+	// Array
+	9, [ o[10],  false ],  
+	// Array
+	11, [ o[12],  false ],  
+	// Array
+	13, [ o[14],  true ],  
+	// Array
+	15, [ true,  true ]
+];
+prUnarchive(o,p);
