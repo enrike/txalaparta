@@ -98,7 +98,7 @@ s.unmute
 var playF, makilaF, dohits, dohitsold;
 
 // GUI vars
-var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath, newpreset;
+var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath;
 // GUI widgets
 var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, enabledButs;
 // GUI functions vars
@@ -134,11 +134,11 @@ presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 presets = (presetspath++"*").pathMatch;
 
 beatbuttons = [nil, nil, nil, nil, nil];
-sliders = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];
-slidersauto = [nil,nil,nil,nil]; //keep a ref to the ones available for autopilot
-makilasliders = [[nil, nil], [nil, nil]];
-planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];
-enabledButs = [nil, nil];
+sliders = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]]; // slider and its autopilot button associated
+slidersauto = [nil,nil,nil,nil]; // keep a ref to the ones available for autopilot
+makilasliders = [[nil, nil], [nil, nil]] // two for each player
+planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];// [Buffer, enable] for each
+enabledButs = [nil, nil]; // txakun and errena
 
 
 s.boot; //////// BOOT SERVER //////////////////
@@ -775,7 +775,7 @@ doMakilas = { arg xloc=300, yloc=190, gap=45;
 
 
 doPresets = { arg xloc, yloc;
-	var popupmenu;
+	var popupmenu, newpreset;
 
 	StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Presets";
 
