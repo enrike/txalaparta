@@ -145,13 +145,13 @@ s.boot; //////// BOOT SERVER //////////////////
 
 
 // THE BASIC SYNTHDEF
-{
+s.waitForBoot({
 	SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
 		Out.ar(outbus,
 			amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
 		)
 	}).add;
-}.waitForBoot(s);
+});
 
 
 /* return true if any of the items in the array or list is not nil
@@ -211,7 +211,7 @@ dohitsold = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localte
 
 	numbeats.do({ arg index; // for each makila one hit
 		var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
-
+		(numbeats-index).postln;
 		if (~amp > 0, { // emphasis on first or on last hit?
 			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
 				{hitamp = localamp + 0.30},
