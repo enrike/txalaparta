@@ -59,6 +59,7 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
+- draw visualization of position of each hit within a circle like in javier sangoza's paper
 - expose the weight of the chance for the beats
 - should correct the gap between hits. slow tempo faster hits, fast tempo slower hits than it is now. sounds weird now.
 - añadir sistema de toque interactivo (persona + máquina)
@@ -94,7 +95,7 @@ s.unmute
 
 
 ( // RUN ME HERE
-var playF, makilaF;
+var playF, makilaF, dohits, dohitsold;
 
 // GUI vars
 var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath, newpreset;
@@ -144,12 +145,13 @@ s.boot; //////// BOOT SERVER //////////////////
 
 
 // THE BASIC SYNTHDEF
-SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
-    Out.ar(outbus,
-        amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
-    )
-}).add;
-
+{
+	SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
+		Out.ar(outbus,
+			amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
+		)
+	}).add;
+}.waitForBoot;
 
 
 /* return true if any of the items in the array or list is not nil
@@ -171,6 +173,69 @@ findIndex = {arg plankmenu, path;
 };
 
 
+/* this schedules the FIRST hit on the bar. subsequent hits go after
+*/
+dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo;
+
+	numbeats.do({ arg index; // for each makila one hit
+		var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
+		if (~amp > 0, { // emphasis on first or on last hit?
+			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
+				{hitamp = localamp + 0.30},
+				{hitamp = localamp}
+			);
+		});
+
+		{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
+		if (~verbose>2, {plank.postln});
+
+		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
+		hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
+
+		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
+
+		// animation
+		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
+
+		if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
+	}); // END NUMBEATS LOOP}
+};
+
+
+
+
+
+/* this goes reverse. schedules the LAST hit to happen on the actual bar. the others go BEFORE
+*/
+dohitsold = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo;
+
+	numbeats.do({ arg index; // for each makila one hit
+		var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
+
+		if (~amp > 0, { // emphasis on first or on last hit?
+			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
+				{hitamp = localamp + 0.30},
+				{hitamp = localamp}
+			);
+		});
+
+		{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
+		if (~verbose>2, {plank.postln});
+
+		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
+		hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
+
+		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * (numbeats-index)));
+
+		// animation
+		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * (numbeats-index)) - 0.2);
+
+		if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
+	}); // END NUMBEATS LOOP
+};
+
+
+
 // TXALAPARTA ////////////////////
 playF = Routine({
 	var txakun; // classical txakun only is limited to two beats
@@ -182,10 +247,6 @@ playF = Routine({
 	inf.do({ arg stepcounter; // txakun > errena cycle
 		var numbeats, outstr; // numbeats needs to be here to be nill each time
 
-		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
-
-		if (~pulse, {(60/~tempo).wait}, {localtempo.wait});
-
 		// autopilot
 		if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 			var sl;
@@ -194,6 +255,9 @@ playF = Routine({
 			nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
 			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
+
+		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
+		if (~pulse, {(60/~tempo).wait}, {localtempo.wait});
 
 		// beats
 		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]),
@@ -208,8 +272,10 @@ playF = Routine({
 
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 
-			numbeats.do({ arg index; // for each makila one hit
-				var hitfreq, hitstep, hitamp, plank; //here to be reseted each time
+			dohitsold.value(txakun, localamp,localstep, intermakilaswing, numbeats, localtempo );
+
+/*			numbeats.do({ arg index; // for each makila one hit
+				var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
 				if (~amp > 0, { // emphasis on first or on last hit?
 					if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
 						{hitamp = localamp + 0.30},
@@ -217,7 +283,6 @@ playF = Routine({
 					);
 				});
 
-				plank = [nil, false]; //buffers.choose[0];
 				{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
 				if (~verbose>2, {plank.postln});
 
@@ -227,19 +292,12 @@ playF = Routine({
 				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
 
 				// animation
-				if (txakun,
-					{
-						{makilaF.value(makilasliders[0].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
-					},
-					{
-						{makilaF.value(makilasliders[1].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) -0.2);
-					}
-				);
+				{makilaF.value(makilasliders[txakun.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
 
 				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
-			}); // END NUMBEATS LOOP
+			}); // END NUMBEATS LOOP*/
 
-			outstr = stepcounter+":"+if (txakun, {"txakun"},{"errena"})+numbeats;
+			outstr = stepcounter+":" + if(txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtempo);
 
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
