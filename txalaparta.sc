@@ -100,7 +100,7 @@ var playF, makilaF, dohits, dohitsold;
 // GUI vars
 var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath;
 // GUI widgets
-var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, enabledButs;
+var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 // GUI functions vars
 var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets;
 
@@ -118,6 +118,7 @@ var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets;
 ~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 ~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
 ~autopilotrange = [5, 10]; // for instance
+~mode = true;// old style hit position calulation?
 
 // utility
 ~verbose = 1;
@@ -175,10 +176,10 @@ findIndex = {arg plankmenu, path;
 
 /* this schedules the FIRST hit on the bar. subsequent hits go after
 */
-dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo;
+dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtemposwing;
 
 	numbeats.do({ arg index; // for each makila one hit
-		var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
+		var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false]; //reseted each time
 		if (~amp > 0, { // emphasis on first or on last hit?
 			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
 				{hitamp = localamp + 0.30},
@@ -190,14 +191,24 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 		if (~verbose>2, {plank.postln});
 
 		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
-		hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
+		hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
+		if( ~mode, // not sure this makes any difference. have to test carefully
+			{
+				hittime = localtemposwing - (hitswing * index);
+				makilaindex = numbeats-index-1;//reverse
+			},
+			{
+				hittime = localtemposwing + (hitswing * index);
+				makilaindex = index;
+			}
+		);
 
-		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
+		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer(hittime);
 
 		// animation
-		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
+		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2)}.defer( hittime-0.2);
 
-		if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
+		if (~verbose>2, {[hittime, hitamp, hitfreq, hitswing].postln});
 	}); // END NUMBEATS LOOP}
 };
 
@@ -205,41 +216,10 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 
 
 
-/* this goes reverse. schedules the LAST hit to happen on the actual bar. the others go BEFORE
-*/
-dohitsold = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo;
-
-	numbeats.do({ arg index; // for each makila one hit
-		var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
-		(numbeats-index).postln;
-		if (~amp > 0, { // emphasis on first or on last hit?
-			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
-				{hitamp = localamp + 0.30},
-				{hitamp = localamp}
-			);
-		});
-
-		{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
-		if (~verbose>2, {plank.postln});
-
-		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
-		hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-
-		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * (numbeats-index)));
-
-		// animation
-		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(numbeats-index), 0.2)}.defer( localtempo + (hitstep * (numbeats-index)) - 0.2);
-
-		if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
-	}); // END NUMBEATS LOOP
-};
-
-
-
 // TXALAPARTA ////////////////////
 playF = Routine({
 	var txakun; // classical txakun only is limited to two beats
-	var intermakilaswing, localstep, localtempo, localamp;
+	var intermakilaswing, localstep, localtemposwing, localamp;
 
 	txakun = true; // play starts with txakun
 	nextautopilot = 0;
@@ -256,49 +236,25 @@ playF = Routine({
 			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
 
-		localtempo = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
-		if (~pulse, {(60/~tempo).wait}, {localtempo.wait});
+		localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
+		if (~pulse, {(60/~tempo).wait}, {localtemposwing.wait});
 
 		// beats
-		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]),
+		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
 		{
-			if (~classictxakun && txakun, // how many hits this time?
+			if (~classictxakun && txakun, // choose num of beats for this step
 				{ numbeats = 2 },
 				{ { numbeats == nil }.while( {numbeats = ~allowedbeats.wchoose(~beatchance)} ) } // avoid nil
 			);
 
-			localstep = (~gap/numbeats); // perfect step between makila hits before swing
-			intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats);
-
+			// global to all hits in this step
+			localstep = (~gap/numbeats); // reduces step proportionally to hits to play
+			intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
-
-			dohitsold.value(txakun, localamp,localstep, intermakilaswing, numbeats, localtempo );
-
-/*			numbeats.do({ arg index; // for each makila one hit
-				var hitfreq, hitstep, hitamp, plank=[nil, false]; //reseted each time
-				if (~amp > 0, { // emphasis on first or on last hit?
-					if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
-						{hitamp = localamp + 0.30},
-						{hitamp = localamp}
-					);
-				});
-
-				{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
-				if (~verbose>2, {plank.postln});
-
-				hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
-				hitstep = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-
-				{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * index));
-
-				// animation
-				{makilaF.value(makilasliders[txakun.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * index) - 0.2);
-
-				if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
-			}); // END NUMBEATS LOOP*/
+			dohits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
 
 			outstr = stepcounter+":" + if(txakun, {"txakun"},{"errena"})+numbeats;
-			{output.string = outstr}.defer(localtempo);
+			{output.string = outstr}.defer(localtemposwing);
 
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
 			if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
@@ -348,6 +304,11 @@ doWindow = {arg width, height, caption;
 	window.alwaysOnTop = true;
 	window.onClose = {AppClock.clear;SystemClock.clear};
 	window.front;
+
+	/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
+		//[char, keycode].postln;
+		if (keycode=65, {playBut.});
+	}*/
 };
 
 
@@ -587,31 +548,40 @@ doButtons = { arg xloc=10, yloc = 110;
 	});
 	beatbuttons[4].valueAction = 0;
 
+	// MODE
+	Button(window, Rect(xloc,yloc+25,100,25))
+	.states_([
+		["old pulse", Color.white, Color.black],
+		["old pulse", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~mode = butt.value.asBoolean;
+	}).valueAction = 1;
+
 
 
 	// PLAY
-	Button(window, Rect(xloc,yloc+25,200,25))
+	playBut = Button(window, Rect(xloc,yloc+50,200,25))
 	.states_([
 		["play/stop", Color.white, Color.black],
 		["play/stop", Color.black, Color.red],
 	])
 	.action_({ arg butt;
-		//if ( butt.value.asBoolean, { AppClock.play(playF)}, {AppClock.clear});
 		if ( butt.value.asBoolean, { SystemClock.play(playF)}, {SystemClock.clear});
 	});
+	//playBut.KeyDownAction = "";
 
 	// SERVER
-	Button(window, Rect(xloc,yloc+50,100,25))
+	Button(window, Rect(xloc,yloc+75,100,25))
 	.states_([
 		["server window", Color.white, Color.grey],
 	])
 	.action_({ arg butt;
 		s.makeGui;
 	});
-	//.valueAction_(0);
 
 	// VERBOSE
-	Button(window, Rect(xloc+100,yloc+50,20,25))
+	Button(window, Rect(xloc+100,yloc+75,20,25))
 	.states_([
 		["V", Color.white, Color.grey],
 		["V", Color.white, Color.blue],
@@ -894,12 +864,12 @@ doPresets = { arg xloc, yloc;
 
 
 // Now position all different groups of GUI elements
-doWindow.value(435, 400, "Txalaparta. www.ixi-audio.net");
+doWindow.value(435, 420, "Txalaparta. www.ixi-audio.net");
 doTimeControls.value(2, 5);
 doButtons.value(10, 250);
 doPlanks.value(10, 150);
 doMakilas.value(330, 130, 16);
-doPresets.value(10, 350);
+doPresets.value(10, 370);
 
 
 if (~verbose>0, {currentEnvironment.postln});
