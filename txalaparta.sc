@@ -136,7 +136,7 @@ presets = (presetspath++"*").pathMatch;
 beatbuttons = [nil, nil, nil, nil, nil];
 sliders = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]]; // slider and its autopilot button associated
 slidersauto = [nil,nil,nil,nil]; // keep a ref to the ones available for autopilot
-makilasliders = [[nil, nil], [nil, nil]] // two for each player
+makilasliders = [[nil, nil], [nil, nil]]; // two for each player
 planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];// [Buffer, enable] for each
 enabledButs = [nil, nil]; // txakun and errena
 
@@ -151,7 +151,7 @@ s.boot; //////// BOOT SERVER //////////////////
 			amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
 		)
 	}).add;
-}.waitForBoot;
+}.waitForBoot(s);
 
 
 /* return true if any of the items in the array or list is not nil
@@ -228,7 +228,7 @@ dohitsold = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localte
 		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer( localtempo + (hitstep * (numbeats-index)));
 
 		// animation
-		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(index), 0.2)}.defer( localtempo + (hitstep * (numbeats-index)) - 0.2);
+		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(numbeats-index), 0.2)}.defer( localtempo + (hitstep * (numbeats-index)) - 0.2);
 
 		if (~verbose>2, {[hitamp, hitfreq, hitstep].postln});
 	}); // END NUMBEATS LOOP
