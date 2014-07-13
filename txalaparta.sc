@@ -862,17 +862,19 @@ doPresets = { arg xloc, yloc;
 };
 
 
+s.waitForBoot({
+	// Now position all different groups of GUI elements
+	doWindow.value(435, 420, "Txalaparta. www.ixi-audio.net");
+	doTimeControls.value(2, 5);
+	doButtons.value(10, 250);
+	doPlanks.value(10, 150);
+	doMakilas.value(330, 130, 16);
+	doPresets.value(10, 370);
 
-// Now position all different groups of GUI elements
-doWindow.value(435, 420, "Txalaparta. www.ixi-audio.net");
-doTimeControls.value(2, 5);
-doButtons.value(10, 250);
-doPlanks.value(10, 150);
-doMakilas.value(330, 130, 16);
-doPresets.value(10, 370);
 
+	if (~verbose>0, {currentEnvironment.postln});
+	if (~verbose>0, {buffers});
+});
 
-if (~verbose>0, {currentEnvironment.postln});
-if (~verbose>0, {buffers});
 )
 
