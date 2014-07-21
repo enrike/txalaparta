@@ -98,7 +98,7 @@ s.unmute
 var playF, makilaF, dohits, dohitsold;
 
 // GUI vars
-var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath;
+var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath, drawingSet;
 // GUI widgets
 var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 // GUI functions vars
@@ -141,6 +141,8 @@ makilasliders = [[nil, nil], [nil, nil]]; // two for each player
 planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];// [Buffer, enable] for each
 enabledButs = [nil, nil]; // txakun and errena
 
+drawingSet = [[0,false], [0, false],[0,false],[0,false]]; // delay time from pulse and txakun or not?
+
 
 s.boot; //////// BOOT SERVER //////////////////
 
@@ -178,6 +180,8 @@ findIndex = {arg plankmenu, path;
 */
 dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtemposwing;
 
+	drawingSet = [[0,false],[0,false],[0,false],[0,false]];//clear
+
 	numbeats.do({ arg index; // for each makila one hit
 		var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false]; //reseted each time
 		if (~amp > 0, { // emphasis on first or on last hit?
@@ -205,11 +209,16 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 
 		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer(hittime);
 
+		drawingSet[index] = [hittime, txakun];
+		if (index==(numbeats.size-1), {window.refresh}.defer(hittime));
+
 		// animation
 		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2)}.defer( hittime-0.2);
 
 		if (~verbose>2, {[hittime, hitamp, hitfreq, hitswing].postln});
 	}); // END NUMBEATS LOOP}
+
+
 };
 
 
@@ -258,7 +267,7 @@ playF = Routine({
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 			dohits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
 
-			outstr = stepcounter++":" + if(txakun, {"txakun"},{"errena"})+numbeats;
+			outstr = stepcounter.asString++":" + if(txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtemposwing);
 
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
@@ -305,10 +314,36 @@ makilaF = {arg sl, time;
 
 // WINDOW
 doWindow = {arg width, height, caption;
+	var dur, dpt;// duration of the circle and degrees per time unit
 	window = Window(caption, Rect(100, 100, width, height));
 	window.alwaysOnTop = true;
 	window.onClose = {AppClock.clear;SystemClock.clear};
 	window.front;
+
+	window.drawFunc = {
+		Pen.translate(380, 375);
+		Pen.color = Color.black;
+
+		Pen.addArc(0@0, 40, 0, 360);
+		Pen.perform(\stroke);
+
+		dur = 120/~tempo; // duration of the cycle in secs
+		dpt = 360/dur; //how many degrees each ms
+		drawingSet.do({arg data;
+			var offset;
+			if (data[0]>0, { // only the ones with a valid value
+				//["drawing data", data].postln;
+				if (data[1], {offset = 90}, {offset = 270}); // errena is down
+				Pen.push;
+				Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
+				Pen.addArc((40)@(0), 5, 0, 360);
+				Pen.perform(\stroke);
+				Pen.stroke;
+				Pen.pop;
+			});
+		});
+	};
+	window.refresh;
 
 	/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
 		//[char, keycode].postln;
