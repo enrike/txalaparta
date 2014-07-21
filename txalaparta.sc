@@ -236,8 +236,13 @@ playF = Routine({
 			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
 
-		localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2); //offset of beat within the ideal position that should have
-		if (~pulse, {(60/~tempo).wait}, {localtemposwing.wait});
+		if (~pulse,
+			{localtemposwing = 60/~tempo},// ideal position
+			{localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2)} //offset
+		);
+		localtemposwing.wait;
+
+		// localtemposwing/360 // cuanta duracion representa cada grado del circulo
 
 		// beats
 		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -253,7 +258,7 @@ playF = Routine({
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 			dohits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
 
-			outstr = stepcounter+":" + if(txakun, {"txakun"},{"errena"})+numbeats;
+			outstr = stepcounter++":" + if(txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtemposwing);
 
 			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
