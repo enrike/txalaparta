@@ -118,7 +118,7 @@ var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, schedul
 ~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 ~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
 ~autopilotrange = [5, 10]; // for instance
-~mode = true;// old style hit position calulation?
+~mode = true; // old style hit position calulation?
 
 // utility
 ~verbose = 1;
@@ -185,7 +185,7 @@ scheduleDraw = {arg data;
 
 /* this schedules the FIRST hit on the bar. subsequent hits go after
 */
-dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtemposwing;
+dohits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
 
 	var firstdefer=nil, drawingSetB = Array.fill(8, [0, false]); // buffer
 
@@ -201,14 +201,15 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 		{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
 		if (~verbose>2, {("plank"+plank).postln});
 
-		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
+		hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing to give some life
+
 		hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-		if( ~mode, // not sure this makes any difference. have to test carefully
+		if( ~mode, // before the bar
 			{
 				hittime = localtemposwing - (hitswing * index);
 				makilaindex = numbeats-index-1;//reverse
 			},
-			{
+			{ // aftr the bar
 				hittime = localtemposwing + (hitswing * index);
 				makilaindex = index;
 			}
@@ -239,7 +240,7 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 // TXALAPARTA ////////////////////
 playF = Routine({
 	var txakun; // classical txakun only is limited to two beats
-	var intermakilaswing, localstep, localtemposwing, localamp;
+	var intermakilaswing, localstep, idealtempo, localtemposwing, localamp;
 
 	txakun = true; // play starts with txakun
 	nextautopilot = 0;
@@ -258,11 +259,14 @@ playF = Routine({
 			if (~verbose>0, {("autopilot! next at" + nextautopilot).postln});
 		});
 
+		idealtempo = 60/~tempo; // ideal position
+		localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2); //offset
+
 		if (~pulse,
-			{localtemposwing = 60/~tempo},// ideal position
-			{localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2)} //offset
+			{idealtempo.wait}, // sets the tempo
+			{localtemposwing.wait} // sets the tempo
 		);
-		localtemposwing.wait;
+
 
 		// beats
 		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -273,22 +277,21 @@ playF = Routine({
 			);
 
 			// global to all hits in this step
-			localstep = (~gap/numbeats); // reduces step proportionally to hits to play
+			localstep = ~gap/numbeats; // reduces step proportionally to hits to play
 			intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
 			if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 			dohits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
 
-			outstr = stepcounter.asString++":" + if(txakun, {"txakun"},{"errena"})+numbeats;
+			outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtemposwing);
 
 			if (~verbose>0, {["beat", stepcounter, txakun, numbeats].postln});
 			if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
 		}); //end if beats
-		//if (stepcounter==0, {drawingSet = drawingSetB}); //swap
+
 		txakun = txakun.not;
 	}) // end inf loop
 });
-
 
 
 
@@ -321,33 +324,38 @@ makilaF = {arg sl, time;
 };
 
 
-
 // GUI ELEMENTS ////
 
 // WINDOW
 doWindow = {arg width, height, caption;
-	var dur, dpt;// duration of the circle and degrees per time unit
+
 	window = Window(caption, Rect(100, 100, width, height));
 	window.alwaysOnTop = true;
 	window.onClose = {AppClock.clear;SystemClock.clear};
 	window.front;
 
 	window.drawFunc = {
+		var dur, dpt; // duration of the circle and degrees per time unit
+		dur = 120/~tempo; // duration of the cycle in secs
+		dpt = 360/dur; // how many degrees each ms
+
 		Pen.translate(380, 375);
 		Pen.color = Color.black;
 
 		Pen.addArc(0@0, 40, 0, 360);
-		Pen.line(0@45.neg, 0@45); //vertical line
-		Pen.perform(\stroke);
 
-		dur = 120/~tempo; // duration of the cycle in secs
-		dpt = 360/dur; //how many degrees each ms
+		if (~pulse.not, {
+			Pen.rotate( (((drawingSet[0][0]*dpt)))*(pi/180) );
+		});
+
+		Pen.line(0@45.neg, 0@45); //vertical line
+		Pen.perform(\stroke); // static if maintaining pulse
 
 		drawingSet.do({arg data; // --> [msecs, txakunflag]
 			var offset;
 			if (data[0]>0, { // only the ones with a valid value
 				//["drawing data was", data].postln;
-				if (data[1], {offset = 90}, {offset = 270}); // txakun up, errena down
+				if (data[1], {offset = 270}, {offset = 90}); // txakun up, errena down
 				Pen.use{
 					Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
 					Pen.addArc((40)@(0), 5, 0, 360);
@@ -358,8 +366,7 @@ doWindow = {arg width, height, caption;
 
 		Pen.perform(\stroke);
 
-		//drawingSet = drawingSetB; //swap
-		drawingSet = [[0,false],[0,false],[0,false],[0,false]];//clear
+		drawingSet = Array.fill(4, [0, false]);//clear
 	};
 	window.refresh;
 
