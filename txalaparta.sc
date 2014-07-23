@@ -59,7 +59,7 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
-- draw visualization of position of each hit within a circle like in javier sangoza's paper
+- assign certain planks to each players? oier
 - expose the weight of the chance for the beats
 - should correct the gap between hits. slow tempo faster hits, fast tempo slower hits than it is now. sounds weird now.
 - añadir sistema de toque interactivo (persona + máquina)
@@ -95,14 +95,14 @@ s.unmute
 
 
 ( // RUN ME HERE
-var playF, makilaF, dohits, dohitsold;
+var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB;
 
 // GUI vars
-var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, presetspath, drawingSet;
+var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
 // GUI widgets
 var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 // GUI functions vars
-var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets;
+var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, scheduleDraw;
 
 // GLOBAL vars
 ~tempo = 70; // tempo. txakun / errena
@@ -129,19 +129,19 @@ samples = (sndpath++"*").pathMatch;
 ("sndpath is" + sndpath).postln;
 ("available samples are" + samples).postln;
 
-buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, enabled]
+buffers = [[nil, true], [nil, false], [nil, false], [nil, false]]; // [Buffer, enabled] // FIRST IS ENABLED!
 
 presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 presets = (presetspath++"*").pathMatch;
 
-beatbuttons = [nil, nil, nil, nil, nil];
-sliders = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]]; // slider and its autopilot button associated
-slidersauto = [nil,nil,nil,nil]; // keep a ref to the ones available for autopilot
+beatbuttons = Array.fill(5, nil);
+sliders = Array.fill(4, [nil,nil]); // slider and its autopilot button associated
+slidersauto = Array.fill(4, nil); // keep a ref to the ones available for autopilot
 makilasliders = [[nil, nil], [nil, nil]]; // two for each player
-planksMenus = [[nil, nil],[nil, nil],[nil, nil],[nil, nil]];// [Buffer, enable] for each
+planksMenus = Array.fill(4, [nil,nil]);// [Buffer, enable] for each
 enabledButs = [nil, nil]; // txakun and errena
 
-drawingSet = [[0,false], [0, false],[0,false],[0,false]]; // delay time from pulse and txakun or not?
+drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or not?
 
 
 s.boot; //////// BOOT SERVER //////////////////
@@ -175,15 +175,22 @@ findIndex = {arg plankmenu, path;
 	returnval;
 };
 
+/* this is just to avoid the data being overwriten
+*/
+scheduleDraw = {arg data;
+	drawingSet = data;
+	window.refresh;
+};
+
 
 /* this schedules the FIRST hit on the bar. subsequent hits go after
 */
 dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtemposwing;
 
-	drawingSet = [[0,false],[0,false],[0,false],[0,false]];//clear
+	var firstdefer=nil, drawingSetB = Array.fill(8, [0, false]); // buffer
 
 	numbeats.do({ arg index; // for each makila one hit
-		var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false]; //reseted each time
+		var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false];
 		if (~amp > 0, { // emphasis on first or on last hit?
 			if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
 				{hitamp = localamp + 0.30},
@@ -192,7 +199,7 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 		});
 
 		{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
-		if (~verbose>2, {plank.postln});
+		if (~verbose>2, {("plank"+plank).postln});
 
 		hitfreq = (~freqs.choose) + 0.6.rand; // freq swing
 		hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
@@ -207,19 +214,23 @@ dohits = {arg txakun, localamp,localstep, intermakilaswing, numbeats, localtempo
 			}
 		);
 
+		if (firstdefer == nil, {firstdefer=hittime}); // to schedule drawing later
+
 		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer(hittime);
 
-		drawingSet[index] = [hittime, txakun];
-		if (index==(numbeats.size-1), {window.refresh}.defer(hittime));
+		drawingSetB[index] = [hittime, txakun]; // store for drawing on window.refresh
 
 		// animation
 		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2)}.defer( hittime-0.2);
 
-		if (~verbose>2, {[hittime, hitamp, hitfreq, hitswing].postln});
+		if (~verbose>2, {["hit", hittime, hitamp, hitfreq, hitswing].postln});
 	}); // END NUMBEATS LOOP}
 
-
+	{scheduleDraw.value(drawingSetB)}.defer(firstdefer); // finally schedule drawing
 };
+
+
+
 
 
 
@@ -236,6 +247,8 @@ playF = Routine({
 	inf.do({ arg stepcounter; // txakun > errena cycle
 		var numbeats, outstr; // numbeats needs to be here to be nill each time
 
+		if (~verbose>1, {("is txakun?" + txakun).postln});
+
 		// autopilot
 		if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 			var sl;
@@ -250,8 +263,6 @@ playF = Routine({
 			{localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2)} //offset
 		);
 		localtemposwing.wait;
-
-		// localtemposwing/360 // cuanta duracion representa cada grado del circulo
 
 		// beats
 		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -270,10 +281,10 @@ playF = Routine({
 			outstr = stepcounter.asString++":" + if(txakun, {"txakun"},{"errena"})+numbeats;
 			{output.string = outstr}.defer(localtemposwing);
 
-			if (~verbose>0, {[stepcounter, txakun, numbeats].postln});
+			if (~verbose>0, {["beat", stepcounter, txakun, numbeats].postln});
 			if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
 		}); //end if beats
-
+		//if (stepcounter==0, {drawingSet = drawingSetB}); //swap
 		txakun = txakun.not;
 	}) // end inf loop
 });
@@ -303,6 +314,7 @@ makilaF = {arg sl, time;
 			gap.wait;
 		});
 		sl.knobColor = Color.black;
+		//window.refresh;
 	});
 
 	AppClock.play(loopF);
@@ -325,23 +337,29 @@ doWindow = {arg width, height, caption;
 		Pen.color = Color.black;
 
 		Pen.addArc(0@0, 40, 0, 360);
+		Pen.line(0@45.neg, 0@45); //vertical line
 		Pen.perform(\stroke);
 
 		dur = 120/~tempo; // duration of the cycle in secs
 		dpt = 360/dur; //how many degrees each ms
-		drawingSet.do({arg data;
+
+		drawingSet.do({arg data; // --> [msecs, txakunflag]
 			var offset;
 			if (data[0]>0, { // only the ones with a valid value
-				//["drawing data", data].postln;
-				if (data[1], {offset = 90}, {offset = 270}); // errena is down
-				Pen.push;
-				Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-				Pen.addArc((40)@(0), 5, 0, 360);
-				Pen.perform(\stroke);
-				Pen.stroke;
-				Pen.pop;
+				//["drawing data was", data].postln;
+				if (data[1], {offset = 90}, {offset = 270}); // txakun up, errena down
+				Pen.use{
+					Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
+					Pen.addArc((40)@(0), 5, 0, 360);
+					Pen.stroke;
+				};
 			});
 		});
+
+		Pen.perform(\stroke);
+
+		//drawingSet = drawingSetB; //swap
+		drawingSet = [[0,false],[0,false],[0,false],[0,false]];//clear
 	};
 	window.refresh;
 
@@ -747,7 +765,7 @@ doMakilas = { arg xloc=300, yloc=190, gap=45;
 	yloc = yloc + 18;
 
 	makilasliders.do({arg list;
-		thegap.postln;
+		//thegap.postln;
 		list.do({arg item, i;
 			list[i] = Slider(window, Rect(xloc+thegap+(21*ind), yloc, 20, 150));
 			list[i].orientation = \vertical;
