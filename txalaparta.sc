@@ -59,15 +59,13 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
+- send OSC out
 - assign certain planks to each players? oier
 - expose the weight of the chance for the beats
-- should correct the gap between hits. slow tempo faster hits, fast tempo slower hits than it is now. sounds weird now.
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
-- send OSC out
-- usar samples con filtros en vez de síntesis . diferentes materiales y tipos de madera. diferentes tamaños y diferentes notas.
-- allow pan each part?
+- allow pan?
 - should pan be mapped to the length of the virtual planks? so that as the hit moves
 along the plank the pan changes but also the filter affects the sound.
 */
@@ -95,7 +93,7 @@ s.unmute
 
 
 {
-var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB;
+var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd;
 
 // GUI vars
 var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
@@ -119,6 +117,7 @@ var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, schedul
 ~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
 ~autopilotrange = [5, 10]; // for instance
 ~mode = true; // old style hit position calulation?
+~oscout = false;
 
 // utility
 ~verbose = 1;
@@ -142,6 +141,9 @@ planksMenus = Array.fill(4, [nil,nil]);// [Buffer, enable] for each
 enabledButs = [nil, nil]; // txakun and errena
 
 drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or not?
+
+
+netadd = NetAddr("127.0.0.1", 6666);
 
 
 Server.default = Server.internal; // this is to avoid problem in some windows machines
@@ -218,14 +220,18 @@ dohits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemp
 
 		if (firstdefer == nil, {firstdefer=hittime}); // to schedule drawing later
 
-		{ Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]) }.defer(hittime);
+		{
+			Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
+			makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
+			if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].bufnum])});
+			if (~verbose>2, {["hit", hittime, hitamp, hitfreq, hitswing].postln});
+		}.defer(hittime);
 
 		drawingSetB[index] = [hittime, txakun]; // store for drawing on window.refresh
 
 		// animation
-		{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2)}.defer( hittime-0.2);
+		//{makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2)}.defer( hittime-0.2);
 
-		if (~verbose>2, {["hit", hittime, hitamp, hitfreq, hitswing].postln});
 	}); // END NUMBEATS LOOP}
 
 	{scheduleDraw.value(drawingSetB)}.defer(firstdefer); // finally schedule drawing
@@ -533,23 +539,6 @@ doButtons = { arg xloc=10, yloc = 110;
 	})
 	.valueAction_(1);
 
-	// ZAHARRA MODE
-	Button(window, Rect(beatsxloc,yloc+70,100,25))
-	.states_([
-		["go zaharra", Color.white, Color.black],
-	])
-	.action_({ arg butt;
-		~classictxakun = true; //butt.value.asBoolean.not;
-		beatbuttons.do({arg but, ind;
-			if ( but != nil, {
-				if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
-				classicBut.valueAction = 1;
-				emphasisBut.valueAction = 1;
-				pulseBut.valueAction = 0
-			});
-		});
-	})
-	.valueAction_(1);
 
 	// CLASSIC TXAKUN
 	classicBut = Button(window, Rect(beatsxloc,yloc+25,100,25))
@@ -561,7 +550,6 @@ doButtons = { arg xloc=10, yloc = 110;
 		~classictxakun = butt.value.asBoolean;
 	});
 	classicBut.valueAction = 1;
-
 
 
 	// BEATS
@@ -658,6 +646,36 @@ doButtons = { arg xloc=10, yloc = 110;
 		~verbose = butt.value;
 	})
 	.valueAction_(~verbose);
+
+
+	// ZAHARRA MODE
+	Button(window, Rect(beatsxloc,yloc+70,100,25))
+	.states_([
+		["go zaharra", Color.white, Color.black],
+	])
+	.action_({ arg butt;
+		~classictxakun = true; //butt.value.asBoolean.not;
+		beatbuttons.do({arg but, ind;
+			if ( but != nil, {
+				if ( ind < 2, {but.valueAction = 1}, {but.valueAction = 0});
+				classicBut.valueAction = 1;
+				emphasisBut.valueAction = 1;
+				pulseBut.valueAction = 0
+			});
+		});
+	})
+	.valueAction_(1);
+
+	// OSC OUT
+	Button(window, Rect(beatsxloc,yloc+100,100,25))
+	.states_([
+		["send OSC", Color.white, Color.black],
+		["send OSC", Color.black, Color.red],
+	])
+	.action_({ arg butt;
+		~oscout = butt.value.asBoolean;
+	})
+	.valueAction_(0);
 };
 
 
