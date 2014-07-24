@@ -59,15 +59,15 @@ Pan (stereo)
 
 /*
 Ideas para supercollider txalaparta :
-- send OSC out
-- assign certain planks to each players? oier
-- expose the weight of the chance for the beats
+- assign enter down to play button
+- double check OSC out
+- expose the weight of the chance for the beats (per player?)
+- add and expose the weight of the chance for the planks (per player as well?) oier suggested
 - añadir sistema de toque interactivo (persona + máquina)
       - incorporar escucha (en el caso de persona + máquina)
 - incorporar memoria (propia y del otro)
 - allow pan?
-- should pan be mapped to the length of the virtual planks? so that as the hit moves
-along the plank the pan changes but also the filter affects the sound.
+- should pan be mapped to the length of the virtual planks? so that as the hit moves along the plank the pan changes but also the filter affects the sound.
 */
 
 
@@ -223,7 +223,7 @@ dohits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemp
 		{
 			Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
 			makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
-			if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].bufnum])});
+			if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].path])});
 			if (~verbose>2, {["hit", hittime, hitamp, hitfreq, hitswing].postln});
 		}.defer(hittime);
 
@@ -273,7 +273,6 @@ playF = Routine({
 			{idealtempo.wait}, // sets the tempo
 			{localtemposwing.wait} // sets the tempo
 		);
-
 
 		// beats
 		if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -622,11 +621,12 @@ doButtons = { arg xloc=10, yloc = 110;
 	])
 	.action_({ arg butt;
 		if ( butt.value.asBoolean, { SystemClock.play(playF)}, {SystemClock.clear});
-	});
-	//playBut.KeyDownAction = "";
+		});
+		//.defaultKeyDownAction_(" ");
+	//playBut.defaultKeyDownAction = "";
 
 	// SERVER
-	Button(window, Rect(xloc,yloc+75,100,25))
+	Button(window, Rect(xloc,yloc+78,100,25))
 	.states_([
 		["server window", Color.white, Color.grey],
 	])
@@ -635,7 +635,7 @@ doButtons = { arg xloc=10, yloc = 110;
 	});
 
 	// VERBOSE
-	Button(window, Rect(xloc+100,yloc+75,20,25))
+	Button(window, Rect(xloc+100,yloc+78,20,25))
 	.states_([
 		["V", Color.white, Color.grey],
 		["V", Color.white, Color.blue],
@@ -647,9 +647,19 @@ doButtons = { arg xloc=10, yloc = 110;
 	})
 	.valueAction_(~verbose);
 
+	// OSC OUT
+	Button(window, Rect(xloc+120,yloc+78,80,25))
+	.states_([
+		["send OSC", Color.white, Color.grey],
+		["send OSC", Color.black, Color.blue],
+	])
+	.action_({ arg butt;
+		~oscout = butt.value.asBoolean;
+	})
+	.valueAction_(0);
 
 	// ZAHARRA MODE
-	Button(window, Rect(beatsxloc,yloc+70,100,25))
+	Button(window, Rect(beatsxloc,yloc+65,100,25))
 	.states_([
 		["go zaharra", Color.white, Color.black],
 	])
@@ -665,17 +675,6 @@ doButtons = { arg xloc=10, yloc = 110;
 		});
 	})
 	.valueAction_(1);
-
-	// OSC OUT
-	Button(window, Rect(beatsxloc,yloc+100,100,25))
-	.states_([
-		["send OSC", Color.white, Color.black],
-		["send OSC", Color.black, Color.red],
-	])
-	.action_({ arg butt;
-		~oscout = butt.value.asBoolean;
-	})
-	.valueAction_(0);
 };
 
 
