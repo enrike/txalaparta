@@ -94,7 +94,7 @@ s.unmute
 
 
 
-( // RUN ME HERE
+{
 var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB;
 
 // GUI vars
@@ -144,6 +144,7 @@ enabledButs = [nil, nil]; // txakun and errena
 drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or not?
 
 
+Server.default = Server.internal; // this is to avoid problem in some windows machines
 s.boot; //////// BOOT SERVER //////////////////
 
 
@@ -941,5 +942,5 @@ s.waitForBoot({
 	if (~verbose>0, {buffers});
 });
 
-)
+}.value; // this to be able to run from command line sclang txalaparta.sc
 
