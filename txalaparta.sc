@@ -72,9 +72,6 @@ Ideas para supercollider txalaparta :
 
 
 
-currentEnvironment;
-
-
 /*
 s.meter
 s.makeGui
@@ -91,8 +88,11 @@ s.unmute
 */
 
 
+Server.default = Server.internal; // this is to avoid problem in some windows machines
+s.boot; //////// BOOT SERVER //////////////////
 
-{
+s.doWhenBooted({
+
 var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd;
 
 // GUI vars
@@ -101,6 +101,8 @@ var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples,
 var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 // GUI functions vars
 var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, scheduleDraw;
+
+"STARTING TXALAPARTA !!!!!!!".postln;
 
 // GLOBAL vars
 ~tempo = 70; // tempo. txakun / errena
@@ -146,18 +148,17 @@ drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or no
 netadd = NetAddr("127.0.0.1", 6666);
 
 
-Server.default = Server.internal; // this is to avoid problem in some windows machines
-s.boot; //////// BOOT SERVER //////////////////
+
 
 
 // THE BASIC SYNTHDEF
-s.waitForBoot({
-	SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
-		Out.ar(outbus,
-			amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
-		)
-	}).add;
-});
+
+SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
+	Out.ar(outbus,
+		amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
+	)
+}).add;
+
 
 
 /* return true if any of the items in the array or list is not nil
@@ -260,6 +261,7 @@ playF = Routine({
 		// autopilot
 		if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 			var sl;
+			slidersauto.postln;
 			{ sl == nil }.while( {sl = slidersauto.choose} ) ;
 			{sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval)}.defer;
 			nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
@@ -861,13 +863,13 @@ doPresets = { arg xloc, yloc;
 		~gap = data[\gap];
 		sliders[3][0].value = ~gap;
 		sliders[3][1].value = data[\slidersauto][2];
-		if (data[\slidersauto][3]==true,
+		if (data[\slidersauto][3]==true, //yes I know...
 			{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
 
 		~gapswing = data[\gapswing];
 		sliders[2][0].value = ~gapswing;
 		sliders[2][1].value = data[\slidersauto][3];
-		if (data[\slidersauto][2]==true,
+		if (data[\slidersauto][2]==true, // //yes I know, I know...
 			{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
 
 		~amp = data[\amp];
@@ -945,7 +947,7 @@ doPresets = { arg xloc, yloc;
 };
 
 
-s.waitForBoot({
+//s.waitForBoot({
 	// Now position all different groups of GUI elements
 	doWindow.value(435, 420, "Txalaparta. www.ixi-audio.net");
 	doTimeControls.value(2, 5);
@@ -957,7 +959,7 @@ s.waitForBoot({
 
 	if (~verbose>0, {currentEnvironment.postln});
 	if (~verbose>0, {buffers});
-});
+//});
 
-}.value; // this to be able to run from command line sclang txalaparta.sc
+}); // this to be able to run from command line sclang txalaparta.sc
 
