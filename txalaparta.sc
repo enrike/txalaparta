@@ -204,7 +204,9 @@ s.doWhenBooted({
 					{hitamp = localamp}
 				);
 			});
-			buffers.postln;
+			//buffers.postln;
+
+			// TO DO: skip if no buffer is enabled for this beat
 			if (txakun,
 				{{ plank[1] == false }.while( { plank = buffers.choose })}, // avoid false,
 				{{ plank[2] == false }.while( { plank = buffers.choose })}
@@ -288,8 +290,8 @@ s.doWhenBooted({
 				{localtemposwing.wait} // sets the tempo
 			);
 
-			// TO DO: or if only 0 is allowed
-			if (~allowedbeats.every(_.isNil), {
+			// if none is allowed or if only 0 is allowed
+			if (~allowedbeats.copyRange(1,~allowedbeats.size).every(_.isNil), {
 				"WARNING: no beats allowed".postln;
 				1.wait;
 			},{
