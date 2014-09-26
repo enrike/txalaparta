@@ -142,7 +142,7 @@ s.doWhenBooted({
 	sliders = Array.fill(4, [nil,nil]); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, nil); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
-	planksMenus = Array.fill(buffers.size, [nil,nil,nil]);// [pulldownmenu, enabled, enabled] txakun and errena separated enabled
+	planksMenus = Array.fill(buffers.size, [nil,nil,nil]);// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
 	drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or not?
@@ -176,6 +176,7 @@ s.doWhenBooted({
 
 	findIndex = {arg plankmenu, path;
 		var returnval=0;
+		//plankmenu.postln;
 		plankmenu.items.do({arg file, i;
 			if (sndpath++file==path,{returnval = i});
 		});
@@ -723,7 +724,7 @@ s.doWhenBooted({
 		////////////////
 		buffers.size.do({ arg index;
 
-			// txakun row
+			// txakun row buttons
 			planksMenus[index][0] = Button(window, Rect(xloc,yloc+yp,20,20))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
@@ -733,7 +734,7 @@ s.doWhenBooted({
 				buffers[index][1] = butt.value.asBoolean;
 			});
 
-			// errena row
+			// errena row buttons
 			planksMenus[index][1] = Button(window, Rect(xloc+22,yloc+yp,20,20))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
@@ -758,7 +759,7 @@ s.doWhenBooted({
 			})
 			.valueAction_(index);
 
-			// play button
+			// play buttons row
 			Button(window, Rect(playxloc,yloc+yp,20,20))
 			.states_([
 				[">", Color.white, Color.black]
@@ -834,7 +835,7 @@ s.doWhenBooted({
 		})
 		.action_({ arg menu;
 			var data;
-			(presetspath ++ menu.item).postln;
+			("loading..." + presetspath ++ menu.item).postln;
 			data = Object.readArchive(presetspath ++ menu.item);
 			data.asCompileString.postln;
 
@@ -885,11 +886,15 @@ s.doWhenBooted({
 			// txakun-errena buttons
 			~autopilotrange = data[\autopilotrange]; // no widget!
 
+			["data buffers", data[\buffers]].postln;
 			planksMenus.do({arg plank, i;
-				plank[0].valueAction = data[\buffers][i][1];
-				plank[1].valueAction = findIndex.value(plank[1], data[\buffers][i][0]);
-				plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
+				try {
+					plank[0].valueAction = data[\buffers][i][1];//tx button
+					plank[1].valueAction = data[\buffers][i][2];//er button
+					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);// pulldown menu
+				} {|error| [\catch, error].postln };
 			});
+
 		});
 		//.valueAction_(0);
 
@@ -924,11 +929,15 @@ s.doWhenBooted({
 				slidersauto[2]!=nil,
 				slidersauto[3]!=nil,
 			]);
-			data.put(\buffers, [
+			data.put(\buffers, [ //path to file, tx flag, err flag
 				[ buffers[0][0].path, buffers[0][1], buffers[0][2] ],
-				[ buffers[1][0].path, buffers[1][1], buffers[0][2] ],
-				[ buffers[2][0].path, buffers[2][1], buffers[0][2] ],
-				[ buffers[3][0].path, buffers[3][1], buffers[0][2] ],
+				[ buffers[1][0].path, buffers[1][1], buffers[1][2] ],
+				[ buffers[2][0].path, buffers[2][1], buffers[2][2] ],
+				[ buffers[3][0].path, buffers[3][1], buffers[3][2] ],
+				[ buffers[4][0].path, buffers[4][1], buffers[4][2] ],
+				[ buffers[5][0].path, buffers[5][1], buffers[5][2] ],
+				[ buffers[6][0].path, buffers[6][1], buffers[6][2] ],
+				[ buffers[7][0].path, buffers[7][1], buffers[7][2] ],
 			]);
 			data.writeArchive(presetspath++filename);
 
