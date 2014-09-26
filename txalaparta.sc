@@ -194,8 +194,14 @@ s.doWhenBooted({
 	*/
 	dohits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
 
-		var firstdefer=nil, drawingSetB = Array.fill(8, [0, false]); // buffer
+		var firstdefer=nil, drawingSetB = Array.fill(8, [0, false]), flagindex=1; // buffer
 
+		// txakun true 1 -> 1 // errena false 0 -> 2
+		if (txakun, {flagindex=1},{flagindex=2});
+
+		// avoid when no sound is selected
+		if (buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
+		{
 		numbeats.do({ arg index; // for each makila one hit
 			var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false, false];
 			if (~amp > 0, { // emphasis on first or on last hit?
@@ -204,20 +210,14 @@ s.doWhenBooted({
 					{hitamp = localamp}
 				);
 			});
-			//buffers.postln;
 
-			// TO DO: skip if no buffer is enabled for this beat
-			if (txakun,
-				{{ plank[1] == false }.while( { plank = buffers.choose })}, // avoid false,
-				{{ plank[2] == false }.while( { plank = buffers.choose })}
-			);
+			{ plank[flagindex] == false }.while( { plank = buffers.choose });// avoid false,
 
 			//{ plank[txakun.asInt] == false }.while( { plank = buffers.choose })
 			//{ plank[1] == false }.while( { plank = buffers.choose }); // avoid nil
 			if (~verbose>2, {("plank"+plank).postln});
 
-			hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing to give some life
-
+			hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
 			hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
 			if( ~mode, // before the bar
 				{
@@ -230,9 +230,9 @@ s.doWhenBooted({
 				}
 			);
 
-			if (firstdefer == nil, {firstdefer=hittime}); // to schedule drawing later
+			if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later
 
-			{
+			{// deferred function
 				Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
 				makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
 				if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].path])});
@@ -249,6 +249,7 @@ s.doWhenBooted({
 
 
 		{scheduleDraw.value(drawingSetB)}.defer(firstdefer); // finally schedule drawing
+		}, {"WARNING: no sound selected for this beat".postln; buffers.postln});
 	};
 
 
@@ -275,7 +276,7 @@ s.doWhenBooted({
 			// autopilot
 			if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
 				var sl;
-				slidersauto.postln;
+				//slidersauto.postln;
 				{ sl == nil }.while( {sl = slidersauto.choose} ) ;
 				{sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval)}.defer;
 				nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
@@ -417,7 +418,7 @@ s.doWhenBooted({
 		sliders[0][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
 			"tempo",  // label
-			ControlSpec(30, 450, \lin, 1, ~tempo, "BPMs"),     // controlSpec
+			ControlSpec(30, 550, \lin, 1, ~tempo, "BPMs"),     // controlSpec
 			{ arg ez;
 				~tempo = ez.value;
 			},
