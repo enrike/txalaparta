@@ -96,7 +96,7 @@ s.doWhenBooted({
 	var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd;
 
 	// GUI vars
-	var window, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
+	var window, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
 	// GUI widgets
 	var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
@@ -138,14 +138,14 @@ s.doWhenBooted({
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 	presets = (presetspath++"*").pathMatch;
 
-	beatbuttons = Array.fill(5, nil);
-	sliders = Array.fill(4, [nil,nil]); // slider and its autopilot button associated
-	slidersauto = Array.fill(4, nil); // keep a ref to the ones available for autopilot
+	beatbuttons = Array.fill(5, {nil});
+	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
+	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
 	planksMenus = Array.fill(buffers.size, [nil,nil,nil]);// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
-	drawingSet = Array.fill(4, [0,false]); // delay time from pulse and txakun or not?
+	drawingSet = Array.fill(4, {[0,false]}); // delay time from pulse and txakun or not?
 
 
 	netadd = NetAddr("127.0.0.1", 6666);
@@ -361,13 +361,14 @@ s.doWhenBooted({
 
 	// WINDOW
 	doWindow = {arg width, height, caption;
+		var rot=0;
 
 		window = Window(caption, Rect(100, 100, width, height));
 		window.alwaysOnTop = true;
 		window.onClose = {AppClock.clear;SystemClock.clear};
 		window.front;
 
-		window.drawFunc = {
+		window.drawFunc = { // drawing the visualization of circles
 			var dur, dpt; // duration of the circle and degrees per time unit
 			dur = 120/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
@@ -376,6 +377,12 @@ s.doWhenBooted({
 			Pen.color = Color.black;
 
 			Pen.addArc(0@0, 40, 0, 360);
+
+			// rot = rot + (dur/2pi);
+			// Pen.rotate( d );
+			// Pen.line(0@0, 0@45.neg); //rotating line
+			// Pen.rotate( rot.neg );
+			// Pen.stroke;
 
 			if (~pulse.not, {
 				Pen.rotate( (((drawingSet[0][0]*dpt)))*(pi/180) );
@@ -391,17 +398,29 @@ s.doWhenBooted({
 					if (data[1], {offset = 270}, {offset = 90}); // txakun up, errena down
 					Pen.use{
 						Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-						Pen.addArc((40)@(0), 5, 0, 360);
+						Pen.addArc((40)@(0), 5, 0, 360); // circles representing beats
 						Pen.stroke;
 					};
 				});
 			});
 
+
 			Pen.perform(\stroke);
 
 			drawingSet = Array.fill(4, [0, false]);//clear
+
 		};
 		window.refresh;
+
+		clock = UserView(window, Rect(380-45, 375-45, 90, 90));
+			//clock.background = Color.black;
+			clock.animate = true;
+			clock.drawFunc = {
+				Pen.color = Color.red;
+			rot = rot + 2pi/(120/~tempo);
+			    Pen.rotate( rot );
+				Pen.line(0@0, 0@45.neg); //rotating line
+			};
 
 		/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
 		//[char, keycode].postln;
@@ -433,11 +452,12 @@ s.doWhenBooted({
 			["autopilot", Color.black, Color.red],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean,{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
+			if (butt.value.asBoolean,
+				{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
 		})
 		.valueAction_(0);
 
-		// swing //
+		// tempo swing //
 		yloc = yloc+gap;
 		sliders[1][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
@@ -456,14 +476,15 @@ s.doWhenBooted({
 			["autopilot", Color.black, Color.red],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean,{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
+			if (butt.value.asBoolean,
+				{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
 		})
 		.valueAction_(0);
 
 
 		// gap //
 		yloc = yloc+gap;
-		sliders[3][0] = EZSlider( window,         // parent
+		sliders[2][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
 			"gap",  // label
 			ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),     // controlSpec
@@ -474,19 +495,20 @@ s.doWhenBooted({
 			labelWidth: 80;
 		);
 
-		sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))
+		sliders[2][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
 			["autopilot", Color.black, Color.red],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean, {slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
+			if (butt.value.asBoolean,
+				{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
 		})
 		.valueAction_(0);
 
 		// gap swing //
 		yloc = yloc+gap;
-		sliders[2][0] = EZSlider( window,         // parent
+		sliders[3][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
 			"gap swing",  // label
 			ControlSpec(0.001, 1, \lin, 0.001, ~gapswing, "ms"),     // controlSpec
@@ -497,13 +519,14 @@ s.doWhenBooted({
 			labelWidth: 80;
 		);
 
-		sliders[2][1] = Button(window, Rect(buttonxloc,yloc,60,20))
+		sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
 			["autopilot", Color.black, Color.red],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean,{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
+			if (butt.value.asBoolean,
+				{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
 		})
 		.valueAction_(0);
 
@@ -840,28 +863,28 @@ s.doWhenBooted({
 			data.asCompileString.postln;
 
 			~tempo = data[\tempo];
-			sliders[0][0].value = ~tempo;
-			sliders[0][1].value = data[\slidersauto][0];
+			sliders[0][0].value = ~tempo;//slider
+			sliders[0][1].value = data[\slidersauto][0].asInt;//button
 			if (data[\slidersauto][0]==true,
 				{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
 
 			~swing = data[\swing];
-			sliders[1][0].value = ~swing;
-			sliders[1][1].value = data[\slidersauto][1];
+			sliders[1][0].value = ~swing;//slider
+			sliders[1][1].value = data[\slidersauto][1].asInt;//button
 			if (data[\slidersauto][1]==true,
 				{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
 
 			~gap = data[\gap];
-			sliders[3][0].value = ~gap;
-			sliders[3][1].value = data[\slidersauto][2];
-			if (data[\slidersauto][3]==true, //yes I know...
-				{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
+			sliders[2][0].value = ~gap;
+			sliders[2][1].value = data[\slidersauto][2].asInt;
+			if (data[\slidersauto][2]==true,
+				{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
 
 			~gapswing = data[\gapswing];
-			sliders[2][0].value = ~gapswing;
-			sliders[2][1].value = data[\slidersauto][3];
-			if (data[\slidersauto][2]==true, // //yes I know, I know...
-				{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
+			sliders[3][0].value = ~gapswing;
+			sliders[3][1].value = data[\slidersauto][3].asInt;
+			if (data[\slidersauto][3]==true,
+				{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
 
 			~amp = data[\amp];
 			ampBut.value = ~amp;
@@ -889,8 +912,8 @@ s.doWhenBooted({
 			["data buffers", data[\buffers]].postln;
 			planksMenus.do({arg plank, i;
 				try {
-					plank[0].valueAction = data[\buffers][i][1];//tx button
-					plank[1].valueAction = data[\buffers][i][2];//er button
+					plank[0].valueAction = data[\buffers][i][1].asInt;//tx button
+					plank[1].valueAction = data[\buffers][i][2].asInt;//er button
 					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);// pulldown menu
 				} {|error| [\catch, error].postln };
 			});
@@ -940,6 +963,8 @@ s.doWhenBooted({
 				[ buffers[7][0].path, buffers[7][1], buffers[7][2] ],
 			]);
 			data.writeArchive(presetspath++filename);
+
+			//data.postln;
 
 			newpreset.string = ""; //clean field
 		});
