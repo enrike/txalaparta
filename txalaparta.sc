@@ -130,9 +130,9 @@ s.doWhenBooted({
 	("sndpath is" + sndpath).postln;
 	("available samples are" + samples).postln;
 
-	buffers = [[nil, true, true], [nil, false, false], [nil, false, false], [nil, false, false],[nil, false, false], [nil, false, false], [nil, false, false], [nil, false, false]]; // [Buffer, enabledtxakun, enablederrena]
-	//buffers = Array.fill(8, [nil,false]);
-	//buffers[0][1] = true;
+	//buffers = [[nil, true, true], [nil, false, false], [nil, false, false], [nil, false, false],[nil, false, false], [nil, false, false], [nil, false, false], [nil, false, false]]; // [Buffer, enabledtxakun, enablederrena]
+	buffers = Array.fill(8, {[nil,false, false]});
+	buffers[0][1] = true; //enable the first one
 	// FIRST IS ENABLED!
 
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
@@ -142,7 +142,7 @@ s.doWhenBooted({
 	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
-	planksMenus = Array.fill(buffers.size, [nil,nil,nil]);// [tx button, err button, pulldownmenu] txakun and errena separated enabled
+	planksMenus = Array.fill(buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
 	drawingSet = Array.fill(4, {[0,false]}); // delay time from pulse and txakun or not?
@@ -195,7 +195,7 @@ s.doWhenBooted({
 	*/
 	dohits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
 
-		var firstdefer=nil, drawingSetB = Array.fill(8, [0, false]), flagindex=1; // buffer
+		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false]}), flagindex=1; // buffer
 
 		// txakun true 1 -> 1 // errena false 0 -> 2
 		if (txakun, {flagindex=1},{flagindex=2});
@@ -407,7 +407,7 @@ s.doWhenBooted({
 
 			Pen.perform(\stroke);
 
-			drawingSet = Array.fill(4, [0, false]);//clear
+			drawingSet = Array.fill(4, {[0, false]});//clear
 
 		};
 		window.refresh;
@@ -910,12 +910,30 @@ s.doWhenBooted({
 			~autopilotrange = data[\autopilotrange]; // no widget!
 
 			["data buffers", data[\buffers]].postln;
+			// planksMenus = [ [tx button, err button, pulldownmenu] ]
 			planksMenus.do({arg plank, i;
 				try {
-					plank[0].valueAction = data[\buffers][i][1].asInt;//tx button
-					plank[1].valueAction = data[\buffers][i][2].asInt;//er button
-					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);// pulldown menu
-				} {|error| [\catch, error].postln };
+					plank[0].valueAction = data[\buffers][i][1].asInt;
+				} {|error|
+					plank[0].valueAction = 0;
+					[\catch, error, i].postln;
+				};
+
+				try {
+					plank[1].valueAction = data[\buffers][i][2].asInt;// set er button
+				} {|error|
+					plank[1].valueAction = 0;
+					[\catch, error, i].postln;
+				};
+
+				try {
+					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
+				} {|error|
+					plank[2].valueAction = 0;
+					[\catch, error, i].postln;
+				};
+
+
 			});
 
 		});
