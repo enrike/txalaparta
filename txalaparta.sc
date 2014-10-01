@@ -98,7 +98,7 @@ s.doWhenBooted({
 	// GUI vars
 	var window, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
 	// GUI widgets
-	var sliders, beatbuttons, classicBut, emphasisBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
+	var sliders, beatbuttons, beatsliders, classicBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
 	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, scheduleDraw;
 
@@ -114,6 +114,7 @@ s.doWhenBooted({
 	~pulse = false; // should we keep stedy pulse in the tempo or not?
 	~freqs = [230, 231]; //
 	~emphasis = [true,false,false,false]; // which one is stronger. actualy just using first or last
+	~zerolimit = true; //allow 0 more than once or not?
 	~enabled = [true, true]; // switch on/off txakun and errena
 	~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 	~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
@@ -139,6 +140,7 @@ s.doWhenBooted({
 	presets = (presetspath++"*").pathMatch;
 
 	beatbuttons = Array.fill(5, {nil});
+	beatsliders = Array.fill(5, {nil});
 	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
@@ -297,13 +299,20 @@ s.doWhenBooted({
 				"WARNING: no beats allowed".postln;
 				1.wait;
 			},{
-			// beats
-			if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
+				// beats
+				if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
 				{
+					//if (~zerolimit,{},{});
 					if (~classictxakun && txakun, // choose num of beats for this step
 						{ numbeats = 2 },
-						{ { numbeats == nil }.while( {numbeats = ~allowedbeats.wchoose(~beatchance)} ) } // avoid nil
+						{
+							{ numbeats == nil }.while({
+										numbeats = ~allowedbeats.wchoose(~beatchance)
+									})
+						} // avoid nil
 					);
+
+					//if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
 					// global to all hits in this step
 					localstep = ~gap/numbeats; // reduces step proportionally to hits to play
@@ -314,14 +323,14 @@ s.doWhenBooted({
 					outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
 					{output.string = outstr}.defer(localtemposwing);
 
+
 					if (~verbose>0, {["beat", stepcounter, txakun, numbeats].postln});
 					if (~verbose>0 && txakun.not, {"-- buelta --".postln}); // every other is a buelta
-			}); //end if beats
+				}); //end if beats
 
 			});
 
 			txakun = txakun.not;
-
 
 		}) // end inf loop
 	});
@@ -373,10 +382,10 @@ s.doWhenBooted({
 			dur = 120/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
 
-			Pen.translate(380, 375);
+			Pen.translate(565, 520);
 			Pen.color = Color.black;
 
-			Pen.addArc(0@0, 40, 0, 360);
+			Pen.addArc(0@0, 80, 0, 360);
 
 			// rot = rot + (dur/2pi);
 			// Pen.rotate( d );
@@ -388,18 +397,29 @@ s.doWhenBooted({
 				Pen.rotate( (((drawingSet[0][0]*dpt)))*(pi/180) );
 			});
 
-			Pen.line(0@45.neg, 0@45); //vertical line
+			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
 			drawingSet.do({arg data; // --> [msecs, txakunflag]
 				var offset;
 				if (data[0]>0, { // only the ones with a valid value
 					//["drawing data was", data].postln;
-					if (data[1], {offset = 270}, {offset = 90}); // txakun up, errena down
+					if (data[1],
+						{
+							offset = 270;
+							Pen.color = Color.red;
+						},
+						{
+							offset = 90;
+							Pen.color = Color.blue;
+						}
+					); // txakun up, errena down
+
 					Pen.use{
 						Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-						Pen.addArc((40)@(0), 5, 0, 360); // circles representing beats
-						Pen.stroke;
+						Pen.addArc((80)@(0), 10, 0, 360); // circles representing beats
+						//Pen.stroke;
+						Pen.perform(\fill);
 					};
 				});
 			});
@@ -411,7 +431,7 @@ s.doWhenBooted({
 
 		};
 		window.refresh;
-
+/*
 		clock = UserView(window, Rect(380-45, 375-45, 90, 90));
 			//clock.background = Color.black;
 			clock.animate = true;
@@ -420,7 +440,7 @@ s.doWhenBooted({
 			rot = rot + 2pi/(120/~tempo);
 			    Pen.rotate( rot );
 				Pen.line(0@0, 0@45.neg); //rotating line
-			};
+			};*/
 
 		/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
 		//[char, keycode].postln;
@@ -449,7 +469,7 @@ s.doWhenBooted({
 		sliders[0][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
-			["autopilot", Color.black, Color.red],
+			["autopilot", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if (butt.value.asBoolean,
@@ -473,7 +493,7 @@ s.doWhenBooted({
 		sliders[1][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
-			["autopilot", Color.black, Color.red],
+			["autopilot", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if (butt.value.asBoolean,
@@ -498,7 +518,7 @@ s.doWhenBooted({
 		sliders[2][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
-			["autopilot", Color.black, Color.red],
+			["autopilot", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if (butt.value.asBoolean,
@@ -522,7 +542,7 @@ s.doWhenBooted({
 		sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))
 		.states_([
 			["autopilot", Color.white, Color.black],
-			["autopilot", Color.black, Color.red],
+			["autopilot", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if (butt.value.asBoolean,
@@ -571,7 +591,7 @@ s.doWhenBooted({
 		pulseBut = Button(window, Rect(xloc,yloc,100,25))
 		.states_([
 			["maintain pulse", Color.white, Color.black],
-			["maintain pulse", Color.black, Color.red],
+			["maintain pulse", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			~pulse = butt.value.asBoolean;
@@ -581,7 +601,7 @@ s.doWhenBooted({
 		emphasisBut = Button(window, Rect(xloc+100,yloc,100,25))
 		.states_([
 			["last emphasis", Color.white, Color.black],
-			["last emphasis", Color.black, Color.red],
+			["last emphasis", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			~emphasis = [butt.value.asBoolean.not, butt.value.asBoolean];
@@ -589,11 +609,116 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 
+		// ZAHARRA MODE
+		Button(window, Rect(xloc+100,yloc+25,100,25))
+		.states_([
+			["go zaharra", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			~classictxakun = true; //butt.value.asBoolean.not;
+			beatbuttons.do({arg but, ind;
+				if ( but != nil, {
+					if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
+					classicBut.valueAction = 1;
+					emphasisBut.valueAction = 1;
+					pulseBut.valueAction = 0
+				});
+			});
+		})
+		.valueAction_(1);
+
+
+
+		// BEATS
+		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
+		StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
+
+		// 0
+		beatbuttons[0] = Button(window, Rect(beatsxloc,yloc,20,25))
+		.states_([
+			["0", Color.white, Color.black],
+			["0", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
+		});
+		beatbuttons[0].valueAction = 1;
+
+		beatsliders[0] = Slider(window, Rect(beatsxloc+25,yloc,75,25))
+		.action_({
+
+        }).orientation = \horizontal;
+
+		// 1
+		beatbuttons[1] = Button(window, Rect(beatsxloc,yloc+25,20,25))
+		.states_([
+			["1", Color.white, Color.black],
+			["1", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
+		});
+		beatbuttons[1].valueAction = 1;
+
+		beatsliders[1] = Slider(window, Rect(beatsxloc+25,yloc+25,75,25))
+		.action_({
+
+        }).orientation = \horizontal;
+
+		// 2
+		beatbuttons[2] = Button(window, Rect(beatsxloc,yloc+50,20,25))
+		.states_([
+			["2", Color.white, Color.black],
+			["2", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if (butt.value.asBoolean, {~allowedbeats[2]=2},{~allowedbeats[2]=nil});
+		});
+		beatbuttons[2].valueAction = 1;
+
+		beatsliders[2] = Slider(window, Rect(beatsxloc+25,yloc+50,75,25))
+		.action_({
+
+        }).orientation = \horizontal;
+
+		// 3
+		beatbuttons[3] = Button(window, Rect(beatsxloc,yloc+75,20,25))
+		.states_([
+			["3", Color.white, Color.black],
+			["3", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
+		});
+		beatbuttons[3].valueAction = 0;
+
+		beatsliders[3] = Slider(window, Rect(beatsxloc+25,yloc+75,75,25))
+		.action_({
+
+        }).orientation = \horizontal;
+
+		// 4
+		beatbuttons[4] =  Button(window, Rect(beatsxloc,yloc+100,20,25))
+		.states_([
+			["4", Color.white, Color.black],
+			["4", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
+		});
+		beatbuttons[4].valueAction = 0;
+
+		beatsliders[4] = Slider(window, Rect(beatsxloc+25,yloc+100,75,25))
+		.action_({
+
+        }).orientation = \horizontal;
+
+
 		// CLASSIC TXAKUN
-		classicBut = Button(window, Rect(beatsxloc,yloc+25,100,25))
+		classicBut = Button(window, Rect(beatsxloc,yloc+125,100,25))
 		.states_([
 			["classic txakun", Color.white, Color.black],
-			["classic txakun", Color.black, Color.red],
+			["classic txakun", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			~classictxakun = butt.value.asBoolean;
@@ -601,65 +726,23 @@ s.doWhenBooted({
 		classicBut.valueAction = 1;
 
 
-		// BEATS
-		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Allowed beats";
 
-		beatbuttons[0] = Button(window, Rect(beatsxloc,yloc,20,25))
+		// Allow repeat 0 more than once
+		zerolimitBut = Button(window, Rect(beatsxloc,yloc+150,100,25))
 		.states_([
-			["0", Color.white, Color.black],
-			["0", Color.black, Color.red],
+			["limit 0", Color.white, Color.black],
+			["limit 0", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
-		});
-		beatbuttons[0].valueAction = 1;
-
-		beatbuttons[1] = Button(window, Rect(beatsxloc+20,yloc,20,25))
-		.states_([
-			["1", Color.white, Color.black],
-			["1", Color.black, Color.red],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
-		});
-		beatbuttons[1].valueAction = 1;
-
-		beatbuttons[2] = Button(window, Rect(beatsxloc+40,yloc,20,25))
-		.states_([
-			["2", Color.white, Color.black],
-			["2", Color.black, Color.red],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[2]=2},{~allowedbeats[2]=nil});
-		});
-		beatbuttons[2].valueAction = 1;
-		//.action_({ arg butt;}); // NO ACTION. THIS IS ALWAYS ON
-
-		beatbuttons[3] = Button(window, Rect(beatsxloc+60,yloc,20,25))
-		.states_([
-			["3", Color.white, Color.black],
-			["3", Color.black, Color.red],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
-		});
-		beatbuttons[3].valueAction = 0;
-
-		beatbuttons[4] =  Button(window, Rect(beatsxloc+80,yloc,20,25))
-		.states_([
-			["4", Color.white, Color.black],
-			["4", Color.black, Color.red],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
-		});
-		beatbuttons[4].valueAction = 0;
+			~zerolimit = butt.value.asBoolean;
+		})
+		.valueAction_(1);
 
 		// MODE
 		Button(window, Rect(xloc,yloc+25,100,25))
 		.states_([
 			["old pulse", Color.white, Color.black],
-			["old pulse", Color.black, Color.red],
+			["old pulse", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			~mode = butt.value.asBoolean;
@@ -671,7 +754,7 @@ s.doWhenBooted({
 		playBut = Button(window, Rect(xloc,yloc+50,200,25))
 		.states_([
 			["play/stop", Color.white, Color.black],
-			["play/stop", Color.black, Color.red],
+			["play/stop", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, { SystemClock.play(playF)}, {SystemClock.clear});
@@ -712,23 +795,7 @@ s.doWhenBooted({
 		})
 		.valueAction_(0);
 
-		// ZAHARRA MODE
-		Button(window, Rect(beatsxloc,yloc+65,100,25))
-		.states_([
-			["go zaharra", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			~classictxakun = true; //butt.value.asBoolean.not;
-			beatbuttons.do({arg but, ind;
-				if ( but != nil, {
-					if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
-					classicBut.valueAction = 1;
-					emphasisBut.valueAction = 1;
-					pulseBut.valueAction = 0
-				});
-			});
-		})
-		.valueAction_(1);
+
 	};
 
 
@@ -761,7 +828,7 @@ s.doWhenBooted({
 			planksMenus[index][1] = Button(window, Rect(xloc+22,yloc+yp,20,20))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
-				[(index+1).asString, Color.black, Color.red],
+				[(index+1).asString, Color.black, Color.blue],
 			])
 			.action_({ arg butt;
 				buffers[index][2] = butt.value.asBoolean;// THIS SHOULD GO TO ANOTHER ONE
@@ -799,18 +866,14 @@ s.doWhenBooted({
 
 
 	// MAKILAS
-	doMakilas = { arg xloc=300, yloc=190, gap=45;
+	doMakilas = { arg xloc=300, yloc=190, gap=35;
 		var ind = 0, thegap = 0;
 
-		output = StaticText(window, Rect(xloc, yloc, 200, 20));
-		yloc = yloc + 18;
-
 		makilasliders.do({arg list;
-			//thegap.postln;
 			list.do({arg item, i;
-				list[i] = Slider(window, Rect(xloc+thegap+(21*ind), yloc, 20, 150));
+				list[i] = Slider(window, Rect(xloc+thegap+(61*ind), yloc, 60, 350));
 				list[i].orientation = \vertical;
-				list[i].thumbSize = 80;
+				list[i].thumbSize = 240;
 				list[i].value = 1;
 				ind = ind + 1;
 			});
@@ -818,7 +881,7 @@ s.doWhenBooted({
 		});
 
 		// TXAKUN
-		enabledButs[0] = Button(window, Rect(xloc,yloc+150,50,25))
+		enabledButs[0] = Button(window, Rect(xloc,yloc+350,120,50))
 		.states_([
 			["txakun", Color.white, Color.black],
 			["txakun", Color.black, Color.red],
@@ -829,15 +892,18 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 		// ERRENA
-		enabledButs[1] = Button(window, Rect(xloc+50,yloc+150,50,25))
+		enabledButs[1] = Button(window, Rect(xloc+130,yloc+350,120,50))
 		.states_([
 			["errena", Color.white, Color.black],
-			["errena", Color.black, Color.red],
+			["errena", Color.black, Color.blue],
 		])
 		.action_({ arg butt;
 			~enabled[1] = butt.value.asBoolean;
 		})
 		.valueAction_(1);
+
+		output = StaticText(window, Rect(xloc, yloc+400, 200, 20));
+
 	};
 
 
@@ -909,30 +975,27 @@ s.doWhenBooted({
 			// txakun-errena buttons
 			~autopilotrange = data[\autopilotrange]; // no widget!
 
-			["data buffers", data[\buffers]].postln;
-			// planksMenus = [ [tx button, err button, pulldownmenu] ]
 			planksMenus.do({arg plank, i;
 				try {
 					plank[0].valueAction = data[\buffers][i][1].asInt;
 				} {|error|
 					plank[0].valueAction = 0;
-					[\catch, error, i].postln;
+					["catch plank0 error", error, i].postln;
 				};
 
 				try {
 					plank[1].valueAction = data[\buffers][i][2].asInt;// set er button
 				} {|error|
 					plank[1].valueAction = 0;
-					[\catch, error, i].postln;
+					["catch plank1 error", error, i].postln;
 				};
 
 				try {
 					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
 				} {|error|
 					plank[2].valueAction = 0;
-					[\catch, error, i].postln;
+					["catch plank2 error", error, i].postln;
 				};
-
 
 			});
 
@@ -992,12 +1055,12 @@ s.doWhenBooted({
 
 	//s.waitForBoot({
 	// Now position all different groups of GUI elements
-	doWindow.value(435, 520, "Txalaparta. www.ixi-audio.net");
+	doWindow.value(700, 620, "Txalaparta. www.ixi-audio.net");
 	doTimeControls.value(2, 5);
-	doMakilas.value(330, 130, 16);
+	doMakilas.value(440, 5, 8);
 	doPlanks.value(10, 150);
 	doButtons.value(10, 350);
-	doPresets.value(10, 470);
+	doPresets.value(10, 490);
 
 
 	if (~verbose>0, {currentEnvironment.postln});
