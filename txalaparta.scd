@@ -116,7 +116,8 @@ s.doWhenBooted({
 	~emphasis = [true,false,false,false]; // which one is stronger. actualy just using first or last
 	~zerolimit = true; //allow 0 more than once or not?
 	~enabled = [true, true]; // switch on/off txakun and errena
-	~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
+	//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
+	~allowedbeats = [[0, 1, 2, nil, nil], [0, 1, 2, nil, nil]];
 	~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
 	~autopilotrange = [5, 10]; // for instance
 	~mode = true; // old style hit position calulation?
@@ -139,7 +140,7 @@ s.doWhenBooted({
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 	presets = (presetspath++"*").pathMatch;
 
-	beatbuttons = Array.fill(5, {nil});
+	beatbuttons = [Array.fill(5, {nil}), Array.fill(5, {nil})];
 	beatsliders = Array.fill(5, {nil});
 	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
@@ -271,8 +272,8 @@ s.doWhenBooted({
 		nextautopilot = 0;
 
 		inf.do({ arg stepcounter; // txakun > errena cycle
-			var numbeats, outstr; // numbeats needs to be here to be nill each time
-
+			var numbeats, outstr, beats; // numbeats needs to be here to be nill each time
+			beats =	~allowedbeats[txakun.not.asInt];
 
 			if (~verbose>1, {("is txakun?" + txakun).postln});
 
@@ -295,7 +296,7 @@ s.doWhenBooted({
 			);
 
 			// if none is allowed or if only 0 is allowed
-			if (~allowedbeats.copyRange(1,~allowedbeats.size).every(_.isNil), {
+			if (beats.copyRange(1,beats.size).every(_.isNil), {
 				"WARNING: no beats allowed".postln;
 				1.wait;
 			},{
@@ -307,7 +308,7 @@ s.doWhenBooted({
 						{ numbeats = 2 },
 						{
 							{ numbeats == nil }.while({
-										numbeats = ~allowedbeats.wchoose(~beatchance)
+										numbeats = beats.wchoose(~beatchance)
 									})
 						} // avoid nil
 					);
@@ -616,7 +617,8 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			~classictxakun = true; //butt.value.asBoolean.not;
-			beatbuttons.do({arg but, ind;
+			beatbuttons.do({arg butset;
+				butset.do({arg but, ind;
 				if ( but != nil, {
 					if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
 					classicBut.valueAction = 1;
@@ -624,6 +626,16 @@ s.doWhenBooted({
 					pulseBut.valueAction = 0
 				});
 			});
+
+			});
+/*			beatbuttons.do({arg but, ind;
+				if ( but != nil, {
+					if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
+					classicBut.valueAction = 1;
+					emphasisBut.valueAction = 1;
+					pulseBut.valueAction = 0
+				});
+			});*/
 		})
 		.valueAction_(1);
 
@@ -631,87 +643,36 @@ s.doWhenBooted({
 
 		// BEATS
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
-		StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
+		//StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
 
-		// 0
-		beatbuttons[0] = Button(window, Rect(beatsxloc,yloc,20,25))
-		.states_([
-			["0", Color.white, Color.black],
-			["0", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[0]=0},{~allowedbeats[0]=nil});
+		~allowedbeats.postln;
+
+		~allowedbeats[0].size.do({arg subindex;
+			2.do({arg index;
+				var thecolor;
+				if (index%2==0, {thecolor=Color.red}, {thecolor=Color.blue});
+				beatbuttons.postln;
+				beatbuttons[index][subindex] = Button(window, Rect(beatsxloc+(20*index),yloc+(25*subindex),20,25))
+				.states_([
+					[subindex.asString, Color.white, Color.black],
+					[subindex.asString, Color.black, thecolor],
+				])
+				.action_({ arg butt;
+					if (butt.value.asBoolean,
+						{~allowedbeats[index][subindex] = subindex},
+						{~allowedbeats[index][subindex] = nil});
+				});
+				beatbuttons[index][subindex].valueAction = 1;
+
+
+			});
+
+/*			beatsliders[subindex] = Slider(window,
+				Rect(beatsxloc+40,yloc+(25*subindex),75,25))
+			.action_({
+
+			}).orientation = \horizontal;*/
 		});
-		beatbuttons[0].valueAction = 1;
-
-		beatsliders[0] = Slider(window, Rect(beatsxloc+25,yloc,75,25))
-		.action_({
-
-        }).orientation = \horizontal;
-
-		// 1
-		beatbuttons[1] = Button(window, Rect(beatsxloc,yloc+25,20,25))
-		.states_([
-			["1", Color.white, Color.black],
-			["1", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[1]=1},{~allowedbeats[1]=nil});
-		});
-		beatbuttons[1].valueAction = 1;
-
-		beatsliders[1] = Slider(window, Rect(beatsxloc+25,yloc+25,75,25))
-		.action_({
-
-        }).orientation = \horizontal;
-
-		// 2
-		beatbuttons[2] = Button(window, Rect(beatsxloc,yloc+50,20,25))
-		.states_([
-			["2", Color.white, Color.black],
-			["2", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[2]=2},{~allowedbeats[2]=nil});
-		});
-		beatbuttons[2].valueAction = 1;
-
-		beatsliders[2] = Slider(window, Rect(beatsxloc+25,yloc+50,75,25))
-		.action_({
-
-        }).orientation = \horizontal;
-
-		// 3
-		beatbuttons[3] = Button(window, Rect(beatsxloc,yloc+75,20,25))
-		.states_([
-			["3", Color.white, Color.black],
-			["3", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[3]=3},{~allowedbeats[3]=nil});
-		});
-		beatbuttons[3].valueAction = 0;
-
-		beatsliders[3] = Slider(window, Rect(beatsxloc+25,yloc+75,75,25))
-		.action_({
-
-        }).orientation = \horizontal;
-
-		// 4
-		beatbuttons[4] =  Button(window, Rect(beatsxloc,yloc+100,20,25))
-		.states_([
-			["4", Color.white, Color.black],
-			["4", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			if (butt.value.asBoolean, {~allowedbeats[4]=4},{~allowedbeats[4]=nil});
-		});
-		beatbuttons[4].valueAction = 0;
-
-		beatsliders[4] = Slider(window, Rect(beatsxloc+25,yloc+100,75,25))
-		.action_({
-
-        }).orientation = \horizontal;
 
 
 		// CLASSIC TXAKUN
@@ -751,7 +712,7 @@ s.doWhenBooted({
 
 
 		// PLAY
-		playBut = Button(window, Rect(xloc,yloc+50,200,25))
+		playBut = Button(window, Rect(xloc,yloc+200,200,50))
 		.states_([
 			["play/stop", Color.white, Color.black],
 			["play/stop", Color.black, Color.green],
