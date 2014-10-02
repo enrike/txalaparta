@@ -274,11 +274,13 @@ s.doWhenBooted({
 		inf.do({ arg stepcounter; // txakun > errena cycle
 			var numbeats, outstr, beats; // numbeats needs to be here to be nill each time
 			beats =	~allowedbeats[txakun.not.asInt];
+			//["beats",beats, txakun.not.asInt, ~allowedbeats].postln;
 
 			if (~verbose>1, {("is txakun?" + txakun).postln});
 
 			// autopilot
-			if (( istheresomething.value(slidersauto) && (stepcounter >= nextautopilot)) , {
+			if (( istheresomething.value(slidersauto) &&
+				(stepcounter >= nextautopilot)) , {
 				var sl;
 				//slidersauto.postln;
 				{ sl == nil }.while( {sl = slidersauto.choose} ) ;
@@ -645,13 +647,13 @@ s.doWhenBooted({
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
 		//StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
 
-		~allowedbeats.postln;
+		//~allowedbeats.postln;
 
 		~allowedbeats[0].size.do({arg subindex;
 			2.do({arg index;
 				var thecolor;
 				if (index%2==0, {thecolor=Color.red}, {thecolor=Color.blue});
-				beatbuttons.postln;
+				//beatbuttons.postln;
 				beatbuttons[index][subindex] = Button(window, Rect(beatsxloc+(20*index),yloc+(25*subindex),20,25))
 				.states_([
 					[subindex.asString, Color.white, Color.black],
@@ -662,9 +664,7 @@ s.doWhenBooted({
 						{~allowedbeats[index][subindex] = subindex},
 						{~allowedbeats[index][subindex] = nil});
 				});
-				beatbuttons[index][subindex].valueAction = 1;
-
-
+				beatbuttons[index][subindex].valueAction = 0;
 			});
 
 /*			beatsliders[subindex] = Slider(window,
@@ -674,6 +674,8 @@ s.doWhenBooted({
 			}).orientation = \horizontal;*/
 		});
 
+		beatbuttons[0][2].valueAction = 1; // activate by default
+		beatbuttons[1][2].valueAction = 1;
 
 		// CLASSIC TXAKUN
 		classicBut = Button(window, Rect(beatsxloc,yloc+125,100,25))
@@ -917,9 +919,27 @@ s.doWhenBooted({
 			ampBut.value = ~amp;
 
 			~allowedbeats = data[\allowedbeats];
-			beatbuttons.do({arg but, i;
-				if (~allowedbeats[i]!=nil, {but.value = 1}, {but.value = 0});
+			~allowedbeats.postln;
+			if(~allowedbeats.size>2, // backwards compatible with old presets
+				{~allowedbeats=[~allowedbeats, [nil,nil,nil,nil,nil]]
 			});
+~allowedbeats.postln;
+			try { //bckwads compatible again
+				beatbuttons.size.do({arg index;
+					beatbuttons[index].do({ arg subindex;
+						if (~allowedbeats[index][subindex]!=nil,
+							{beatbuttons[index][subindex].value = 1},
+							{beatbuttons[index][subindex].value = 0}
+						);
+					});
+				});
+			} {|error|
+				["setting beat buttons error", error, ~allowedbeats].postln;
+				beatbuttons[1][2].value = 1; // emergency activate this one
+			};
+/*			beatbuttons.do({arg but, i;
+				if (~allowedbeats[i]!=nil, {but.value = 1}, {but.value = 0});
+			});*/
 
 			~pulse = data[\pulse];
 			pulseBut.value = ~pulse;
