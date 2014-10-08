@@ -1,4 +1,5 @@
 
+
 TxalaScore {
 	
 	var win, view, events, selected, timeoffset, image, record, recordtask;
