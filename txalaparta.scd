@@ -93,10 +93,10 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var playF, makilaF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
+	var playF, makilaF, txalascoreF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
 
 	// GUI vars
-	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets;
+	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
 	var sliders, beatbuttons, beatsliders, classicBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
@@ -127,7 +127,7 @@ s.doWhenBooted({
 	// utility
 	~verbose = 1;
 
-	scoreArray = Dictionary.new; // stores all events as a score
+	scoreArray = [];//Dictionary.new; // stores all events as a score
 	//scoreArray.put(\foo, "bar");
 
 	sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
@@ -231,12 +231,10 @@ s.doWhenBooted({
 
 					hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
 					hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-					if( ~mode, // before the bar
-						{
+					if( ~mode, { // before the bar
 							hittime = localtemposwing - (hitswing * index);
 							makilaindex = numbeats-index-1;//reverse
-						},
-						{ // aftr the bar
+						},{ // aftr the bar
 							hittime = localtemposwing + (hitswing * index);
 							makilaindex = index;
 						}
@@ -244,25 +242,17 @@ s.doWhenBooted({
 
 					if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later
 					scoreArray = scoreArray.add(
-						().add(\time -> hittime)
+						().add(\time -> (Main.elapsedTime - startTime + hittime)) // now - starttime + hittime
 						.add(\amp -> hitamp)
-						.add(\player -> (flagindex-1)) //0 or 1
-						.add(\plank -> (plank[0].path)
-					));
-					/*scoreArray.put( // store the event
-						step.asString, //number of this cycle
-						Dictionary[
-							\time->hittime,
-							\amp->hitamp,
-							\plank->plank[0].path,
-						]
-					);*/
+						.add(\player -> flagindex) //1 or 2
+						.add(\plank -> 0) //plank[0].path) // just testing
+					);
 
 					{// deferred function
 						Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
 						makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
 						if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].path])});
-						if (~midiout, {
+						if (~midiout, { // to do. send MIDI note on and schedule off
 							//midioutdev.noteOn(16, 60, 60);
 							//mimioutdev.noteOff(16, 61, 60);
 
@@ -366,6 +356,15 @@ s.doWhenBooted({
 
 
 	// GUI /////////////////////////////////////////
+
+	// txalascore animation
+
+	txalascoreF = Routine({
+		inf.do({ //arg count;
+			{tscore.update(scoreArray, Main.elapsedTime - startTime)}.defer;
+			0.05.wait;
+		});
+	});
 
 
 	// MAKILA PLAYING ANIMATION //
@@ -992,12 +991,12 @@ s.doWhenBooted({
 
 
 	doTimeline = { arg xloc=0, yloc=400, width=600, height=100;
-		var view, xstep=0, drawspeed=1, tscore;
+		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height));
-			// schedule this
-			//{tscore.update(scoreArray, Main.elapsedTime - startTime)}.defer;
+
+			AppClock.play(txalascoreF);
 
 			timelinewin.onClose = {timelinewin=nil}; // only one instance please
 			timelinewin.front;
