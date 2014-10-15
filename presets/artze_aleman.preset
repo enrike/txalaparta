@@ -1,22 +1,25 @@
 var o, p;
 o = [
-	Dictionary.prNew,  Array.prNew(64),  Array.prNew(5),  Array.prNew(2),  
-	Array.prNew(2),  Array.prNew(4),  Array.prNew(4),  Array.prNew(2),  
-	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra01.wav",  Array.prNew(2),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra02.wav",  Array.prNew(2),  
-	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra04.wav",  Array.prNew(2),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra05.wav",  Array.prNew(2)
+	Dictionary.prNew,  Array.prNew(64),  Array.prNew(2),  Array.prNew(5),  
+	Array.prNew(5),  Array.prNew(2),  Array.prNew(2),  Array.prNew(4),  
+	Array.prNew(8),  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra01.wav",  Array.prNew(3),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra02.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra04.wav",  Array.prNew(3),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra05.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte1.wav",  Array.prNew(3),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte1.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte1.wav",  Array.prNew(3),  
+	"/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte1.wav",  Array.prNew(2)
 ];
 p = [
 	// Dictionary
 	0, [ array: o[1],  size: 13 ],  
 	// Array
-	1, [ 'allowedbeats',  o[2],  'emphasis',  o[3],  
-		'autopilotrange',  o[4],  nil,  nil,  
+	1, [ 'allowedbeats',  o[2],  'emphasis',  o[5],  
+		'autopilotrange',  o[6],  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		'amp',  0.500000,  'classictxakun',  false,  
-		'slidersauto',  o[5],  nil,  nil,  
+		'slidersauto',  o[7],  nil,  nil,  
 		'gap',  0.220000,  'gapswing',  0.417000,  
-		'buffers',  o[6],  nil,  nil,  
-		nil,  nil,  'enabled',  o[15],  
+		'buffers',  o[8],  nil,  nil,  
+		nil,  nil,  'enabled',  o[25],  
 		'swing',  0.140000,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
@@ -26,25 +29,39 @@ p = [
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ],  
 	// Array
-	2, [ 0,  1,  2,  3,  
+	2, [ o[3],  o[4] ],  
+	// Array
+	3, [ 0,  1,  2,  3,  
 		4 ],  
 	// Array
-	3, [ false,  true ],  
+	4, [ 0,  1,  nil,  nil,  
+		nil ],  
 	// Array
-	4, [ 5,  10 ],  
+	5, [ false,  true ],  
 	// Array
-	5, [ false,  false,  false,  false ],  
+	6, [ 5,  10 ],  
 	// Array
-	6, [ o[7],  o[9],  o[11],  o[13] ],  
+	7, [ false,  false,  false,  false ],  
 	// Array
-	7, [ o[8],  true ],  
+	8, [ o[9],  o[11],  o[13],  o[15],  
+		o[17],  o[19],  o[21],  o[23] ],  
 	// Array
-	9, [ o[10],  true ],  
+	9, [ o[10],  true,  true ],  
 	// Array
-	11, [ o[12],  true ],  
+	11, [ o[12],  true,  true ],  
 	// Array
-	13, [ o[14],  false ],  
+	13, [ o[14],  true,  true ],  
 	// Array
-	15, [ true,  true ]
+	15, [ o[16],  false,  false ],  
+	// Array
+	17, [ o[18],  false,  false ],  
+	// Array
+	19, [ o[20],  false,  false ],  
+	// Array
+	21, [ o[22],  false,  false ],  
+	// Array
+	23, [ o[24],  false,  false ],  
+	// Array
+	25, [ true,  true ]
 ];
 prUnarchive(o,p);
