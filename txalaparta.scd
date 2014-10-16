@@ -135,10 +135,8 @@ s.doWhenBooted({
 	("sndpath is" + sndpath).postln;
 	("available samples are" + samples).postln;
 
-	//buffers = [[nil, true, true], [nil, false, false], [nil, false, false], [nil, false, false],[nil, false, false], [nil, false, false], [nil, false, false], [nil, false, false]]; // [Buffer, enabledtxakun, enablederrena]
-	buffers = Array.fill(8, {[nil,false, false]});
-	buffers[0][1] = true; //enable the first one
-	// FIRST IS ENABLED!
+	buffers = Array.fill(8, {[nil,false, false]});// [Buffer, enabledtxakun, enablederrena]
+	buffers[0][1] = true; // but enable the first one
 
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 	presets = (presetspath++"*").pathMatch;
@@ -245,7 +243,7 @@ s.doWhenBooted({
 						().add(\time -> (Main.elapsedTime - startTime + hittime)) // now - starttime + hittime
 						.add(\amp -> hitamp)
 						.add(\player -> flagindex) //1 or 2
-						.add(\plank -> 0) //plank[0].path) // just testing
+						.add(\plank -> 1) //plank[0].path) // 1 just for just testing
 					);
 
 					{// deferred function
@@ -991,10 +989,15 @@ s.doWhenBooted({
 
 
 	doTimeline = { arg xloc=0, yloc=400, width=600, height=100;
-		var view, xstep=0, drawspeed=1;
+		var view, xstep=0, drawspeed=1, numactiveplanks=0;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
-			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height));
+
+			buffers.do({arg arr;
+				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
+			});
+
+			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height), numactiveplanks);
 
 			AppClock.play(txalascoreF);
 
