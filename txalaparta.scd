@@ -113,7 +113,7 @@ s.doWhenBooted({
 	//~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
 	~pulse = false; // should we keep stedy pulse in the tempo or not?
 	~freqs = [230, 231]; //
-	~emphasis = [true,false,false,false]; // which one is stronger. actualy just using first or last
+	~lastemphasis = true; //[true,false,false,false]; // which one is stronger. actualy just using first or last
 	~zerolimit = true; //allow 0 more than once or not?
 	~enabled = [true, true]; // switch on/off txakun and errena
 	//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
@@ -149,7 +149,7 @@ s.doWhenBooted({
 	planksMenus = Array.fill(buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
-	drawingSet = Array.fill(4, {[0,false]}); // delay time from pulse and txakun or not?
+	drawingSet = Array.fill(4, {[0, false, 10]}); // delay time from pulse, txakun or not?, amplitude
 
 	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
 	//midioutdev = MIDIOut(0); // activate MIDI out device
@@ -204,9 +204,9 @@ s.doWhenBooted({
 
 	/* this schedules the FIRST hit on the bar. subsequent hits go after
 	*/
-	dohits = {arg step, txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
+	dohits = {arg step, txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing, emph;
 
-		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false]}), flagindex=1, outarray=Array.new;
+		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false, 10]}), flagindex=1, outarray=Array.new;
 
 		// txakun true 1 -> 1 // errena false 0 -> 2
 		if (txakun, {flagindex=1},{flagindex=2});
@@ -214,16 +214,29 @@ s.doWhenBooted({
 		// avoid when no sound is selected
 		if (buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
 			{
+				if(~mode, { // reverse in old mode
+					if(~lastemphasis,
+						{emph = 0},
+						{emph = 1+((numbeats-1).rand)}
+					);
+				},{
+					if(~lastemphasis,
+						{emph = numbeats-1},
+						{emph = (numbeats-1).rand}
+					);
+				});
+
 				numbeats.do({ arg index; // for each makila one hit
-					var hittime, hitfreq, hitswing, hitamp, makilaindex, plank=[nil, false, false];
+					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=[nil, false, false];
 					if (~amp > 0, { // emphasis on first or on last hit?
-						if ((numbeats == (index+1) && ~emphasis[1]) || (index == 0 && ~emphasis[0]),
-							{hitamp = localamp + 0.30},
-							{hitamp = localamp}
-						);
+						if (index == emph, {
+							hitamp = localamp + 0.50;
+						},{
+							hitamp = localamp + rrand(-0.1, 0.1) ;
+						});
 					});
 
-					{ plank[flagindex] == false }.while( { plank = buffers.choose });// avoid false,
+					{ plank[flagindex] == false }.while( { plank = buffers.choose });
 
 					outarray = outarray.add([2, "plank"+plank]);
 
@@ -260,8 +273,7 @@ s.doWhenBooted({
 
 						postOutput.value(outarray);
 					}.defer(hittime);
-
-					drawingSetB[index] = [hittime, txakun]; // store for drawing on window.refresh
+					drawingSetB[index] = [hittime, txakun, hitamp]; // store for drawing on window.refresh
 
 				}); // END NUMBEATS LOOP}
 
@@ -344,7 +356,6 @@ s.doWhenBooted({
 			});
 
 			txakun = txakun.not;
-
 		}) // end inf loop
 	});
 
@@ -442,7 +453,7 @@ s.doWhenBooted({
 
 					Pen.use{
 						Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-						Pen.addArc((80)@(0), 10, 0, 360); // circles representing beats
+						Pen.addArc((80)@(0), data[2]*12, 0, 360); // circles representing beats
 						//Pen.stroke;
 						Pen.perform(\fill);
 					};
@@ -452,7 +463,7 @@ s.doWhenBooted({
 
 			Pen.perform(\stroke);
 
-			drawingSet = Array.fill(4, {[0, false]});//clear
+			drawingSet = Array.fill(4, {[0, false, 10]});//clear
 
 		};
 		window.refresh;
@@ -706,7 +717,7 @@ s.doWhenBooted({
 			["last emphasis", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			~emphasis = [butt.value.asBoolean.not, butt.value.asBoolean];
+			~lastemphasis = butt.value.asBoolean;//[butt.value.asBoolean.not, false,false, butt.value.asBoolean];
 		})
 		.valueAction_(1);
 
@@ -743,6 +754,9 @@ s.doWhenBooted({
 
 
 
+
+
+
 		// BEATS
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
 		//StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
@@ -767,11 +781,12 @@ s.doWhenBooted({
 				beatbuttons[index][subindex].valueAction = 0;
 			});
 
-			/*			beatsliders[subindex] = Slider(window,
-			Rect(beatsxloc+40,yloc+(25*subindex),75,25))
+			beatsliders[subindex] = Slider(window,
+				Rect(beatsxloc+40,yloc+(25*subindex),75,25))
 			.action_({
 
-			}).orientation = \horizontal;*/
+			}).orientation = \horizontal;
+			beatsliders[subindex].valueAction = 1;
 		});
 
 		beatbuttons[0][2].valueAction = 1; // activate by default
@@ -788,19 +803,8 @@ s.doWhenBooted({
 		});
 		classicBut.valueAction = 1;*/
 
-
 		// Allow repeat 0 more than once
-		Button(window, Rect(beatsxloc,yloc+180,100,25))
-		.states_([
-			["show timeline", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			doTimeline.value();
-		});
-
-
-		// Allow repeat 0 more than once
-		zerolimitBut = Button(window, Rect(beatsxloc,yloc+150,100,25))
+		zerolimitBut = Button(window, Rect(beatsxloc,yloc+140,100,25))
 		.states_([
 			["limit 0", Color.white, Color.black],
 			["limit 0", Color.black, Color.green],
@@ -810,7 +814,16 @@ s.doWhenBooted({
 		})
 		.valueAction_(1);
 
-		//.valueAction_(1);
+
+		// txakascore timeline
+		Button(window, Rect(beatsxloc,yloc+170,100,25))
+		.states_([
+			["show timeline", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			doTimeline.value();
+		});
+
 
 		// MODE
 		Button(window, Rect(xloc,yloc+25,100,25))
@@ -842,6 +855,17 @@ s.doWhenBooted({
 		});
 		//.defaultKeyDownAction_(" ");
 		//playBut.defaultKeyDownAction = "";
+
+		// RANDOM MODE
+		Button(window, Rect(beatsxloc,yloc+200,100,25))
+		.states_([
+			["randomise", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			"TO DO: randomise all controls".postln;
+		})
+		.valueAction_(1);
+
 
 		// SERVER
 		Button(window, Rect(xloc,yloc+78,100,25))
@@ -988,7 +1012,7 @@ s.doWhenBooted({
 	};
 
 
-	doTimeline = { arg xloc=0, yloc=400, width=600, height=100;
+	doTimeline = { arg xloc=0, yloc=400, width=800, height=150;
 		var view, xstep=0, drawspeed=1, numactiveplanks=0;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
@@ -1003,6 +1027,7 @@ s.doWhenBooted({
 
 			timelinewin.onClose = {timelinewin=nil}; // only one instance please
 			timelinewin.front;
+			timelinewin.alwaysOnTop = true;
 		});
 	};
 
@@ -1079,8 +1104,8 @@ s.doWhenBooted({
 			~pulse = data[\pulse];
 			pulseBut.value = ~pulse;
 
-			~emphasis = data[\emphasis];
-			emphasisBut.value = ~emphasis;
+			~lastemphasis = data[\emphasis];
+			emphasisBut.value = ~lastemphasis;
 
 			/*			~classictxakun = data[\classictxakun];
 			classicBut.value = ~classictxakun;*/
@@ -1139,7 +1164,7 @@ s.doWhenBooted({
 			data.put(\amp, ~amp);
 			data.put(\allowedbeats, ~allowedbeats);
 			data.put(\pulse, ~pulse);
-			data.put(\emphasis, ~emphasis);
+			data.put(\emphasis, ~lastemphasis);
 			//data.put(\classictxakun, ~classictxakun);
 			data.put(\enabled, ~enabled);
 			data.put(\autopilotrange, ~autopilotrange);
