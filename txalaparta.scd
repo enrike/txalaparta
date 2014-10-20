@@ -100,7 +100,7 @@ s.doWhenBooted({
 	// GUI widgets
 	var sliders, beatbuttons, beatsliders, classicBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
-	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel;
+	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel, drawHitSet;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
@@ -127,8 +127,13 @@ s.doWhenBooted({
 	// utility
 	~verbose = 1;
 
-	scoreArray = [];//Dictionary.new; // stores all events as a score
-	//scoreArray.put(\foo, "bar");
+	scoreArray = []; //stores all events as a score
+/*	scoreArray = scoreArray.add( // just add an empty event
+		().add(\time -> 0)
+		.add(\amp -> 0)
+		.add(\player -> 1) //1 or 2
+		.add(\plank -> 1)
+	);*/
 
 	sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
 	samples = (sndpath++"*").pathMatch;
@@ -149,7 +154,8 @@ s.doWhenBooted({
 	planksMenus = Array.fill(buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
-	drawingSet = Array.fill(4, {[0, false, 10]}); // delay time from pulse, txakun or not?, amplitude
+	//drawingSet = Array.fill(8, {[0, false, 10]}); // delay time from pulse, txakun or not?, amplitude
+	drawingSet = [Array.fill(4, {[0, false, 10]}), Array.fill(4, {[0, false, 10]})]; //one buelta with 4 hits each part
 
 	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
 	//midioutdev = MIDIOut(0); // activate MIDI out device
@@ -190,7 +196,7 @@ s.doWhenBooted({
 	/* this is just to avoid the data being overwriten
 	*/
 	scheduleDraw = {arg data;
-		drawingSet = data;
+		drawingSet[1] = data;
 		window.refresh;
 	};
 
@@ -230,9 +236,9 @@ s.doWhenBooted({
 					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=[nil, false, false];
 					if (~amp > 0, { // emphasis on first or on last hit?
 						if (index == emph, {
-							hitamp = localamp + 0.50;
+							hitamp = localamp + (localamp/5);
 						},{
-							hitamp = localamp + rrand(-0.1, 0.1) ;
+							hitamp = localamp + rrand(-0.06, 0.06) ;
 						});
 					});
 
@@ -253,7 +259,7 @@ s.doWhenBooted({
 
 					if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later
 					scoreArray = scoreArray.add(
-						().add(\time -> (Main.elapsedTime - startTime + hittime)) // now - starttime + hittime
+						().add(\time -> (Main.elapsedTime - startTime + hittime))
 						.add(\amp -> hitamp)
 						.add(\player -> flagindex) //1 or 2
 						.add(\plank -> 1) //plank[0].path) // 1 just for just testing
@@ -414,59 +420,30 @@ s.doWhenBooted({
 		window.front;
 
 		window.drawFunc = { // drawing the visualization of circles
-			var dur, dpt; // duration of the circle and degrees per time unit
+			var dur, dpt, rot; // duration of the circle and degrees per time unit
 			dur = 120/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
+			rot = (((drawingSet[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
 
 			Pen.translate(565, 520);
 			Pen.color = Color.black;
-
 			Pen.addArc(0@0, 80, 0, 360);
 
-			// rot = rot + (dur/2pi);
-			// Pen.rotate( d );
-			// Pen.line(0@0, 0@45.neg); //rotating line
-			// Pen.rotate( rot.neg );
-			// Pen.stroke;
+			Pen.perform(\stroke); // static if maintaining pulse
 
-			if (~pulse.not, {
-				Pen.rotate( (((drawingSet[0][0]*dpt)))*(pi/180) );
-			});
+			//drawHitSet.value(drawingSet[0], dur, dpt);
+
+			if (~pulse.not, { Pen.rotate( rot ) });
 
 			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
-			drawingSet.do({arg data; // --> [msecs, txakunflag]
-				var offset;
-				if (data[0]>0, { // only the ones with a valid value
-					//["drawing data was", data].postln;
-					if (data[1],
-						{
-							offset = 270;
-							Pen.color = Color.red;
-						},
-						{
-							offset = 90;
-							Pen.color = Color.blue;
-						}
-					); // txakun up, errena down
+			drawHitSet.value(drawingSet[1], dur, dpt);
 
-					Pen.use{
-						Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-						Pen.addArc((80)@(0), data[2]*12, 0, 360); // circles representing beats
-						//Pen.stroke;
-						Pen.perform(\fill);
-					};
-				});
-			});
-
-
-			Pen.perform(\stroke);
-
-			drawingSet = Array.fill(4, {[0, false, 10]});//clear
+			drawingSet = [ drawingSet[1], Array.fill(4, {[0, false, 10]}) ];
 
 		};
-		window.refresh;
+
 		/*
 		clock = UserView(window, Rect(380-45, 375-45, 90, 90));
 		//clock.background = Color.black;
@@ -482,6 +459,31 @@ s.doWhenBooted({
 		//[char, keycode].postln;
 		if (keycode=65, {playBut.});
 		}*/
+	};
+
+	drawHitSet = { arg set, dur, dpt;
+		set.do({arg data; // --> [msecs, txakunflag, ]
+			var offset;
+
+			if (data[0]>0, { // only the ones with a valid value
+				if (data[1], //txakun
+					{
+						offset = 270;
+						Pen.color = Color.red; //.alpha_(0.8).set;
+					},
+					{
+						offset = 90;
+						Pen.color = Color.blue;
+					}
+				); // txakun up, errena down
+
+				Pen.use{
+					Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
+					Pen.addArc((80)@(0), data[2]*12, 0, 360); // circles representing beats
+					Pen.perform(\fill);
+				};
+			});
+		});
 	};
 
 
@@ -784,7 +786,7 @@ s.doWhenBooted({
 			beatsliders[subindex] = Slider(window,
 				Rect(beatsxloc+40,yloc+(25*subindex),75,25))
 			.action_({
-
+				"TO DO: set chance weight".postln;
 			}).orientation = \horizontal;
 			beatsliders[subindex].valueAction = 1;
 		});
@@ -1023,6 +1025,9 @@ s.doWhenBooted({
 
 			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height), numactiveplanks);
 
+			tscore.timeframe = 4;
+			//tscore.recordScore = true;
+
 			AppClock.play(txalascoreF);
 
 			timelinewin.onClose = {timelinewin=nil}; // only one instance please
@@ -1105,7 +1110,10 @@ s.doWhenBooted({
 			pulseBut.value = ~pulse;
 
 			~lastemphasis = data[\emphasis];
+			if (true.size==2, ~lastemphasis = data[\emphasis][1]); //bkwds compatibility
 			emphasisBut.value = ~lastemphasis;
+
+			~lastemphasis.postln;
 
 			/*			~classictxakun = data[\classictxakun];
 			classicBut.value = ~classictxakun;*/
