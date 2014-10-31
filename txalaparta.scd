@@ -326,9 +326,9 @@ s.doWhenBooted({
 			idealtempo = 60/~tempo; // ideal position
 			localtemposwing = (60/~tempo) + ~swing.rand - (~swing/2); //offset
 
-			if (~pulse,
-				{idealtempo.wait}, // sets the tempo
-				{localtemposwing.wait} // sets the tempo
+			if (~pulse, // sets the tempo
+				{idealtempo.wait},
+				{localtemposwing.wait}
 			);
 
 			// if none is allowed or if only 0 is allowed
@@ -343,14 +343,20 @@ s.doWhenBooted({
 								beats=beats[1..beats.size];
 							});
 
-							beats.postln;
-
 							{ numbeats == nil }.while({ numbeats = beats.wchoose(~beatchance) });
 
 							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
 							// global to all hits in this step
-							localstep = ~gap/numbeats; // reduces step proportionally to hits to play
+							// TO DO: gap should be relative to tempo. eg max gap should be tempo step
+							//localstep = ~gap/numbeats; // reduces step proportionally to hits to play
+							if (~pulse, // calculates de ~gap
+								{localstep = (idealtempo*~gap)/numbeats},
+								{localstep = (localtemposwing*~gap)/numbeats}
+							);
+
+
+
 							intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
 							if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 							dohits.value(stepcounter, txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
