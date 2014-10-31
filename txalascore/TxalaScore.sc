@@ -1,11 +1,11 @@
 
 
 TxalaScore {
-	
+
 	var win, view, events, selected, timeoffset, image, record, recordtask;
 	var timeframe = 12;
 	var imageArray;
-	
+
 	*new {|parent, rect, numPlanks=3|
 		^super.new.initTxalaScore( parent, rect, numPlanks );
 	}
@@ -20,13 +20,13 @@ TxalaScore {
 		plankheight = (view.bounds.height/(numPlanks+1));		view.drawFunc_({
 			// the planks
 			(numPlanks).do({arg i;
-				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1))); 
+				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
 			});
 			Pen.stroke;
 			// the time grid (vertical lines)
 			Pen.color = Color.black.alpha_(0.2);
 			20.do({arg i;
-				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height)); 
+				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height));
 			});
 			Pen.stroke;
 			// the events themselves
@@ -35,10 +35,10 @@ TxalaScore {
 			//	var time = (event.time-timeoffset-speed) * (view.bounds.width/speed);
 				var time = (event.time-timeoffset) * (view.bounds.width/timeframe);
 				Pen.color = if(event.player == 1, {Color.red.alpha_(0.5)}, {Color.blue.alpha_(0.5)});
-				Pen.fillRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8)); 
+				Pen.fillRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
 				Pen.color = Color.black;
-				Pen.line(Point(time, (view.bounds.height-(plankheight*event.plank)).abs), Point(time, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-8)).abs)); 
-				Pen.addRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8)); 
+				Pen.line(Point(time, (view.bounds.height-(plankheight*event.plank)).abs), Point(time, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-8)).abs));
+				Pen.addRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
 				Pen.stroke;
 			});
 		});
@@ -47,10 +47,10 @@ TxalaScore {
 			block{arg break;
 				events.do({ arg event, i;
 					var rect = Rect(event.time * view.bounds.width-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8);
-					if(rect.contains(Point(x,y)), { 
+					if(rect.contains(Point(x,y)), {
 						 "Inside : ".post; i.postln;
-						selected = i; 
-						break.value(); 
+						selected = i;
+						break.value();
 					});
 				});
 			};
@@ -67,24 +67,24 @@ TxalaScore {
 				this.update(events);
 				view.update;
 			});
-			
+
 		});
 		view.mouseUpAction_({ this.sortEvents });
 		view.keyDownAction_({|view, key, sm, wh|
 			[view, key, sm, wh].postln;
 			if(wh == 127, {
-				events.removeAt(selected);	
+				events.removeAt(selected);
 				this.update(events);
 				view.update;
 			});
 		});
-		
+
 	}
 
 	// start the scrolling movement (better not use this and do it from the outside - see example)
 	scrolling_ {arg bool;
 		var task; // this needs to be declared above, if used;
-		var offsettime = Main.elapsedTime;		
+		var offsettime = Main.elapsedTime;
 		task = fork{
 			inf.do({arg i;
 				var now = Main.elapsedTime - offsettime;
@@ -93,7 +93,7 @@ TxalaScore {
 			});
 		};
 	}
-	
+
 	// is the score being recorded? (images saved to disk)
 	recordScore_ {arg bool;
 		record = bool;
@@ -120,36 +120,36 @@ TxalaScore {
 				});
 			});
 		});
-		
+
 	}
 	// the time it takes to scroll from right to left
 	timeframe_{arg timef;
 		timeframe = timef;
 	}
-	
+
 	sortEvents {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });
 	}
-	
+
 	update { |arr, timeoff=0|
 		timeoffset = timeoff-timeframe;
 		events = arr;
 		view.refresh;
 	}
-	
+
 	grabScoreIntoImage {arg number;
 		var tempimg;
 		tempimg = Image.fromWindow(win, view.bounds);
 		imageArray = imageArray.add(tempimg);
-		tempimg.write("~/Desktop/txalascores/txalascore_"++number.asString++".png");
+		tempimg.write("~/txalascores/txalascore_"++number.asString++".png");
 	}
-	
+
 	postEvents {
 		" EVENTS ____________________ \n".postln;
-		events.postln;	
+		events.postln;
 	}
-	
-	
+
+
 
 }
 
@@ -180,7 +180,7 @@ fork{
 o = e.reject({arg event; event.player == 1})
 t = e.reject({arg event; event.player == 0})
 
-	
+
 // ////////////////////
 
 // example 1
@@ -341,6 +341,6 @@ x.recordScore = true;
 )
 x.grabScoreIntoImage
 
-	
+
 */
 
