@@ -1,0 +1,65 @@
+var o, p;
+o = [
+	Dictionary.prNew,  Array.prNew(64),  Array.prNew(2),  Array.prNew(5),  
+	Array.prNew(5),  Array.prNew(2),  Array.prNew(4),  Array.prNew(8),  
+	Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte1.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte2.wav",  
+	Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte3.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/00_ugarte4.wav",  
+	Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra01.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra02.wav",  
+	Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra04.wav",  Array.prNew(3),  "/home/r2d2/Dropbox/ixi/supercollider/txalaparta/sounds/01zaharra05.wav",  
+	Array.prNew(2)
+];
+p = [
+	// Dictionary
+	0, [ array: o[1],  size: 12 ],  
+	// Array
+	1, [ 'allowedbeats',  o[2],  'emphasis',  false,  
+		'autopilotrange',  o[5],  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		'amp',  0.500000,  nil,  nil,  
+		'slidersauto',  o[6],  nil,  nil,  
+		'gap',  0.661000,  'gapswing',  0.001000,  
+		'buffers',  o[7],  nil,  nil,  
+		nil,  nil,  'enabled',  o[24],  
+		'swing',  0.001000,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'pulse',  true,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'tempo',  70,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	2, [ o[3],  o[4] ],  
+	// Array
+	3, [ nil,  nil,  nil,  nil,  
+		4 ],  
+	// Array
+	4, [ nil,  nil,  nil,  nil,  
+		4 ],  
+	// Array
+	5, [ 5,  10 ],  
+	// Array
+	6, [ false,  false,  false,  false ],  
+	// Array
+	7, [ o[8],  o[10],  o[12],  o[14],  
+		o[16],  o[18],  o[20],  o[22] ],  
+	// Array
+	8, [ o[9],  true,  true ],  
+	// Array
+	10, [ o[11],  false,  false ],  
+	// Array
+	12, [ o[13],  false,  false ],  
+	// Array
+	14, [ o[15],  false,  false ],  
+	// Array
+	16, [ o[17],  false,  false ],  
+	// Array
+	18, [ o[19],  false,  false ],  
+	// Array
+	20, [ o[21],  false,  false ],  
+	// Array
+	22, [ o[23],  false,  false ],  
+	// Array
+	24, [ true,  true ]
+];
+prUnarchive(o,p);

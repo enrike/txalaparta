@@ -93,12 +93,12 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var playF, makilaF, txalascoreF, dohits, dohitsold, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
+	var playF, makilaF, txalascoreF, dohits, dohitsold, getplankindex, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
-	var sliders, beatbuttons, beatsliders, classicBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
+	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
 	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel, drawHitSet;
 
@@ -128,11 +128,11 @@ s.doWhenBooted({
 	~verbose = 1;
 
 	scoreArray = []; //stores all events as a score
-/*	scoreArray = scoreArray.add( // just add an empty event
-		().add(\time -> 0)
-		.add(\amp -> 0)
-		.add(\player -> 1) //1 or 2
-		.add(\plank -> 1)
+	/*	scoreArray = scoreArray.add( // just add an empty event
+	().add(\time -> 0)
+	.add(\amp -> 0)
+	.add(\player -> 1) //1 or 2
+	.add(\plank -> 1)
 	);*/
 
 	sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
@@ -176,6 +176,12 @@ s.doWhenBooted({
 
 	/* return true if any of the items in the array or list is not nil
 	*/
+	getplankindex = {arg plank;
+		// buffers.
+		// this should return the index of this plank in the 1-8 planks available
+		1;
+	};
+
 	istheresomething = {arg alist;
 		var values = List[];
 		alist.do({arg item;
@@ -225,11 +231,11 @@ s.doWhenBooted({
 						{emph = 0},
 						{emph = 1+((numbeats-1).rand)}
 					);
-				},{
-					if(~lastemphasis,
-						{emph = numbeats-1},
-						{emph = (numbeats-1).rand}
-					);
+					},{
+						if(~lastemphasis,
+							{emph = numbeats-1},
+							{emph = (numbeats-1).rand}
+						);
 				});
 
 				numbeats.do({ arg index; // for each makila one hit
@@ -237,8 +243,8 @@ s.doWhenBooted({
 					if (~amp > 0, { // emphasis on first or on last hit?
 						if (index == emph, {
 							hitamp = localamp + (localamp/5);
-						},{
-							hitamp = localamp + rrand(-0.06, 0.06) ;
+							},{
+								hitamp = localamp + rrand(-0.06, 0.06) ;
 						});
 					});
 
@@ -249,8 +255,8 @@ s.doWhenBooted({
 					hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
 					hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
 					if( ~mode, { // before the bar
-							hittime = localtemposwing - (hitswing * index);
-							makilaindex = numbeats-index-1;//reverse
+						hittime = localtemposwing - (hitswing * index);
+						makilaindex = numbeats-index-1;//reverse
 						},{ // aftr the bar
 							hittime = localtemposwing + (hitswing * index);
 							makilaindex = index;
@@ -262,7 +268,7 @@ s.doWhenBooted({
 						().add(\time -> (Main.elapsedTime - startTime + hittime))
 						.add(\amp -> hitamp)
 						.add(\player -> flagindex) //1 or 2
-						.add(\plank -> 1) //plank[0].path) // 1 just for just testing
+						.add(\plank -> getplankindex.value(plank)) //
 					);
 
 					{// deferred function
@@ -288,9 +294,6 @@ s.doWhenBooted({
 				}.defer(firstdefer); // finally schedule drawing
 		}, {"WARNING: no sound selected for beat".postln; buffers.postln});
 	};
-
-
-
 
 
 
@@ -348,14 +351,10 @@ s.doWhenBooted({
 							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
 							// global to all hits in this step
-							// TO DO: gap should be relative to tempo. eg max gap should be tempo step
-							//localstep = ~gap/numbeats; // reduces step proportionally to hits to play
 							if (~pulse, // calculates de ~gap
-								{localstep = (idealtempo*~gap)/numbeats},
-								{localstep = (localtemposwing*~gap)/numbeats}
+								{localstep = (idealtempo*~gap*2)/numbeats},
+								{localstep = (localtemposwing*~gap*2)/numbeats}
 							);
-
-
 
 							intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
 							if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
@@ -732,7 +731,7 @@ s.doWhenBooted({
 			["last emphasis", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			~lastemphasis = butt.value.asBoolean;//[butt.value.asBoolean.not, false,false, butt.value.asBoolean];
+			~lastemphasis = butt.value.asBoolean;
 		})
 		.valueAction_(1);
 
@@ -749,7 +748,7 @@ s.doWhenBooted({
 				butset.do({arg but, ind;
 					if ( but != nil, {
 						if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
-						classicBut.valueAction = 1;
+						oldpulseBut.valueAction = 1;
 						emphasisBut.valueAction = 1;
 						pulseBut.valueAction = 0
 					});
@@ -769,20 +768,15 @@ s.doWhenBooted({
 
 
 
-
-
-
 		// BEATS
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
 		StaticText(window, Rect(beatsxloc+40, yloc-16, 200, 20)).string = "% chance";
-
-		//~allowedbeats.postln;
 
 		~allowedbeats[0].size.do({arg subindex;
 			2.do({arg index;
 				var thecolor;
 				if (index%2==0, {thecolor=Color.red}, {thecolor=Color.blue});
-				//beatbuttons.postln;
+
 				beatbuttons[index][subindex] = Button(window, Rect(beatsxloc+(20*index),yloc+(25*subindex),20,25))
 				.states_([
 					[subindex.asString, Color.white, Color.black],
@@ -807,16 +801,6 @@ s.doWhenBooted({
 		beatbuttons[0][2].valueAction = 1; // activate by default
 		beatbuttons[1][2].valueAction = 1;
 
-		/*		// CLASSIC TXAKUN
-		classicBut = Button(window, Rect(beatsxloc,yloc+125,100,25))
-		.states_([
-		["classic txakun", Color.white, Color.black],
-		["classic txakun", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-		~classictxakun = butt.value.asBoolean;
-		});
-		classicBut.valueAction = 1;*/
 
 		// Allow repeat 0 more than once
 		zerolimitBut = Button(window, Rect(beatsxloc,yloc+140,100,25))
@@ -841,7 +825,7 @@ s.doWhenBooted({
 
 
 		// MODE
-		Button(window, Rect(xloc,yloc+25,100,25))
+		oldpulseBut = Button(window, Rect(xloc,yloc+25,100,25))
 		.states_([
 			["old pulse", Color.white, Color.black],
 			["old pulse", Color.black, Color.green],
@@ -849,7 +833,6 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			~mode = butt.value.asBoolean;
 		}).valueAction = 1;
-
 
 
 		// PLAY
@@ -862,10 +845,10 @@ s.doWhenBooted({
 			if ( butt.value.asBoolean, {
 				SystemClock.play(playF);
 				startTime = Main.elapsedTime;
-			},{
-				SystemClock.clear;
-				startTime = 0;
-				scoreArray.postln;
+				},{
+					SystemClock.clear;
+					startTime = 0;
+					scoreArray.postln;
 			});
 		});
 		//.defaultKeyDownAction_(" ");
@@ -878,6 +861,15 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			"TO DO: randomise all controls".postln;
+			sliders.do({arg slarray;
+				//slarray[0].valueAction = 0;// to do random
+			});
+			beatsliders.do({arg slarray;
+				//slarray.valueAction = 0;
+			});
+			beatbuttons.do({arg slarray;
+				//slarray.valueAction = 0;
+			});
 		})
 		.valueAction_(1);
 
@@ -914,8 +906,6 @@ s.doWhenBooted({
 			~oscout = butt.value.asBoolean;
 		})
 		.valueAction_(0);
-
-
 	};
 
 
@@ -958,7 +948,6 @@ s.doWhenBooted({
 				planksMenus[index][0].valueAction = 1;
 				planksMenus[index][1].valueAction = 1;
 			});// ONLY activate first ones
-
 
 			// menus
 			planksMenus[index][2] = PopUpMenu(window,Rect(menuxloc,yloc+yp,250,20))
@@ -1115,9 +1104,6 @@ s.doWhenBooted({
 				["setting beat buttons error", error, ~allowedbeats].postln;
 				beatbuttons[1][2].value = 1; // emergency activate this one
 			};
-			/*			beatbuttons.do({arg but, i;
-			if (~allowedbeats[i]!=nil, {but.value = 1}, {but.value = 0});
-			});*/
 
 			~pulse = data[\pulse];
 			pulseBut.value = ~pulse;
@@ -1125,11 +1111,6 @@ s.doWhenBooted({
 			~lastemphasis = data[\emphasis];
 			if (true.size==2, ~lastemphasis = data[\emphasis][1]); //bkwds compatibility
 			emphasisBut.value = ~lastemphasis;
-
-			~lastemphasis.postln;
-
-			/*			~classictxakun = data[\classictxakun];
-			classicBut.value = ~classictxakun;*/
 
 			~enabled = data[\enabled];
 			enabledButs[0].value = ~enabled[0];
@@ -1206,8 +1187,6 @@ s.doWhenBooted({
 				[ buffers[7][0].path, buffers[7][1], buffers[7][2] ],
 			]);
 			data.writeArchive(presetspath++filename);
-
-			//data.postln;
 
 			newpreset.string = ""; //clean field
 		});
