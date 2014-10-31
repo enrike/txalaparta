@@ -376,7 +376,9 @@ s.doWhenBooted({
 
 	txalascoreF = Routine({
 		inf.do({ //arg count;
-			{tscore.update(scoreArray, Main.elapsedTime - startTime)}.defer;
+			if (playBut.value.asBoolean, {
+				{tscore.update(scoreArray, Main.elapsedTime - startTime)}.defer;
+			});
 			0.05.wait;
 		});
 	});
@@ -761,7 +763,7 @@ s.doWhenBooted({
 
 		// BEATS
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
-		//StaticText(window, Rect(beatsxloc+30, yloc-16, 200, 20)).string = "% weights";
+		StaticText(window, Rect(beatsxloc+40, yloc-16, 200, 20)).string = "% chance";
 
 		//~allowedbeats.postln;
 
