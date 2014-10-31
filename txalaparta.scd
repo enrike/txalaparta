@@ -299,7 +299,7 @@ s.doWhenBooted({
 	// TXALAPARTA ////////////////////
 	playF = Routine({
 		var txakun; // classical txakun only is limited to two beats
-		var intermakilaswing, localstep, idealtempo, localtemposwing, localamp;
+		var intermakilaswing, localstep, idealtempo, localtemposwing, localamp, zeroflag=false;
 
 		txakun = true; // play starts with txakun
 		nextautopilot = 0;
@@ -339,10 +339,15 @@ s.doWhenBooted({
 					// beats
 					if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
 						{
-							//if (~zerolimit,{},{});
+							if ((~zerolimit && zeroflag),{ // no two consecutive 0
+								beats=beats[1..beats.size];
+							});
+
+							beats.postln;
+
 							{ numbeats == nil }.while({ numbeats = beats.wchoose(~beatchance) });
 
-							//if (numbeats==0, {zeroflag=true}, {zeroflag=false});
+							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
 							// global to all hits in this step
 							localstep = ~gap/numbeats; // reduces step proportionally to hits to play
@@ -546,8 +551,8 @@ s.doWhenBooted({
 			})
 			.valueAction_(0);
 
-			TextField(lwin, Rect(180, 355, 40, 25));
-			StaticText(lwin, Rect(250, 355, 200, 20)).string = "Duration";
+			StaticText(lwin, Rect(250, 375, 100, 20)).string = "Duration (secs)";
+			TextField(lwin, Rect(180, 355, 40, 25)).string = "10";
 
 			lwin.front;
 		});
