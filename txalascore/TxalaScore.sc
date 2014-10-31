@@ -141,7 +141,7 @@ TxalaScore {
 		var tempimg;
 		tempimg = Image.fromWindow(win, view.bounds);
 		imageArray = imageArray.add(tempimg);
-		tempimg.write("~/txalascores/txalascore_"++number.asString++".png");
+		tempimg.write(Platform.userHomeDir++"/txalascores/txalascore_"++number.asString++".png");
 	}
 
 	postEvents {
