@@ -17,7 +17,8 @@ TxalaScore {
 		imageArray = [];
 		view = UserView.new(parent, rect);
 		view.background = Color.white;
-		plankheight = (view.bounds.height/(numPlanks+1));		view.drawFunc_({
+		plankheight = (view.bounds.height/(numPlanks+1));
+		view.drawFunc_({
 			// the planks
 			(numPlanks).do({arg i;
 				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));

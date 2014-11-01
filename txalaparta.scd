@@ -100,7 +100,7 @@ s.doWhenBooted({
 	// GUI widgets
 	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
-	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel, drawHitSet;
+	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTimeLineNumPlanks;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
@@ -932,6 +932,7 @@ s.doWhenBooted({
 			])
 			.action_({ arg butt;
 				buffers[index][1] = butt.value.asBoolean;
+				updateTimeLineNumPlanks.value();
 			});
 
 			// errena row buttons
@@ -942,6 +943,7 @@ s.doWhenBooted({
 			])
 			.action_({ arg butt;
 				buffers[index][2] = butt.value.asBoolean;// THIS SHOULD GO TO ANOTHER ONE
+				updateTimeLineNumPlanks.value();
 			});
 
 			if (index==0, {
@@ -1016,6 +1018,22 @@ s.doWhenBooted({
 	};
 
 
+	updateTimeLineNumPlanks = {arg numactiveplanks;
+		if (timelinewin.isNil.not, {
+			var numactiveplanks=0;
+
+			buffers.do({arg arr;
+				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
+			});
+
+			tscore = TxalaScore.new(timelinewin,
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
+				numactiveplanks);
+		});
+	};
+
+
+	// creates the timeline window
 	doTimeline = { arg xloc=0, yloc=400, width=800, height=150;
 		var view, xstep=0, drawspeed=1, numactiveplanks=0;
 		if (timelinewin.isNil, {
@@ -1025,10 +1043,21 @@ s.doWhenBooted({
 				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
 			});
 
-			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height), numactiveplanks);
+			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numactiveplanks);
 
 			tscore.timeframe = 4;
 			//tscore.recordScore = true;
+
+			EZSlider( timelinewin,         // parent
+				Rect(-40,timelinewin.bounds.height-22,200,20),    // bounds
+				"zoom",  // label
+				ControlSpec(20, 1, \lin, 0.001, 10, "ms"),     // controlSpec
+				{ arg ez;
+					tscore.timeframe = ez.value;
+				},
+				initVal: ~swing,
+				labelWidth: 80;
+			);
 
 			AppClock.play(txalascoreF);
 
