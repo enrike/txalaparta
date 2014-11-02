@@ -100,7 +100,7 @@ s.doWhenBooted({
 	// GUI widgets
 	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
 	// GUI functions vars
-	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTimeline, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTimeLineNumPlanks;
+	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTxalaScoreNumPlanks;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
@@ -122,7 +122,7 @@ s.doWhenBooted({
 	~autopilotrange = [5, 10]; // for instance
 	~mode = true; // old style hit position calulation?
 	~oscout = false;
-	~midiout = false;
+	~midiout = false;// not yet
 
 	// utility
 	~verbose = 1;
@@ -154,11 +154,10 @@ s.doWhenBooted({
 	planksMenus = Array.fill(buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
-	//drawingSet = Array.fill(8, {[0, false, 10]}); // delay time from pulse, txakun or not?, amplitude
 	drawingSet = [Array.fill(4, {[0, false, 10]}), Array.fill(4, {[0, false, 10]})]; //one buelta with 4 hits each part
 
 	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
-	//midioutdev = MIDIOut(0); // activate MIDI out device
+	midioutdev = MIDIOut(0); // activate MIDI out device
 
 
 
@@ -176,10 +175,15 @@ s.doWhenBooted({
 
 	/* return true if any of the items in the array or list is not nil
 	*/
-	getplankindex = {arg plank;
-		// buffers.
-		// this should return the index of this plank in the 1-8 planks available
-		1;
+	getplankindex = { arg plank;
+		var pos=0;
+		buffers.do({arg buf, index;
+			if (buf[0].bufnum==plank[0].bufnum, {
+				pos = index;
+			});
+		});
+
+		pos+1;
 	};
 
 	istheresomething = {arg alist;
@@ -275,10 +279,10 @@ s.doWhenBooted({
 						Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
 						makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
 						if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].path])});
-						if (~midiout, { // to do. send MIDI note on and schedule off
+						if (~midiout, {
 							//midioutdev.noteOn(16, 60, 60);
-							//mimioutdev.noteOff(16, 61, 60);
-
+							//midioutdev.noteOff(16, 61, 60);
+							//midioutdev.allNotesOff(16);
 						});
 
 						outarray = outarray.add([2, ["hit", hittime, hitamp, hitfreq, hitswing]]);
@@ -334,10 +338,11 @@ s.doWhenBooted({
 				{localtemposwing.wait}
 			);
 
-			// if none is allowed or if only 0 is allowed
-			if (beats.copyRange(1,beats.size).every(_.isNil), {
-				"WARNING: no beats allowed".postln;
-				1.wait;
+			// if none is allowed or if only 0 is allowed or no choices to choose any
+			// TO DO. more complex. needs to check if the allowed ones have valid choice
+			if ((beats.copyRange(1,beats.size).every(_.isNil) ||
+				~beatchance.normalizeSum.every(_.isNaN)), {
+				"WARNING: no beats allowed or no choice to select any".postln;
 				},{
 					// beats
 					if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -345,8 +350,7 @@ s.doWhenBooted({
 							if ((~zerolimit && zeroflag),{ // no two consecutive 0
 								beats=beats[1..beats.size];
 							});
-
-							{ numbeats == nil }.while({ numbeats = beats.wchoose(~beatchance) });
+							{ numbeats == nil }.while({ numbeats = beats.wchoose(~beatchance.normalizeSum) });
 
 							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
@@ -792,10 +796,10 @@ s.doWhenBooted({
 
 			beatsliders[subindex] = Slider(window,
 				Rect(beatsxloc+40,yloc+(25*subindex),75,25))
-			.action_({
-				"TO DO: set chance weight".postln;
+			.action_({arg sl;
+				~beatchance[subindex] = sl.value;
 			}).orientation = \horizontal;
-			beatsliders[subindex].valueAction = 1;
+			beatsliders[subindex].valueAction = ~beatchance[subindex];
 		});
 
 		beatbuttons[0][2].valueAction = 1; // activate by default
@@ -820,7 +824,7 @@ s.doWhenBooted({
 			["show timeline", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			doTimeline.value();
+			doTxalaScore.value();
 		});
 
 
@@ -932,7 +936,7 @@ s.doWhenBooted({
 			])
 			.action_({ arg butt;
 				buffers[index][1] = butt.value.asBoolean;
-				updateTimeLineNumPlanks.value();
+				updateTxalaScoreNumPlanks.value();
 			});
 
 			// errena row buttons
@@ -942,8 +946,8 @@ s.doWhenBooted({
 				[(index+1).asString, Color.black, Color.blue],
 			])
 			.action_({ arg butt;
-				buffers[index][2] = butt.value.asBoolean;// THIS SHOULD GO TO ANOTHER ONE
-				updateTimeLineNumPlanks.value();
+				buffers[index][2] = butt.value.asBoolean;// THIS SHOULD GO TO ANOTHER?
+				updateTxalaScoreNumPlanks.value();
 			});
 
 			if (index==0, {
@@ -1018,7 +1022,7 @@ s.doWhenBooted({
 	};
 
 
-	updateTimeLineNumPlanks = {arg numactiveplanks;
+	updateTxalaScoreNumPlanks = {arg numactiveplanks;
 		if (timelinewin.isNil.not, {
 			var numactiveplanks=0;
 
@@ -1034,7 +1038,7 @@ s.doWhenBooted({
 
 
 	// creates the timeline window
-	doTimeline = { arg xloc=0, yloc=400, width=800, height=150;
+	doTxalaScore = { arg xloc=0, yloc=600, width=1020, height=350, timeframe=4;
 		var view, xstep=0, drawspeed=1, numactiveplanks=0;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
@@ -1043,9 +1047,11 @@ s.doWhenBooted({
 				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
 			});
 
-			tscore = TxalaScore.new(timelinewin, Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numactiveplanks);
+			tscore = TxalaScore.new(timelinewin,
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
+				numactiveplanks);
 
-			tscore.timeframe = 4;
+			tscore.timeframe = timeframe;
 			//tscore.recordScore = true;
 
 			EZSlider( timelinewin,         // parent
@@ -1055,15 +1061,23 @@ s.doWhenBooted({
 				{ arg ez;
 					tscore.timeframe = ez.value;
 				},
-				initVal: ~swing,
+				initVal: timeframe,
 				labelWidth: 80;
 			);
+
+			Button(timelinewin, Rect(200,timelinewin.bounds.height-22,75,20))
+			.states_([
+				["save score", Color.white, Color.black]
+			])
+			.action_({ arg butt;
+				"this should save the score to a MIDI file".postln;
+			});
 
 			AppClock.play(txalascoreF);
 
 			timelinewin.onClose = {timelinewin=nil}; // only one instance please
 			timelinewin.front;
-			timelinewin.alwaysOnTop = true;
+			//timelinewin.alwaysOnTop = true;
 		});
 	};
 
