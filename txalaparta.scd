@@ -119,6 +119,7 @@ s.doWhenBooted({
 	//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 	~allowedbeats = [[0, 1, 2, nil, nil], [0, 1, 2, nil, nil]];
 	~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
+	~plankchance = (Array.fill(8, {1}));
 	~autopilotrange = [5, 10]; // for instance
 	~mode = true; // old style hit position calulation?
 	~oscout = false;
@@ -252,7 +253,9 @@ s.doWhenBooted({
 						});
 					});
 
-					{ plank[flagindex] == false }.while( { plank = buffers.choose });
+					{ plank[flagindex] == false }.while( {
+						plank = buffers.wchoose(~plankchance.normalizeSum)
+					});
 
 					outarray = outarray.add([2, "plank"+plank]);
 
@@ -350,7 +353,10 @@ s.doWhenBooted({
 							if ((~zerolimit && zeroflag),{ // no two consecutive 0
 								beats=beats[1..beats.size];
 							});
-							{ numbeats == nil }.while({ numbeats = beats.wchoose(~beatchance.normalizeSum) });
+
+							{ numbeats == nil }.while({
+								numbeats = beats.wchoose(~beatchance.normalizeSum)
+							});
 
 							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
 
@@ -746,8 +752,6 @@ s.doWhenBooted({
 			["go zaharra", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			// TO DO this should set ttxakun to 2 beats
-			//~classictxakun = true; //butt.value.asBoolean.not;
 			beatbuttons.do({arg butset;
 				butset.do({arg but, ind;
 					if ( but != nil, {
@@ -759,14 +763,6 @@ s.doWhenBooted({
 				});
 
 			});
-			/*			beatbuttons.do({arg but, ind;
-			if ( but != nil, {
-			if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
-			classicBut.valueAction = 1;
-			emphasisBut.valueAction = 1;
-			pulseBut.valueAction = 0
-			});
-			});*/
 		})
 		.valueAction_(1);
 
@@ -777,7 +773,7 @@ s.doWhenBooted({
 		StaticText(window, Rect(beatsxloc+40, yloc-16, 200, 20)).string = "% chance";
 
 		~allowedbeats[0].size.do({arg subindex;
-			2.do({arg index;
+			2.do({arg index; // two players
 				var thecolor;
 				if (index%2==0, {thecolor=Color.red}, {thecolor=Color.blue});
 
@@ -910,6 +906,18 @@ s.doWhenBooted({
 			~oscout = butt.value.asBoolean;
 		})
 		.valueAction_(0);
+
+		// MIDI OUT
+		Button(window, Rect(xloc+120,yloc+105,80,25))
+		.states_([
+			["send MIDI", Color.white, Color.grey],
+			["send MIDI", Color.black, Color.blue],
+		])
+		.action_({ arg butt;
+			"TO DO, send MIDI events".postln;
+			~midiout = butt.value.asBoolean;
+		})
+		.valueAction_(0);
 	};
 
 
@@ -923,8 +931,9 @@ s.doWhenBooted({
 
 		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "TX";
 		StaticText(window, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
-
 		StaticText(window, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
+		StaticText(window, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
+
 		////////////////
 		buffers.size.do({ arg index;
 
@@ -970,8 +979,17 @@ s.doWhenBooted({
 				[">", Color.white, Color.black]
 			])
 			.action_({ arg butt;
-				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, buffers[index][0].bufnum])
+				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum,
+					buffers[index][0].bufnum]
+				)
 			});
+
+			Slider(window,Rect(menuxloc+275,yloc+yp,75,20))
+			.action_({arg sl;
+				~plankchance[index] = sl.value;
+			})
+			.orientation_(\horizontal)
+			.valueAction_(~plankchance.[index]);
 
 			yp = yp + 20; // px
 		});
@@ -1129,18 +1147,18 @@ s.doWhenBooted({
 			ampBut.value = ~amp;
 
 			~allowedbeats = data[\allowedbeats];
-			~allowedbeats.postln;
 			if(~allowedbeats.size>2, // backwards compatible with old presets
 				{~allowedbeats=[~allowedbeats, [nil,nil,nil,nil,nil]]
 			});
-			~allowedbeats.postln;
+
 			try { //bckwads compatible again
-				beatbuttons.size.do({arg index;
-					beatbuttons[index].do({ arg subindex;
-						if (~allowedbeats[index][subindex]!=nil,
-							{beatbuttons[index][subindex].value = 1},
-							{beatbuttons[index][subindex].value = 0}
-						);
+				beatbuttons.do({arg playerbuttons, index;
+					playerbuttons.do({arg but, subindex;
+						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
+/*						if (~allowedbeats[index][subindex]!=nil,
+							{but.value = 1},
+							{but.value = 0}
+						);*/
 					});
 				});
 			} {|error|
@@ -1151,15 +1169,36 @@ s.doWhenBooted({
 			~pulse = data[\pulse];
 			pulseBut.value = ~pulse;
 
+			data[\emphasis].postln;
+
 			~lastemphasis = data[\emphasis];
-			if (true.size==2, ~lastemphasis = data[\emphasis][1]); //bkwds compatibility
+			if (~lastemphasis.size==2, ~lastemphasis = data[\emphasis][1]); //bkwds compatibility
 			emphasisBut.value = ~lastemphasis;
+
+			"zzzz".postln;
 
 			~enabled = data[\enabled];
 			enabledButs[0].value = ~enabled[0];
 			enabledButs[1].value = ~enabled[1];
 			// txakun-errena buttons
 			~autopilotrange = data[\autopilotrange]; // no widget!
+
+			try {
+				~plankchance = data[\plankchance];
+				// to do update widgets!!!
+			} {|error|
+				"not plankchance in preset".postln;
+			};
+
+			try {
+				~beatchance = data[\beatchance];
+				beatsliders.do({arg beatsl, index;
+					beatsl.valueAction = ~beatchance[index];
+				});
+			} {|error|
+				"not beatchance in preset".postln;
+			};
+
 
 			planksMenus.do({arg plank, i;
 				try {
@@ -1213,6 +1252,8 @@ s.doWhenBooted({
 			//data.put(\classictxakun, ~classictxakun);
 			data.put(\enabled, ~enabled);
 			data.put(\autopilotrange, ~autopilotrange);
+			data.put(\beatchance, ~beatchance);
+			data.put(\plankchance, ~plankchance);
 			data.put(\slidersauto, [
 				slidersauto[0]!=nil, // store true or false
 				slidersauto[1]!=nil,
@@ -1229,6 +1270,7 @@ s.doWhenBooted({
 				[ buffers[6][0].path, buffers[6][1], buffers[6][2] ],
 				[ buffers[7][0].path, buffers[7][1], buffers[7][2] ],
 			]);
+
 			data.writeArchive(presetspath++filename);
 
 			newpreset.string = ""; //clean field
