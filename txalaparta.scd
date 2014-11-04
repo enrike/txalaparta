@@ -113,7 +113,7 @@ s.doWhenBooted({
 	//~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
 	~pulse = false; // should we keep stedy pulse in the tempo or not?
 	~freqs = [230, 231]; //
-	~lastemphasis = true; //[true,false,false,false]; // which one is stronger. actualy just using first or last
+	~lastemphasis = true; // which one is stronger. actualy just using first or last
 	~zerolimit = true; //allow 0 more than once or not?
 	~enabled = [true, true]; // switch on/off txakun and errena
 	//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
@@ -1169,13 +1169,12 @@ s.doWhenBooted({
 			~pulse = data[\pulse];
 			pulseBut.value = ~pulse;
 
-			data[\emphasis].postln;
-
 			~lastemphasis = data[\emphasis];
-			if (~lastemphasis.size==2, ~lastemphasis = data[\emphasis][1]); //bkwds compatibility
-			emphasisBut.value = ~lastemphasis;
-
-			"zzzz".postln;
+			try {
+				emphasisBut.value = ~lastemphasis.asInt;
+			} {|error|
+				~lastemphasis = data[\emphasis][1]; //bkwds compatibility
+			};
 
 			~enabled = data[\enabled];
 			enabledButs[0].value = ~enabled[0];
