@@ -93,7 +93,7 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var playF, makilaF, txalascoreF, dohits, dohitsold, getplankindex, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
+	var playF, makilaF, txalascoreF, dohits, dohitsold, getplankindex, getnumactiveplanks, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
@@ -185,6 +185,14 @@ s.doWhenBooted({
 		});
 
 		pos+1;
+	};
+
+	getnumactiveplanks = {
+		var numactiveplanks=0;
+		buffers.do({arg arr;
+			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
+		});
+		numactiveplanks;
 	};
 
 	istheresomething = {arg alist;
@@ -1042,12 +1050,12 @@ s.doWhenBooted({
 
 	updateTxalaScoreNumPlanks = {arg numactiveplanks;
 		if (timelinewin.isNil.not, {
-			var numactiveplanks=0;
+			var numactiveplanks = getnumactiveplanks.value();
 
-			buffers.do({arg arr;
+/*			buffers.do({arg arr;
 				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-			});
-
+			});*/
+			tscore = nil;
 			tscore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 				numactiveplanks);
@@ -1061,9 +1069,11 @@ s.doWhenBooted({
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 
-			buffers.do({arg arr;
+			numactiveplanks = getnumactiveplanks.value();
+
+/*			buffers.do({arg arr;
 				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-			});
+			});*/
 
 			tscore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
