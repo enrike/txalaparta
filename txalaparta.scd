@@ -637,7 +637,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			ParamWin.new("~gapwing", ControlSpec(0.001, 1));
+			ParamWin.new("~gapswing", ControlSpec(0.001, 1));
 		});
 
 		sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))

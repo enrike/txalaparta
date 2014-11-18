@@ -1,17 +1,22 @@
 ParamWin {
 
-	var size, lwin, lmsl, lmslline, lbut, lpbut, lfield, lloopf, ldata, varStr, ctrlSp;
+	var size, lwin, lmsl, lmslline, lbut, lpbut, lfield, lloopf, ldata, varStr, ctrlSpc, widget;
 
 
-	*new {|caption, globalvarStr|
-		^super.new.initParamWin( caption, globalvarStr );
+	*new {|globalvarStr, aControlSpec, aWidget|
+		^super.new.initParamWin( globalvarStr, aControlSpec, aWidget );
 	}
 
-	initParamWin {|globalvarStr, aControlSpec|
+	initParamWin {|globalvarStr, aControlSpec, aWidget|
 		varStr = globalvarStr;
-		ctrlSp = aControlSpec;
+		ctrlSpc = aControlSpec;
+		widget = aWidget;
+
 		size = 360 / 6;
-		lwin = Window("Control" + varStr,  Rect(0, 0, 360, 135));
+		lwin = Window("Control" + varStr,  Rect(0, 0, 360, 135))
+		.onClose_({
+			lloopf.stop;
+		});
 
 		lmsl = MultiSliderView(lwin,  Rect(0, 0, 360, 100));
 		lmsl.value_(Array.fill(size, {0}));
@@ -26,9 +31,10 @@ ParamWin {
 		lloopf = Task {
 			inf.do({arg index;
 				var val;
-				val = ctrlSp.map(lmsl.value.at(lmsl.index)).asStringPrec(3);
+				val = ctrlSpc.map(lmsl.value.at(lmsl.index)).asStringPrec(3);
 				(varStr+"="+val).interpret; // here set value of the variable I control
 				ldata.string = varStr ++ ":\n"+ val;
+				if (widget != nil, {widget.value = val}); // update this widget
 				lmsl.index_(index%lmsl.size); //next step
 				(lfield.value.asInt/lmsl.size).wait; // each cycle takes as many secs as the lfield says
 			});
@@ -59,8 +65,23 @@ ParamWin {
 }
 
 /*
-~amp=1;
-p = ParamWin.new("~amp", ControlSpec(0.01, 2000));
+(
+~value=20;
+ w = Window("main", Rect(0, 0, 300, 100));
+l = EZSlider( w,
+			Rect(5,5,200,20),
+			"gap",
+			ControlSpec(20, 1000, \lin, 0.001, ~value, "ms"),
+			{ arg ez;
+				~amp = ez.value;
+			},
+			initVal: ~value,
+			labelWidth: 80;
+		);
+w.front;
+
+ParamWin.new("~value", ControlSpec(20, 1000), l);
+)
 */
 
 		
