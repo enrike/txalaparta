@@ -539,45 +539,8 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			//"this should open a parameter editing window".postln;
-
-			var size, lwin, lmsl, lb;
-			size = 350 / 6;
-			lwin = Window.new;
-			lwin.view.decorator = FlowLayout(lwin.view.bounds);
-
-			lmsl = MultiSliderView(lwin, Rect(0, 0, 350, 100));
-			lmsl.value_(Array.fill(size, {0.01}));
-			lmsl.isFilled_(true); // width in pixels of each stick
-			lmsl.indexThumbSize_(2.0); // spacing on the value axis
-			lmsl.gap_(4);
-
-			Button(lwin, Rect(10,355,80,30))
-			.states_([
-				["play/pause", Color.white, Color.black],
-				["play/pause", Color.black, Color.green],
-			])
-			.action_({ arg butt;
-				if (butt.value.asBoolean,
-					{"play/pause this parameter".postln});
-			})
-			.valueAction_(0);
-
-			Button(lwin, Rect(90,355,80,30))
-			.states_([
-				["loop", Color.white, Color.black],
-				["loop", Color.black, Color.green],
-			])
-			.action_({ arg butt;
-				if (butt.value.asBoolean,
-					{"toogle this parameter".postln});
-			})
-			.valueAction_(0);
-
-			StaticText(lwin, Rect(250, 375, 100, 20)).string = "Duration (secs)";
-			TextField(lwin, Rect(180, 355, 40, 25)).string = "10";
-
-			lwin.front;
+			// "this should open a parameter editing window".postln;
+			ParamWin.new("~tempo", ControlSpec(30, 550));
 		});
 
 		sliders[0][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -609,7 +572,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			"this should open a parameter editing window".postln;
+			ParamWin.new("~swing", ControlSpec(0.001, 1));
 		});
 
 		sliders[1][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -642,7 +605,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			"this should open a parameter editing window".postln;
+			ParamWin.new("~gap", ControlSpec(0.001, 1));
 		});
 
 		sliders[2][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -674,7 +637,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			"this should open a parameter editing window".postln;
+			ParamWin.new("~gapwing", ControlSpec(0.001, 1));
 		});
 
 		sliders[3][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -706,7 +669,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			"this should open a parameter editing window".postln;
+			ParamWin.new("~amp", ControlSpec(0, 1));
 		});
 	};
 
