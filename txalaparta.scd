@@ -88,7 +88,13 @@ s.unmute
 */
 
 
-Server.default = Server.internal; // this is to avoid problem in some windows machines
+ // this is to avoid problem in some windows machines
+Platform.case(
+    //\osx,       { "OSX".postln },
+    \linux,     { Server.default = Server.internal },
+    \windows,   { Server.default = Server.internal }
+);
+
 s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
@@ -158,7 +164,7 @@ s.doWhenBooted({
 	drawingSet = [Array.fill(4, {[0, false, 10]}), Array.fill(4, {[0, false, 10]})]; //one buelta with 4 hits each part
 
 	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
-	midioutdev = MIDIOut(0); // activate MIDI out device
+	//midioutdev = MIDIOut(0); // activate MIDI out device
 
 
 
@@ -811,7 +817,7 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			var tc, tt, curtempo;
-			tt = TxalaTempo.new(0);
+			tt = TxalaTempo.new(s, 0, true);
 			OSCFunc({ arg msg, time;
 				curtempo = tt.calculate(msg[3]);
 			},'/txalasil', s.addr);

@@ -12,6 +12,10 @@ t.setCheckRate(40)
 t.setFallTime(0.1)
 t.setAmp(0.3)
 
+
+to trap the event from somewhere else:
+
+t = TxalaTempo.new(s, 0, false);
 //collect its output this way
 f = OSCFunc({ arg msg, time;
 	msg.postln;
@@ -25,19 +29,19 @@ TxalaTempo {
 	var synth, channel, server;
 	var win, label; // gui
 
-	*new {| server, channel = 0 |
-		^super.new.initTxalaTempo( server, channel );
+	*new {| server, channel = 0, standalone=true |
+		^super.new.initTxalaTempo( server, channel, standalone );
 	}
 
-	initTxalaTempo {| aserver, achannel |
+	initTxalaTempo {| aserver, achannel, standalone |
 		server = aserver;
 		channel = achannel;
-		this.reset();
+		this.reset(standalone);
 	}
 
-	reset {
+	reset { arg standalone;
 		tempocalc = TempoCalculator.new(2, 1);
-		this.doAudio();
+		this.doAudio(standalone);
 		this.doGui();
 	}
 
@@ -58,7 +62,7 @@ TxalaTempo {
 		^bpm;
 	}
 
-	doAudio {
+	doAudio { arg standalone;
 		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
@@ -66,6 +70,12 @@ TxalaTempo {
 		}).store;
 
 		synth = Synth(\txalatempo, [\ch, channel]);
+
+		if (standalone, {
+			OSCFunc({ arg msg, time;
+				this.calculate(msg[3])
+			},'/txalasil', server.addr);
+		});
 	}
 
 	doGui {
@@ -76,7 +86,7 @@ TxalaTempo {
 			synth.free;
 		};
 
-		label = StaticText(win, Rect(60, 0, 80, 25));
+		label = StaticText(win, Rect(60, 0, 90, 25));
 		label.string = "BPM:"+bpm;
 
 		Button( win, Rect(248,3,100,25))
