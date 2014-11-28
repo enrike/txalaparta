@@ -6,7 +6,7 @@ License GPL.
 by www.ixi-audio.net
 
 Usage:
-t = TxalaTempo.new(0);
+t = TxalaTempo.new(s, 0);
 t.bpm.postln;
 t.setCheckRate(40)
 t.setFallTime(0.1)
@@ -22,21 +22,21 @@ f = OSCFunc({ arg msg, time;
 TxalaTempo {
 
 	var <>bpm = 0, tempocalc;
-	var synth, channel;
+	var synth, channel, server;
 	var win, label; // gui
 
-	*new {| channel = 0 |
-		^super.new.initTxalaTempo( channel );
+	*new {| server, channel = 0 |
+		^super.new.initTxalaTempo( server, channel );
 	}
 
-	initTxalaTempo {| channel |
-		channel = channel;
+	initTxalaTempo {| aserver, achannel |
+		server = aserver;
+		channel = achannel;
 		this.reset();
 	}
 
 	reset {
-		tempocalc = TempoCalculator.new(2,1);
-
+		tempocalc = TempoCalculator.new(2, 1);
 		this.doAudio();
 		this.doGui();
 	}
@@ -85,6 +85,14 @@ TxalaTempo {
 		])
 		.action_({ arg butt;
 			this.reset();
+		});
+
+		Button( win, Rect(148,3,100,25))
+		.states_([
+			["scope", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			server.scope(1).setProperties(1,8);
 		});
 
 		EZSlider( win,
