@@ -227,12 +227,9 @@ s.doWhenBooted({
 		window.front;
 
 		window.drawFunc = { // drawing the visualization of circles
-			var dur, dpt, rot; // duration of the circle and degrees per time unit
+			var dur, dpt; // duration of the circle and degrees per time unit
 			dur = 60/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
-			try {
-				rot = (((drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
-			} {|error| rot = 0};
 
 			Pen.translate(565, 520); // location of the circle
 			Pen.color = Color.black;
@@ -242,8 +239,13 @@ s.doWhenBooted({
 
 			Pen.perform(\stroke); // static if maintaining pulse
 
+			if (~pulse.not, {
 
-			//if (~pulse.not, { Pen.rotate( rot ) });
+				try {
+					rot = rot + (((drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
+				} {|error| rot = 0};
+				Pen.rotate( rot )
+			});
 			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
