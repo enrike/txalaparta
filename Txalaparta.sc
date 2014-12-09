@@ -243,7 +243,7 @@ Txalaparta{
 					if ( ~mode, { // before the bar
 						hittime = delaytime - (localstep * index);
 						if (index > 0, { hittime = hittime - rand(intermakilaswing) });
-					},{ // aftr the bar;
+					},{ // after the bar;
 						hittime = delaytime + (localstep * index);
 						if (index > 0, { hittime = hittime + rand(intermakilaswing) });
 					});
@@ -254,7 +254,7 @@ Txalaparta{
 						makilaF.value(txakun.not.asInteger, makilaindex, 0.2);//slider animation
 
 						scoreArray = scoreArray.add( // just add an empty event
-							().add(\time -> (Main.elapsedTime - startTime + hittime))
+							().add(\time -> (Main.elapsedTime - startTime))
 							.add(\amp -> hitamp)
 							.add(\player -> (flagindex + 1)) //1 or 2
 							.add(\plank -> (pos + 1))
