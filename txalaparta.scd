@@ -99,8 +99,7 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	/*	var playF, makilaF, txalascoreF, schedulehits, getplankindex, getnumactiveplanks, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;*/
-	var presetspath, makilaF, txalascoreF, drawingSetBuffer, netadd, scoreArray, midioutdev, startTime, txalaparta, schedulehits, playF;
+	var presetspath, makilaF, txalascoreF, drawingSetBuffer, scoreArray, midioutdev, txalaparta;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
@@ -111,38 +110,13 @@ s.doWhenBooted({
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
-	/*	// GLOBAL vars
-	~tempo = 70; // tempo. txakun / errena
-	~swing = 0.1;
-	~gapswing = 0.1;
-	~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
-	~amp = 0.5;
-	//~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
-	~pulse = false; // should we keep stedy pulse in the tempo or not?
-	~freqs = [230, 231]; //
-	~lastemphasis = true; // which one is stronger. actualy just using first or last
-	~zerolimit = true; //allow 0 more than once or not?
-	~enabled = [true, true]; // switch on/off txakun and errena
-	//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
-	~allowedbeats = [[0, 1, 2, nil, nil], [0, 1, 2, nil, nil]];
-	~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
-	~plankchance = (Array.fill(8, {1}));
-	~autopilotrange = [5, 10]; // for instance
-	~mode = true; // old style hit position calulation?
-	~oscout = false;
-	~midiout = false;// not yet
-
-	// utility
-	~verbose = 1;*/
-
-	scoreArray = []; //stores all events as a score
+	//scoreArray = []; //stores all events as a score
 	/*	scoreArray = scoreArray.add( // just add an empty event
 	().add(\time -> 0)
 	.add(\amp -> 0)
 	.add(\player -> 1) //1 or 2
 	.add(\plank -> 1)
 	);*/
-
 
 	txalaparta = Txalaparta.new( s, thisProcess.nowExecutingPath.dirname );
 
@@ -159,9 +133,7 @@ s.doWhenBooted({
 
 	drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with 4 hits each part
 
-	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
 	//midioutdev = MIDIOut(0); // activate MIDI out device
-
 
 
 	/* check if any of the values in an array is not nil
@@ -181,181 +153,6 @@ s.doWhenBooted({
 		drawingSetBuffer[1] = data; // store in second slot
 		window.refresh;
 	};
-/*
-	postOutput = {arg outarray;
-		outarray.do({arg item;
-			if (~verbose>item[0], {item[1].postln});
-		});
-		outarray = [];
-	};*/
-
-
-	/* this schedules all the hits for this bar. uses deffer
-	*/
-/*	schedulehits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
-
-		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false, 10]}), flagindex=1, outarray=Array.new, emph;
-
-		// txakun true 1 -> 1 // errena false 0 -> 2
-		if (txakun, {flagindex=1},{flagindex=2});
-
-		// avoid when no sound is selected
-		if (txalaparta.buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
-			{
-				if(~mode, { // reverse in old mode
-					if(~lastemphasis,
-						{emph = 0},
-						{emph = 1+((numbeats-1).rand)}
-					);
-					},{
-						if(~lastemphasis,
-							{emph = numbeats-1},
-							{emph = (numbeats-1).rand}
-						);
-				});
-
-				numbeats.do({ arg index; // for each makila one hit
-					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=[nil, false, false];
-					if (~amp > 0, { // emphasis on first or on last hit?
-						if (index == emph, {
-							hitamp = localamp + (localamp/5);
-							},{
-								hitamp = localamp + rrand(-0.06, 0.06) ;
-						});
-					});
-
-					{ plank[flagindex] == false }.while( {
-						plank = txalaparta.buffers.wchoose(~plankchance.normalizeSum)
-					});
-
-					outarray = outarray.add([2, "plank"+plank]);
-
-					hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
-					hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-					if ( ~mode, { // before the bar
-						hittime = localtemposwing - (hitswing * index);
-						makilaindex = numbeats-index-1;//reverse
-						},{ // aftr the bar
-							hittime = localtemposwing + (hitswing * index);
-							makilaindex = index;
-					});
-
-					if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later at the time the first one is played
-
-					scoreArray = scoreArray.add(
-						().add(\time -> (Main.elapsedTime - startTime + hittime))
-						.add(\amp -> hitamp)
-						.add(\player -> flagindex) //1 or 2
-						.add(\plank -> txalaparta.getplankindex(plank)) //
-					);
-
-					{ // deferred function
-						Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
-						makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
-						if (~oscout,{ netadd.sendMsg("/txalaparta", [txakun, hitamp, plank[0].path])});
-						if (~midiout, {
-							//midioutdev.noteOn(16, 60, 60);
-							//midioutdev.noteOff(16, 61, 60);
-							//midioutdev.allNotesOff(16);
-						});
-
-						outarray = outarray.add([2, ["hit", hittime, hitamp, hitfreq, hitswing]]);
-						postOutput.value(outarray);
-					}.defer(hittime);
-					drawingSetB[index] = [hittime, txakun, hitamp]; // store for drawing on window.refresh
-
-				}); // END NUMBEATS LOOP}
-
-				{
-					scheduleDraw.value(drawingSetB);
-				}.defer(firstdefer); // finally schedule drawing
-		}, {"WARNING: no sound selected for beat".postln; txalaparta.buffers.postln});
-	};*/
-
-
-
-
-
-	// TXALAPARTA ////////////////////
-/*	playF = Routine({
-		var txakun; // classical txakun only is limited to two beats
-		var intermakilaswing, localstep, idealtempo, localtemposwing, localamp, zeroflag=false;
-
-		txakun = true; // play starts with txakun
-		nextautopilot = 0;
-
-		inf.do({ arg stepcounter; // txakun > errena cycle
-			var numbeats, outstr, beats, outarray=Array.new; // reset each loop
-
-			outarray = outarray.add([1, ("is txakun?" + txakun)]);
-
-			beats =	~allowedbeats[txakun.not.asInt];
-
-			// autopilot
-			if (( istheresomething.value(slidersauto) &&
-				(stepcounter >= nextautopilot)) , {
-					var sl;
-					{ sl == nil }.while( {sl = slidersauto.choose} ) ;
-					{
-						sl.valueAction = rrand(sl.controlSpec.minval, sl.controlSpec.maxval);
-					}.defer;
-					nextautopilot = stepcounter + rrand(~autopilotrange[0], ~autopilotrange[1]); // next buelta to change
-					outarray = outarray.add([0, ("autopilot! next at" + nextautopilot)]);
-			});
-
-			idealtempo = 60/(~tempo*2); // ideal position tempo /2 because it is a binary rhythm
-			localtemposwing = idealtempo + ~swing.rand - (~swing/2); //offset
-
-			if (~pulse, // sets the tempo
-				{idealtempo.wait},
-				{localtemposwing.wait}
-			);
-
-			// if none is allowed or if only 0 is allowed or no choices to choose any
-			// TO DO. more complex. needs to check if the allowed ones have valid choice
-			if ((beats.copyRange(1,beats.size).every(_.isNil) ||
-				~beatchance.normalizeSum.every(_.isNaN)), {
-					"WARNING: no beats allowed or no choice to select any".postln;
-				},{
-					// beats
-					if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
-						{
-							if ((~zerolimit && zeroflag),{ // no two consecutive 0
-								beats=beats[1..beats.size];
-							});
-
-							{ numbeats == nil }.while({
-								numbeats = beats.wchoose(~beatchance.normalizeSum)
-							});
-
-							if (numbeats==0, {zeroflag=true}, {zeroflag=false});
-
-							// global to all hits in this step
-							if (~pulse, // calculates de ~gap
-								{localstep = (idealtempo*~gap*2)/numbeats},
-								{localstep = (localtemposwing*~gap*2)/numbeats}
-							);
-
-							intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
-							if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
-							schedulehits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
-							[txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing].postln;
-							outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
-							outarray = outarray.add([2, ["beat", stepcounter, txakun, numbeats]]);
-
-							{
-								output.string = outstr;
-								postOutput.value(outarray);
-							}.defer;//(localtemposwing);
-					}); //end if beats
-
-			});
-
-			txakun = txakun.not;
-		}) // end inf loop
-	});*/
-
-
 
 
 
@@ -381,7 +178,7 @@ s.doWhenBooted({
 		inf.do({ //arg count;
 			if (playBut.value.asBoolean, {
 				//{
-				tscore.update(scoreArray, Main.elapsedTime - startTime)
+				tscore.update(txalaparta.scoreArray, Main.elapsedTime - txalaparta.startTime)
 				//}.defer;
 			});
 			0.05.wait;
@@ -417,11 +214,6 @@ s.doWhenBooted({
 
 
 
-
-
-
-
-
 	// WINDOW
 	doWindow = {arg width, height, caption;
 		var rot=0;
@@ -438,8 +230,9 @@ s.doWhenBooted({
 			var dur, dpt, rot; // duration of the circle and degrees per time unit
 			dur = 60/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
-			//drawingSetBuffer[1][0][0].postln;
-			rot = (((drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
+			try {
+				rot = (((drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
+			} {|error| rot = 0};
 
 			Pen.translate(565, 520); // location of the circle
 			Pen.color = Color.black;
@@ -447,18 +240,16 @@ s.doWhenBooted({
 			Pen.line(10@90.neg, 15@87.neg); // > mark
 			Pen.line(15@87.neg, 10@84.neg);
 
-			//Pen.perform(\stroke); // static if maintaining pulse
+			Pen.perform(\stroke); // static if maintaining pulse
 
+
+			//if (~pulse.not, { Pen.rotate( rot ) });
 			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
 			//drawHitSet.value(drawingSetBuffer[0], dur, dpt);
 
-			Pen.rotate( rot );
-
-			//if (~pulse.not, { Pen.rotate( rot ) });
-
-
+			//Pen.rotate( rot );
 
 			drawHitSet.value(drawingSetBuffer[1], dur, dpt);
 
@@ -805,8 +596,6 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 
-
-
 		// MODE
 		oldpulseBut = Button(window, Rect(xloc,yloc+25,100,25))
 		.states_([
@@ -825,16 +614,8 @@ s.doWhenBooted({
 			["play/stop", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			if ( butt.value.asBoolean, {
-				txalaparta.play();
-				//SystemClock.play(playF);
-				startTime = Main.elapsedTime;
-				},{
-					txalaparta.stop();
-					//SystemClock.clear;
-					startTime = 0;
-					scoreArray.postln;
-			});
+			if ( butt.value.asBoolean, { txalaparta.play() },
+				                       { txalaparta.stop() });
 		});
 		//.defaultKeyDownAction_(" ");
 		//playBut.defaultKeyDownAction = "";
@@ -1008,10 +789,6 @@ s.doWhenBooted({
 	updateTxalaScoreNumPlanks = {arg numactiveplanks;
 		if (timelinewin.isNil.not, {
 			var numactiveplanks = txalaparta.getnumactiveplanks();
-
-			/*			buffers.do({arg arr;
-			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-			});*/
 			tscore = nil;
 			tscore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
@@ -1027,10 +804,6 @@ s.doWhenBooted({
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 
 			numactiveplanks = txalaparta.getnumactiveplanks();
-
-			/*			buffers.do({arg arr;
-			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-			});*/
 
 			tscore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),

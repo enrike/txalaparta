@@ -3,19 +3,17 @@ s.boot
 t = Txalaparta.new( s, '.' );
 
 ~mode=false
-// delaytime, mode, txakun, localamp, localstep, intermakilaswing, numbeats
+// delaytime, mode, txakun?, localamp, localstep, intermakilaswing, numbeats
 t.schedulehits(0, true, true, 0.5, 0.01, 0.9, 4);
 t.play // plays a task that loops endlessly generating txalaparta rhythms
 
-t.samples
-
 t.makilaF = {"hit".postln}; // custom function that will be triggered when a hit is triggered
-
+t.scheduleDraw= {"".postln};
 
 */
 Txalaparta{
 	var <samples, <>buffers, sndpath, netadd, server, playRoutine, currenttemposwing;
-	var >makilaF, >scheduleDraw;
+	var >makilaF, >scheduleDraw, <scoreArray, <startTime;
 
 	*new {| server, path = "." |
 		^super.new.initTxalaparta( server, path );
@@ -30,14 +28,23 @@ Txalaparta{
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
 
-		buffers = Array.fill(8, {nil}); //{[nil,false, false]}); // [Buffer, enabledtxakun, enablederrena]
+		startTime = 0;
+
+		buffers = Array.fill(8, {nil});
 
 		netadd = NetAddr("127.0.0.1", 6666);// which port to use?
+
+		scoreArray = scoreArray.add( // just add an empty event
+			().add(\time -> 0)
+			.add(\amp -> 0)
+			.add(\player -> 1) //1 or 2
+			.add(\plank -> 1)
+		);
 
 		// globals //
 		~verbose = 0;
 		~tempo = 60; // tempo. txakun / errena
-		~swing = 0.1;
+		~swing = 0.05;
 		~gapswing = 0.1;
 		~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
 		~amp = 0.5;
@@ -64,22 +71,18 @@ Txalaparta{
 			)
 		}).store;
 
-
 		scheduleDraw = {};
 		makilaF = {};
-
 
 		// AUTO TXALAPARTA LOOP ////////////////////
 		/* endless txalaparta rhythm using to globals
 		*/
 		playRoutine = Task({
-			var txakun; // classical txakun only is limited to two beats
-			var intermakilaswing, localstep, idealtempo=0, localtemposwing=0, deviation, localamp, zeroflag=false;
-
-			txakun = true; // play starts with txakun
+			var txakun = true; // classical txakun only is limited to two beats
+			var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
 
 			inf.do({ arg stepcounter; // txakun > errena cycle
-				var numbeats, outstr, beats, outarray=Array.new, scheduletime=0; // reset each loop
+				var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation; // reset each loop
 
 				outarray = outarray.add([1, ("is txakun?" + txakun)]);
 
@@ -106,13 +109,9 @@ Txalaparta{
 								});
 
 								zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
-
-								// global to all hits in this step
 								localstep = (localtemposwing*~gap*2)/numbeats;
-
 								intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
-								if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
-
+								if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
 								if (~mode, {scheduletime = localtemposwing});
 								this.schedulehits(scheduletime, ~mode, txakun, localamp, localstep, intermakilaswing, numbeats);
 
@@ -124,14 +123,15 @@ Txalaparta{
 
 				});
 
-				txakun = txakun.not;
-
 				// calculate time of next hit
 				currenttemposwing = rrand(~swing.neg, ~swing);
 				localtemposwing = idealtempo + currenttemposwing;
-				if (~pulse, { localtemposwing = deviation + localtemposwing });
-				localtemposwing.wait;
+				if (~pulse.not, { localtemposwing = localtemposwing + deviation; "adding deviation".postln });
 
+				localtemposwing.wait;
+				localtemposwing.postln;
+
+				txakun = txakun.not;
 			}) // end inf loop
 		}); // end  routine
 
@@ -139,10 +139,12 @@ Txalaparta{
 
 	play {
 		playRoutine.play(SystemClock);
+		startTime = Main.elapsedTime;
 	}
 
 	stop {
 		playRoutine.stop;
+		startTime = 0;
 	}
 
 	load {arg filename, index;
@@ -163,9 +165,9 @@ Txalaparta{
 
 	getnumactiveplanks {
 		var numactiveplanks=0;
-		buffers.do({arg arr;
-			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-		});
+		buffers.do({arg arr, ind; // checks if enabled for any of the players
+			if( (~buffersenabled[0][ind]||~buffersenabled[1][ind]),
+				{numactiveplanks = numactiveplanks + 1})});
 		^numactiveplanks;
 	}
 
@@ -241,16 +243,23 @@ Txalaparta{
 
 					if ( ~mode, { // before the bar
 						hittime = delaytime - (localstep * index);
-						if (index > 0, { hittime = hittime - rand(intermakilaswing) }); // but first one plays now
+						if (index > 0, { hittime = hittime - rand(intermakilaswing) });
 					},{ // aftr the bar;
 						hittime = delaytime + (localstep * index);
-						if (index > 0, { hittime = hittime + rand(intermakilaswing) }); // but first one plays now
+						if (index > 0, { hittime = hittime + rand(intermakilaswing) });
 					});
 
 					{ // deferred function
 						Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, plank.bufnum]);
 
 						makilaF.value(txakun.not.asInteger, makilaindex, 0.2);//slider animation
+
+						scoreArray = scoreArray.add( // just add an empty event
+							().add(\time -> (Main.elapsedTime - startTime + hittime))
+							.add(\amp -> hitamp)
+							.add(\player -> (flagindex + 1)) //1 or 2
+							.add(\plank -> (pos+1))
+						);
 
 						outarray = outarray.add([2, "plank"+plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
