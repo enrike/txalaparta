@@ -3,29 +3,25 @@ s.boot
 t = Txalaparta.new( s, '.' );
 
 ~mode=false
-//txakun, localamp, localstep, intermakilaswing, numbeats
-t.schedulehits(true, 0.5, 0.01, 0.9, 4);
-t.play
-
+// delaytime, mode, txakun, localamp, localstep, intermakilaswing, numbeats
+t.schedulehits(0, true, true, 0.5, 0.01, 0.9, 4);
+t.play // plays a task that loops endlessly generating txalaparta rhythms
 
 t.samples
-t.loadbuffer(''); //TO DO
 
-t.play
+t.makilaF = {"hit".postln}; // custom function that will be triggered when a hit is triggered
 
 
-todo:
-separate all the code related to GUI from the funcionality. use globals and functions to pass values between.
-this means to split some of the arrays with values where the structure is [widget, state], [widget, state] they have to be two separated arrays one for the widget and another for the states
 */
 Txalaparta{
-	var <samples, buffers, sndpath, netadd, server, playRoutine;
+	var <samples, <>buffers, sndpath, netadd, server, playRoutine, currenttemposwing;
+	var >makilaF, >scheduleDraw;
 
 	*new {| server, path = "." |
-		^super.new.initTxalaparta( server,path );
+		^super.new.initTxalaparta( server, path );
 	}
 
-	initTxalaparta {| aserver, apath |
+	initTxalaparta { |aserver, apath|
 
 		server = aserver;
 
@@ -34,59 +30,64 @@ Txalaparta{
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
 
-		buffers = Array.fill(8, {[nil,false, false]});// [Buffer, enabledtxakun, enablederrena]
-		buffers[0][1] = true; // but enable the first one
-		buffers[0][2] = true; // but enable the first one
+		buffers = Array.fill(8, {nil}); //{[nil,false, false]}); // [Buffer, enabledtxakun, enablederrena]
 
-		buffers.do({ arg buf, index;
-			buf[0] = Buffer.read(server, samples[index]);
-			["loading", buf[0]].postln;
-		});
+		netadd = NetAddr("127.0.0.1", 6666);// which port to use?
 
-		netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
-
-		~verbose = 2;
-		~tempo = 70; // tempo. txakun / errena
+		// globals //
+		~verbose = 0;
+		~tempo = 60; // tempo. txakun / errena
 		~swing = 0.1;
 		~gapswing = 0.1;
 		~gap = 0.22; // between hits. in txalaparta berria all gaps are more equal
 		~amp = 0.5;
 		//~classictxakun = true; // in txalaparta zaharra the txakun always 2 hits
 		~pulse = false; // should we keep stedy pulse in the tempo or not?
-		~freqs = [230, 231]; //
+		~freqs = [1]; //
 		~lastemphasis = true; // which one is stronger. actualy just using first or last
 		~zerolimit = true; //allow 0 more than once or not?
 		~enabled = [true, true]; // switch on/off txakun and errena
 		//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 		~allowedbeats = [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]];
 		~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
-		~plankchance = (Array.fill(8, {1}));
+		~plankchance = (Array.fill(buffers.size, {1}));
 		~autopilotrange = [5, 10]; // for instance
 		~mode = true; // old style hit position calulation?
 		~oscout = false;
 		~midiout = false;// not yet
 
-		// TXALAPARTA ////////////////////
+		~buffersenabled = [Array.fill(buffers.size, {false}), Array.fill(buffers.size, {false})]; // [enabledtxakun, enablederrena]
+
+		SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
+			Out.ar(outbus,
+				amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
+			)
+		}).store;
+
+
+		scheduleDraw = {};
+		makilaF = {};
+
+
+		// AUTO TXALAPARTA LOOP ////////////////////
+		/* endless txalaparta rhythm using to globals
+		*/
 		playRoutine = Task({
 			var txakun; // classical txakun only is limited to two beats
-			var intermakilaswing, localstep, idealtempo, localtemposwing, localamp, zeroflag=false;
+			var intermakilaswing, localstep, idealtempo=0, localtemposwing=0, deviation, localamp, zeroflag=false;
 
 			txakun = true; // play starts with txakun
 
 			inf.do({ arg stepcounter; // txakun > errena cycle
-				var numbeats, outstr, beats, outarray=Array.new; // reset each loop
+				var numbeats, outstr, beats, outarray=Array.new, scheduletime=0; // reset each loop
 
 				outarray = outarray.add([1, ("is txakun?" + txakun)]);
 
-				beats =	~allowedbeats[txakun.not.asInt];
+				beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
 
-				idealtempo = 60/(~tempo*2); // ideal position tempo /2 because it is a binary rhythm
-				localtemposwing = idealtempo + ~swing.rand - (~swing/2); //offset
-
-				if (~pulse, // sets the tempo
-					{idealtempo.wait},
-					{localtemposwing.wait}
-				);
+				deviation = idealtempo - localtemposwing;  // how far we are from ideal time
+				idealtempo = 60/(~tempo*2); // ideal position /2* because it is a binary rhythm
+				if (localtemposwing == 0, {localtemposwing = idealtempo}); // only first time
 
 				// if none is allowed or if only 0 is allowed or no choices to choose any
 				// TO DO. more complex. needs to check if the allowed ones have valid choice
@@ -97,26 +98,23 @@ Txalaparta{
 						// beats
 						if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
 							{
-								if ((~zerolimit && zeroflag),{ // no two consecutive 0
-									beats=beats[1..beats.size];
-								});
+								if ((~zerolimit && zeroflag), // no two consecutive 0
+									{ beats = beats[1..beats.size]});
 
 								{ numbeats == nil }.while({
 									numbeats = beats.wchoose(~beatchance.normalizeSum)
 								});
 
-								if (numbeats==0, {zeroflag=true}, {zeroflag=false}); // no two gaps in a row
+								zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
 
 								// global to all hits in this step
-								if (~pulse, // reduce the whole bar (*2) by the ~gap percentage and finally divide by the numbeats
-									{localstep = (idealtempo*~gap*2)/numbeats},
-									{localstep = (localtemposwing*~gap*2)/numbeats}
-								);
+								localstep = (localtemposwing*~gap*2)/numbeats;
 
 								intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
 								if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
 
-								this.schedulehits(txakun, localamp, localstep, intermakilaswing, numbeats);
+								if (~mode, {scheduletime = localtemposwing});
+								this.schedulehits(scheduletime, ~mode, txakun, localamp, localstep, intermakilaswing, numbeats);
 
 								outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
 								outarray = outarray.add([1, ["beat", stepcounter, txakun, numbeats]]);
@@ -127,6 +125,13 @@ Txalaparta{
 				});
 
 				txakun = txakun.not;
+
+				// calculate time of next hit
+				currenttemposwing = rrand(~swing.neg, ~swing);
+				localtemposwing = idealtempo + currenttemposwing;
+				if (~pulse, { localtemposwing = deviation + localtemposwing });
+				localtemposwing.wait;
+
 			}) // end inf loop
 		}); // end  routine
 
@@ -140,6 +145,11 @@ Txalaparta{
 		playRoutine.stop;
 	}
 
+	load {arg filename, index;
+		["loading"+(sndpath ++ filename) ].postln;
+		buffers[index] = Buffer.read(server, sndpath ++ filename);
+	}
+
 	/* receives an array of arrays each of them with two items:
 	- verbose level, array of strings to post --> [ [2, ["hello", "world"]], [1, [0,1,2,3,4]] ]
 	it posts the mesages that are above ~verbose level
@@ -151,41 +161,42 @@ Txalaparta{
 		//arr = [];
 	}
 
-	bufferstatusfor{ arg index, interpreter, flag;// interpreter can be 1 or 2
-		buffers[index][interpreter] = flag;
-	}
-
-	/* matches planks with buffers
-	*/
-	getplankindex { arg plank;
-		var pos=0;
-		buffers.do({arg buf, index;
-			if (buf[0].bufnum==plank[0].bufnum, { pos = index });
-		});
-		pos + 1;
-	}
-
 	getnumactiveplanks {
 		var numactiveplanks=0;
 		buffers.do({arg arr;
 			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
 		});
-		numactiveplanks;
+		^numactiveplanks;
+	}
+
+	/* which buffer positions is this plank?
+	*/
+	getplankindex { arg plank;
+		var pos=0;
+		buffers.do({arg buf, index;
+			if (buf.bufnum == plank.bufnum, { pos = index });
+		});
+		^pos;
+	}
+
+	checkplankenabled { arg aplank, flags;
+		var pos;
+		pos = this.getplankindex(aplank);
+		^flags[pos].not; // until we choose a plank that is enabled
 	}
 
 
 	/* this schedules all the hits for this bar. uses defer
 	localstep: distance between hits
 	*/
-	schedulehits {arg txakun, localamp, localstep, intermakilaswing, numbeats;
+	schedulehits {arg delaytime=0, mode=0, txakun, localamp, localstep, intermakilaswing, numbeats;
 
-		var flagindex=1, outarray=Array.new, emph;
+		var flagindex=txakun.not.asInt, outarray=Array.new, emph, drawingSet = Array.fill(buffers.size, {[-1, 0, false, 10]});
 
 		// txakun true 1 -> 1 // errena false 0 -> 2
-		if (txakun, {flagindex=1},{flagindex=2});
+		//if (txakun, {flagindex=1},{flagindex=2});
 
-		// avoid when no sound is selected
-		if (buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
+		if (~buffersenabled[1].indexOf(true).isNil.not,
 			{
 				if(~mode, { // reverse in old mode. 4 options
 					if(~lastemphasis,
@@ -200,7 +211,7 @@ Txalaparta{
 				});
 
 				numbeats.do({ arg index; // for each makila one hit
-					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=[nil, false, false];
+					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=nil, pos;
 
 					// emphasis
 					if (~amp > 0, { // place emphasis
@@ -210,32 +221,47 @@ Txalaparta{
 						);
 					});
 
-					// here we could mute randomly one of the hits on >1 phrases to
-					// emulate constructions such as ||:|   :|   |:| and so on...
-
-					// choose a plank. (which sample)
-					{ plank[flagindex] == false }.while( {
-						plank = buffers.wchoose(~plankchance.normalizeSum)
+					if ( ~mode, { // before the bar
+						makilaindex = numbeats-index-1;//reverse
+					},{ // aftr the bar;
+						makilaindex = index;
 					});
 
-					//freq
-					hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
+					// here we could mute randomly one of the hits on >1 phrases to
+					// emulate constructions such as ||:|   :|   |:| and so on...
+					pos = Array.fill(buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
+					{
+						~buffersenabled[flagindex][pos] == false;
+					}.while({
+						pos = Array.fill(buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
+					});
+					plank = buffers[pos];
 
-					// time of the hit. first plays now
-					hittime = localstep * index;
-					if (index > 0, { hittime = hittime + rand(intermakilaswing) });
+					hitfreq = ~freqs.choose + rrand(-0.002, 0.002); // just a small freq swing
+
+					if ( ~mode, { // before the bar
+						hittime = delaytime - (localstep * index);
+						if (index > 0, { hittime = hittime - rand(intermakilaswing) }); // but first one plays now
+					},{ // aftr the bar;
+						hittime = delaytime + (localstep * index);
+						if (index > 0, { hittime = hittime + rand(intermakilaswing) }); // but first one plays now
+					});
 
 					{ // deferred function
-						Synth(\playBuf, [\amp, hitamp, \freq, 1+rrand(-0.008, 0.008), \bufnum, plank[0].bufnum]);
-						//GUI
-						//makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
+						Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, plank.bufnum]);
+
+						makilaF.value(txakun.not.asInteger, makilaindex, 0.2);//slider animation
 
 						outarray = outarray.add([2, "plank"+plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
 						this.postoutput(outarray); // finally
 						outarray = [];
 					}.defer(hittime);
+
+					drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
 				}); // END NUMBEATS LOOP
+
+				{ scheduleDraw.value(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
 
 		}, {"WARNING: no sound selected for beat".postln; buffers.postln});
 	}
