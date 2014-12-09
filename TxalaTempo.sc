@@ -5,15 +5,15 @@ listens to incomming signal distinguising silence/signal. Calculates tempo betwe
 License GPL.
 by www.ixi-audio.net
 
-Usage:
-t = TxalaTempo.new(s, 0);
+Usage as standalone panel:
+t = TxalaTempo.new(s, 0, true);
 t.bpm.postln;
 t.setCheckRate(40)
 t.setFallTime(0.1)
 t.setAmp(0.3)
 
 
-to trap the event from somewhere else:
+Usage from an app. to trap the event from there:
 
 t = TxalaTempo.new(s, 0, false);
 //collect its output this way
