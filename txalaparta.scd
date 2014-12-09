@@ -88,18 +88,19 @@ s.unmute
 */
 
 
- // this is to avoid problem in some windows machines
+// this is to avoid problem in some windows machines
 Platform.case(
-    //\osx,       { "OSX".postln },
-    \linux,     { Server.default = Server.internal },
-    \windows,   { Server.default = Server.internal }
+	//\osx,       { "OSX".postln },
+	\linux,     { Server.default = Server.internal },
+	\windows,   { Server.default = Server.internal }
 );
 
 s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var playF, makilaF, txalascoreF, schedulehits, getplankindex, getnumactiveplanks, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;
+	/*	var playF, makilaF, txalascoreF, schedulehits, getplankindex, getnumactiveplanks, presetspath, drawingSet, drawingSetB, netadd, scoreArray, midioutdev, startTime;*/
+	var presetspath, makilaF, txalascoreF, drawingSetBuffer, netadd, scoreArray, midioutdev, startTime, txalaparta, schedulehits, playF;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
@@ -110,7 +111,7 @@ s.doWhenBooted({
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
-	// GLOBAL vars
+	/*	// GLOBAL vars
 	~tempo = 70; // tempo. txakun / errena
 	~swing = 0.1;
 	~gapswing = 0.1;
@@ -132,7 +133,7 @@ s.doWhenBooted({
 	~midiout = false;// not yet
 
 	// utility
-	~verbose = 1;
+	~verbose = 1;*/
 
 	scoreArray = []; //stores all events as a score
 	/*	scoreArray = scoreArray.add( // just add an empty event
@@ -142,13 +143,8 @@ s.doWhenBooted({
 	.add(\plank -> 1)
 	);*/
 
-	sndpath = thisProcess.nowExecutingPath.dirname ++ "/sounds/";
-	samples = (sndpath++"*").pathMatch;
-	("sndpath is" + sndpath).postln;
-	("available samples are" + samples).postln;
 
-	buffers = Array.fill(8, {[nil,false, false]});// [Buffer, enabledtxakun, enablederrena]
-	buffers[0][1] = true; // but enable the first one
+	txalaparta = Txalaparta.new( s, thisProcess.nowExecutingPath.dirname );
 
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 	presets = (presetspath++"*").pathMatch;
@@ -158,27 +154,18 @@ s.doWhenBooted({
 	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
-	planksMenus = Array.fill(buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
+	planksMenus = Array.fill(txalaparta.buffers.size, {[nil,nil,nil]});// [tx button, err button, pulldownmenu] txakun and errena separated enabled
 	enabledButs = [nil, nil]; // txakun and errena
 
-	drawingSet = [Array.fill(4, {[0, false, 10]}), Array.fill(4, {[0, false, 10]})]; //one buelta with 4 hits each part
+	drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with 4 hits each part
 
 	netadd = NetAddr("127.0.0.1", 6666);// this needs to be set to a proper port
 	//midioutdev = MIDIOut(0); // activate MIDI out device
 
 
 
-
-
-	// THE BASIC SYNTHDEF
-
-	SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
-		Out.ar(outbus,
-			amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
-		)
-	}).store;
-
-
+	/* check if any of the values in an array is not nil
+	*/
 	istheresomething = {arg alist;
 		var values = List[];
 		alist.do({arg item;
@@ -191,29 +178,29 @@ s.doWhenBooted({
 	/* this is just to avoid the data being overwriten
 	*/
 	scheduleDraw = {arg data;
-		drawingSet[1] = data;
+		drawingSetBuffer[1] = data; // store in second slot
 		window.refresh;
 	};
-
+/*
 	postOutput = {arg outarray;
 		outarray.do({arg item;
 			if (~verbose>item[0], {item[1].postln});
 		});
 		outarray = [];
-	};
+	};*/
 
 
 	/* this schedules all the hits for this bar. uses deffer
 	*/
-	schedulehits = {arg step, txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing, emph;
+/*	schedulehits = {arg txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing;
 
-		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false, 10]}), flagindex=1, outarray=Array.new;
+		var firstdefer=nil, drawingSetB = Array.fill(8, {[0, false, 10]}), flagindex=1, outarray=Array.new, emph;
 
 		// txakun true 1 -> 1 // errena false 0 -> 2
 		if (txakun, {flagindex=1},{flagindex=2});
 
 		// avoid when no sound is selected
-		if (buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
+		if (txalaparta.buffers.deepCollect(1, {|item| item[flagindex]}).find([true]).isNil.not,
 			{
 				if(~mode, { // reverse in old mode
 					if(~lastemphasis,
@@ -238,29 +225,28 @@ s.doWhenBooted({
 					});
 
 					{ plank[flagindex] == false }.while( {
-						plank = buffers.wchoose(~plankchance.normalizeSum)
+						plank = txalaparta.buffers.wchoose(~plankchance.normalizeSum)
 					});
 
 					outarray = outarray.add([2, "plank"+plank]);
 
 					hitfreq = (~freqs.choose) + 0.6.rand; // just a small freq swing
 					hitswing = localstep + rrand(intermakilaswing.neg, intermakilaswing);
-					if( ~mode, { // before the bar
+					if ( ~mode, { // before the bar
 						hittime = localtemposwing - (hitswing * index);
 						makilaindex = numbeats-index-1;//reverse
 						},{ // aftr the bar
 							hittime = localtemposwing + (hitswing * index);
 							makilaindex = index;
-						}
-					);
+					});
 
-					if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later
+					if (firstdefer == nil, {firstdefer=hittime}); // schedule drawing later at the time the first one is played
 
 					scoreArray = scoreArray.add(
 						().add(\time -> (Main.elapsedTime - startTime + hittime))
 						.add(\amp -> hitamp)
 						.add(\player -> flagindex) //1 or 2
-						.add(\plank -> getplankindex.value(plank)) //
+						.add(\plank -> txalaparta.getplankindex(plank)) //
 					);
 
 					{ // deferred function
@@ -283,15 +269,15 @@ s.doWhenBooted({
 				{
 					scheduleDraw.value(drawingSetB);
 				}.defer(firstdefer); // finally schedule drawing
-		}, {"WARNING: no sound selected for beat".postln; buffers.postln});
-	};
+		}, {"WARNING: no sound selected for beat".postln; txalaparta.buffers.postln});
+	};*/
 
 
 
 
 
 	// TXALAPARTA ////////////////////
-	playF = Routine({
+/*	playF = Routine({
 		var txakun; // classical txakun only is limited to two beats
 		var intermakilaswing, localstep, idealtempo, localtemposwing, localamp, zeroflag=false;
 
@@ -329,7 +315,7 @@ s.doWhenBooted({
 			// TO DO. more complex. needs to check if the allowed ones have valid choice
 			if ((beats.copyRange(1,beats.size).every(_.isNil) ||
 				~beatchance.normalizeSum.every(_.isNaN)), {
-				"WARNING: no beats allowed or no choice to select any".postln;
+					"WARNING: no beats allowed or no choice to select any".postln;
 				},{
 					// beats
 					if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
@@ -352,10 +338,10 @@ s.doWhenBooted({
 
 							intermakilaswing = rrand(~gapswing/numbeats.neg, ~gapswing/numbeats); //reduces  swing proportionally to hits to play
 							if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0}); //local amp swing
-							schedulehits.value(stepcounter, txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
-
+							schedulehits.value(txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing);
+							[txakun, localamp, localstep, intermakilaswing, numbeats, localtemposwing].postln;
 							outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
-							outarray = outarray.add([1, ["beat", stepcounter, txakun, numbeats]]);
+							outarray = outarray.add([2, ["beat", stepcounter, txakun, numbeats]]);
 
 							{
 								output.string = outstr;
@@ -367,7 +353,7 @@ s.doWhenBooted({
 
 			txakun = txakun.not;
 		}) // end inf loop
-	});
+	});*/
 
 
 
@@ -390,32 +376,12 @@ s.doWhenBooted({
 		returnval;
 	};
 
-	getplankindex = { arg plank;
-		var pos=0;
-		buffers.do({arg buf, index;
-			if (buf[0].bufnum==plank[0].bufnum, {
-				pos = index;
-			});
-		});
-
-		pos+1;
-	};
-
-	getnumactiveplanks = {
-		var numactiveplanks=0;
-		buffers.do({arg arr;
-			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
-		});
-		numactiveplanks;
-	};
-
-	// txalascore animation
 
 	txalascoreF = Routine({
 		inf.do({ //arg count;
 			if (playBut.value.asBoolean, {
 				//{
-					tscore.update(scoreArray, Main.elapsedTime - startTime)
+				tscore.update(scoreArray, Main.elapsedTime - startTime)
 				//}.defer;
 			});
 			0.05.wait;
@@ -423,9 +389,13 @@ s.doWhenBooted({
 	});
 
 
+
 	// MAKILA PLAYING ANIMATION //
-	makilaF = {arg sl, time;
-		var steps, stepvalue, gap=0.05, loopF;
+	//makilaF.value(makilasliders[txakun.not.asInteger].wrapAt(makilaindex), 0.2);//slider animation
+	makilaF = {arg txakunflag, makilaindex, time;
+		var steps, stepvalue, gap=0.05, loopF, sl;
+
+		sl = makilasliders[txakunflag].wrapAt(makilaindex);
 		steps = (time/gap).asInt;
 		stepvalue = 1/steps;
 
@@ -452,7 +422,6 @@ s.doWhenBooted({
 
 
 
-
 	// WINDOW
 	doWindow = {arg width, height, caption;
 		var rot=0;
@@ -469,37 +438,33 @@ s.doWhenBooted({
 			var dur, dpt, rot; // duration of the circle and degrees per time unit
 			dur = 60/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
-			rot = (((drawingSet[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
+			//drawingSetBuffer[1][0][0].postln;
+			rot = (((drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
 
-			Pen.translate(565, 520);
+			Pen.translate(565, 520); // location of the circle
 			Pen.color = Color.black;
 			Pen.addArc(0@0, 80, 0, 360);
+			Pen.line(10@90.neg, 15@87.neg); // > mark
+			Pen.line(15@87.neg, 10@84.neg);
 
-			Pen.perform(\stroke); // static if maintaining pulse
-
-			//drawHitSet.value(drawingSet[0], dur, dpt);
-
-			if (~pulse.not, { Pen.rotate( rot ) });
+			//Pen.perform(\stroke); // static if maintaining pulse
 
 			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
-			drawHitSet.value(drawingSet[1], dur, dpt);
+			//drawHitSet.value(drawingSetBuffer[0], dur, dpt);
 
-			drawingSet = [ drawingSet[1], Array.fill(4, {[0, false, 10]}) ];
+			Pen.rotate( rot );
+
+			//if (~pulse.not, { Pen.rotate( rot ) });
+
+
+
+			drawHitSet.value(drawingSetBuffer[1], dur, dpt);
+
+			drawingSetBuffer = [ drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ];
 
 		};
-
-		/*
-		clock = UserView(window, Rect(380-45, 375-45, 90, 90));
-		//clock.background = Color.black;
-		clock.animate = true;
-		clock.drawFunc = {
-		Pen.color = Color.red;
-		rot = rot + 2pi/(120/~tempo);
-		Pen.rotate( rot );
-		Pen.line(0@0, 0@45.neg); //rotating line
-		};*/
 
 		/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
 		//[char, keycode].postln;
@@ -508,24 +473,21 @@ s.doWhenBooted({
 	};
 
 	drawHitSet = { arg set, dur, dpt;
-		set.do({arg data; // --> [msecs, txakunflag, ]
+		set.do({arg data; // --> [msecs, txakunflag, amp]
 			var offset;
 
-			if (data[0]>0, { // only the ones with a valid value
-				if (data[1], //txakun
-					{
-						offset = 270;
-						Pen.color = Color.red; //.alpha_(0.8).set;
-					},
-					{
-						offset = 90;
-						Pen.color = Color.blue;
-					}
-				); // txakun up, errena down
+			if (data[3] <= 1, { // only the ones with a valid data
+				if (data[2], {//txakun
+					offset = 270;
+					Pen.color = Color.red; //.alpha_(0.8).set;
+				},{
+					offset = 90;
+					Pen.color = Color.blue;
+				}); // txakun up, errena down
 
 				Pen.use{
-					Pen.rotate( (((data[0]*dpt)-offset)*(pi/180)) );
-					Pen.addArc((80)@(0), data[2]*12, 0, 360); // circles representing beats
+					Pen.rotate( (((data[1]*dpt)-offset)*(pi/180)) );
+					Pen.addArc((80)@(0), data[3]*12, 0, 360); // circles representing beats
 					Pen.perform(\fill);
 				};
 			});
@@ -542,7 +504,7 @@ s.doWhenBooted({
 		sliders[0][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
 			"tempo",  // label
-			ControlSpec(30, 350, \lin, 1, ~tempo, "BPMs"),     // controlSpec
+			ControlSpec(20, 250, \lin, 1, ~tempo, "BPMs"),     // controlSpec
 			{ arg ez;
 				~tempo = ez.value;
 			},
@@ -556,7 +518,7 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			// "this should open a parameter editing window".postln;
-			ParamWin.new("~tempo", ControlSpec(30, 350), sliders[0][0]);
+			ParamWin.new("~tempo", ControlSpec(20, 250), sliders[0][0]);
 		});
 
 		sliders[0][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -575,7 +537,7 @@ s.doWhenBooted({
 		sliders[1][0] = EZSlider( window,         // parent
 			Rect(xloc,yloc,width,20),    // bounds
 			"tempo swing",  // label
-			ControlSpec(0.001, 1, \lin, 0.001, ~swing, "ms"),     // controlSpec
+			ControlSpec(0.001, 0.2, \lin, 0.001, ~swing, "ms"),     // controlSpec
 			{ arg ez;
 				~swing = ez.value;
 			},
@@ -588,7 +550,7 @@ s.doWhenBooted({
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			ParamWin.new("~swing", ControlSpec(0.001, 1), sliders[1][0]);
+			ParamWin.new("~swing", ControlSpec(0.001, 0.2), sliders[1][0]);
 		});
 
 		sliders[1][1] = Button(window, Rect(buttonxloc,yloc,60,20))
@@ -864,10 +826,12 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, {
-				SystemClock.play(playF);
+				txalaparta.play();
+				//SystemClock.play(playF);
 				startTime = Main.elapsedTime;
 				},{
-					SystemClock.clear;
+					txalaparta.stop();
+					//SystemClock.clear;
 					startTime = 0;
 					scoreArray.postln;
 			});
@@ -932,13 +896,14 @@ s.doWhenBooted({
 		var menuxloc = xloc + 44, playxloc = menuxloc+250+2;
 		var yp=0;
 
+
 		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "TX";
 		StaticText(window, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
 		StaticText(window, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		StaticText(window, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
 
 		////////////////
-		buffers.size.do({ arg index;
+		txalaparta.buffers.size.do({ arg index;
 
 			// txakun row buttons
 			planksMenus[index][0] = Button(window, Rect(xloc,yloc+yp,20,20))
@@ -947,7 +912,7 @@ s.doWhenBooted({
 				[(index+1).asString, Color.black, Color.red],
 			])
 			.action_({ arg butt;
-				buffers[index][1] = butt.value.asBoolean;
+				~buffersenabled[0][index] = butt.value.asBoolean;
 				updateTxalaScoreNumPlanks.value();
 			});
 
@@ -958,7 +923,7 @@ s.doWhenBooted({
 				[(index+1).asString, Color.black, Color.blue],
 			])
 			.action_({ arg butt;
-				buffers[index][2] = butt.value.asBoolean;// THIS SHOULD GO TO ANOTHER?
+				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
 				updateTxalaScoreNumPlanks.value();
 			});
 
@@ -967,12 +932,11 @@ s.doWhenBooted({
 				planksMenus[index][1].valueAction = 1;
 			});// ONLY activate first ones
 
-			// menus
+			// menus for each plank
 			planksMenus[index][2] = PopUpMenu(window,Rect(menuxloc,yloc+yp,250,20))
-			.items_(samples.asArray.collect({arg item; PathName.new(item).fileName}))
+			.items_(txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}))
 			.action_({ arg menu;
-				buffers[index][0] = Buffer.read(s, sndpath ++ menu.item);
-				("loading" + menu.item + "with bufnum" + buffers[index][0].bufnum).postln;
+				txalaparta.load(menu.item, index);
 			})
 			.valueAction_(index);
 
@@ -981,10 +945,8 @@ s.doWhenBooted({
 			.states_([
 				[">", Color.white, Color.black]
 			])
-			.action_({ arg butt;
-				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum,
-					buffers[index][0].bufnum]
-				)
+			.action_({ arg butt;// play a single shot
+				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, txalaparta.buffers[index].bufnum])
 			});
 
 			Slider(window,Rect(menuxloc+275,yloc+yp,75,20))
@@ -1045,10 +1007,10 @@ s.doWhenBooted({
 
 	updateTxalaScoreNumPlanks = {arg numactiveplanks;
 		if (timelinewin.isNil.not, {
-			var numactiveplanks = getnumactiveplanks.value();
+			var numactiveplanks = txalaparta.getnumactiveplanks();
 
-/*			buffers.do({arg arr;
-				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
+			/*			buffers.do({arg arr;
+			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
 			});*/
 			tscore = nil;
 			tscore = TxalaScore.new(timelinewin,
@@ -1064,10 +1026,10 @@ s.doWhenBooted({
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 
-			numactiveplanks = getnumactiveplanks.value();
+			numactiveplanks = txalaparta.getnumactiveplanks();
 
-/*			buffers.do({arg arr;
-				if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
+			/*			buffers.do({arg arr;
+			if( (arr[1]||arr[2]), {numactiveplanks=numactiveplanks+1})
 			});*/
 
 			tscore = TxalaScore.new(timelinewin,
@@ -1160,10 +1122,10 @@ s.doWhenBooted({
 				beatbuttons.do({arg playerbuttons, index;
 					playerbuttons.do({arg but, subindex;
 						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
-/*						if (~allowedbeats[index][subindex]!=nil,
-							{but.value = 1},
-							{but.value = 0}
-						);*/
+						/* if (~allowedbeats[index][subindex]!=nil,
+						{but.value = 1},
+						{but.value = 0}
+						); */
 					});
 				});
 			} {|error|
@@ -1265,14 +1227,14 @@ s.doWhenBooted({
 				slidersauto[3]!=nil,
 			]);
 			data.put(\buffers, [ //path to file, tx flag, err flag
-				[ buffers[0][0].path, buffers[0][1], buffers[0][2] ],
-				[ buffers[1][0].path, buffers[1][1], buffers[1][2] ],
-				[ buffers[2][0].path, buffers[2][1], buffers[2][2] ],
-				[ buffers[3][0].path, buffers[3][1], buffers[3][2] ],
-				[ buffers[4][0].path, buffers[4][1], buffers[4][2] ],
-				[ buffers[5][0].path, buffers[5][1], buffers[5][2] ],
-				[ buffers[6][0].path, buffers[6][1], buffers[6][2] ],
-				[ buffers[7][0].path, buffers[7][1], buffers[7][2] ],
+				[ buffers[0][0].path, ~buffersenabled[1][0], ~buffersenabled[2][0] ],
+				[ buffers[1][0].path, ~buffersenabled[1][1], ~buffersenabled[2][1] ],
+				[ buffers[2][0].path, ~buffersenabled[1][2], ~buffersenabled[2][2] ],
+				[ buffers[3][0].path, ~buffersenabled[1][3], ~buffersenabled[2][3] ],
+				[ buffers[4][0].path, ~buffersenabled[1][4], ~buffersenabled[2][4] ],
+				[ buffers[5][0].path, ~buffersenabled[1][5], ~buffersenabled[2][5] ],
+				[ buffers[6][0].path, ~buffersenabled[1][6], ~buffersenabled[2][6] ],
+				[ buffers[7][0].path, ~buffersenabled[1][7], ~buffersenabled[2][7] ],
 			]);
 
 			data.writeArchive(presetspath++filename);
@@ -1282,6 +1244,9 @@ s.doWhenBooted({
 
 	};
 
+	txalaparta.makilaF = makilaF;
+	txalaparta.scheduleDraw = scheduleDraw;
+
 	doWindow.value(700, 620, "Txalaparta. www.ixi-audio.net");
 	doTimeControls.value(2, 5);
 	doMakilas.value(445, 5, 8);
@@ -1290,7 +1255,7 @@ s.doWhenBooted({
 	doPresets.value(10, 490);
 
 	if (~verbose>0, {currentEnvironment.postln});
-	if (~verbose>0, {buffers});
+	if (~verbose>0, {txalaparta.buffers});
 
 }); // this to be able to run from command line sclang txalaparta.sc
 
