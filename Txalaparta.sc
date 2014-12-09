@@ -126,10 +126,9 @@ Txalaparta{
 				// calculate time of next hit
 				currenttemposwing = rrand(~swing.neg, ~swing);
 				localtemposwing = idealtempo + currenttemposwing;
-				if (~pulse.not, { localtemposwing = localtemposwing + deviation; "adding deviation".postln });
+				if (~pulse.not, { localtemposwing = localtemposwing - deviation });
 
 				localtemposwing.wait;
-				localtemposwing.postln;
 
 				txakun = txakun.not;
 			}) // end inf loop
@@ -258,10 +257,10 @@ Txalaparta{
 							().add(\time -> (Main.elapsedTime - startTime + hittime))
 							.add(\amp -> hitamp)
 							.add(\player -> (flagindex + 1)) //1 or 2
-							.add(\plank -> (pos+1))
+							.add(\plank -> (pos + 1))
 						);
 
-						outarray = outarray.add([2, "plank"+plank]); // postln which plank this hit
+						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
 						this.postoutput(outarray); // finally
 						outarray = [];
