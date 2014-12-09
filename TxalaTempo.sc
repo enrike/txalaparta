@@ -25,7 +25,7 @@ f = OSCFunc({ arg msg, time;
 
 TxalaTempo {
 
-	var <>bpm = 0, tempocalc;
+	var <>bpm = 0, tempocalc, standalone;
 	var synth, channel, server;
 	var win, label; // gui
 
@@ -33,15 +33,23 @@ TxalaTempo {
 		^super.new.initTxalaTempo( server, channel, standalone );
 	}
 
-	initTxalaTempo {| aserver, achannel, standalone |
+	initTxalaTempo {| aserver, achannel, astandalone |
 		server = aserver;
+		standalone = astandalone;
+
+		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
+			var detected;
+			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
+			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // this will be collected somewhere else
+		}).store;
+
 		channel = achannel;
-		this.reset(standalone);
+		this.reset();
 	}
 
-	reset { arg standalone;
+	reset {
 		tempocalc = TempoCalculator.new(2, 1);
-		this.doAudio(standalone);
+		this.doAudio();
 		this.doGui();
 	}
 
@@ -62,13 +70,7 @@ TxalaTempo {
 		^bpm;
 	}
 
-	doAudio { arg standalone;
-		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
-			var detected;
-			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
-			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // this will be collected somewhere else
-		}).store;
-
+	doAudio {
 		synth = Synth(\txalatempo, [\ch, channel]);
 
 		if (standalone, {
@@ -81,10 +83,8 @@ TxalaTempo {
 	doGui {
 		if (win.isNil.not, {win.close});
 		win = Window("tempo detection using silence. for txalaparta",  Rect(0, 0, 350, 110));
-		win.onClose = {
-			// free all OSC responders with /txalasil address
-			synth.free;
-		};
+		// free all OSC responders with /txalasil address
+		win.onClose = {	synth.free };
 
 		label = StaticText(win, Rect(60, 0, 90, 25));
 		label.string = "BPM:"+bpm;
