@@ -104,9 +104,9 @@ s.doWhenBooted({
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
-	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, playBut, enabledButs;
+	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, enabledButs;
 	// GUI functions vars
-	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTxalaScoreNumPlanks;
+	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, doTxalaTempo, updateTxalaScoreNumPlanks;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
@@ -176,7 +176,7 @@ s.doWhenBooted({
 
 	txalascoreF = Routine({
 		inf.do({ //arg count;
-			if (playBut.value.asBoolean, {
+			if (autoplayBut.value.asBoolean, {
 				//{
 				tscore.update(txalaparta.scoreArray, Main.elapsedTime - txalaparta.startTime)
 				//}.defer;
@@ -261,7 +261,7 @@ s.doWhenBooted({
 
 		/*window.view.keyDownAction = { arg view, char, modifiers, unicode, keycode;
 		//[char, keycode].postln;
-		if (keycode=65, {playBut.});
+		if (keycode=65, {autoplayBut.});
 		}*/
 	};
 
@@ -273,9 +273,9 @@ s.doWhenBooted({
 				if (data[2], {//txakun
 					offset = 270;
 					Pen.color = Color.red; //.alpha_(0.8).set;
-				},{
-					offset = 90;
-					Pen.color = Color.blue;
+					},{
+						offset = 90;
+						Pen.color = Color.blue;
 				}); // txakun up, errena down
 
 				Pen.use{
@@ -571,11 +571,7 @@ s.doWhenBooted({
 			["tempo listener", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			var tc, tt, curtempo;
-			tt = TxalaTempo.new(s, 0, true);
-			OSCFunc({ arg msg, time;
-				curtempo = tt.calculate(msg[3]);
-			},'/txalasil', s.addr);
+			doTxalaTempo.value();
 		});
 
 		// RANDOM MODE
@@ -609,18 +605,32 @@ s.doWhenBooted({
 		}).valueAction = 1;
 
 
-		// PLAY
-		playBut = Button(window, Rect(xloc,yloc+200,200,50))
+		// AUTO PLAY
+		autoplayBut = Button(window, Rect(xloc,yloc+190,200,35))
 		.states_([
-			["play/stop", Color.white, Color.black],
-			["play/stop", Color.black, Color.green],
+			["auto play", Color.white, Color.black],
+			["auto play", Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, { txalaparta.autoplay() },
-				                       { txalaparta.autostop() });
+				{ txalaparta.autostop() });
 		});
 		//.defaultKeyDownAction_(" ");
-		//playBut.defaultKeyDownAction = "";
+		//autoplayBut.defaultKeyDownAction = "";
+
+		// INTERACTIVE PLAY
+		autoplayBut = Button(window, Rect(xloc,yloc+225,200,35))
+		.states_([
+			["interactive play", Color.white, Color.black],
+			["interactive play", Color.black, Color.green],
+		])
+		.action_({ arg butt;
+			if ( butt.value.asBoolean, {
+				doTxalaTempo.value();
+			});
+				//txalaparta.interactiveplay();
+			//}, { txalaparta.interactivestop() });
+		});
 
 
 
@@ -798,6 +808,15 @@ s.doWhenBooted({
 		});
 	};
 
+
+	// creates txalatempo window
+	doTxalaTempo = {
+		var tc, tt;
+		tt = TxalaTempo.new(txalaparta, s, 0, true);
+		OSCFunc({ arg msg, time;
+			tt.calculate(msg[3]);
+		},'/txalasil', s.addr);
+	};
 
 	// creates the timeline window
 	doTxalaScore = { arg xloc=0, yloc=600, width=1020, height=350, timeframe=4;
