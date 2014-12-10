@@ -7,24 +7,25 @@ by www.ixi-audio.net
 
 Usage:
 t = TempoCalculator.new(3, 1);
-t.process(0) // it receives a stream of 0/1 value and will understand the change between 0 to 1 as a trigger for the tempo calculation. for instance 0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1 it will calculate the tempo acording to the first 1 of each group or 1s
+t.process(0) // it receives a stream of 0/1 value and will understand the change between 0 to 1 as a trigger for the tempo calculation (being 0 signal and 1 silence).
 t.calculate // if you deal with discrete events you can simple shut this and it will return the tempo between the present call and the previous one
 */
 
 TempoCalculator{
 
-	var <memorylength, <verbose=0, hit = false, bpm=0, bpms, lastTime, sanityCheck;
+	var <memorylength, >verbose=0, hit = false, bpm=0, bpms, lastTime, sanityCheck, parent;
 
-	*new {| memorylength = 2, verbose = 0 |
-		^super.new.initTempoCalculator( memorylength, verbose );
+	*new {| parent=nil, memorylength = 2, verbose = 0 |
+		^super.new.initTempoCalculator( parent, memorylength, verbose );
 	}
 
-	initTempoCalculator {| memorylength, verbose |
-		memorylength = memorylength;
-		verbose = verbose;
+	initTempoCalculator {| aparent, amemorylength, averbose |
+		parent = aparent;
+		memorylength = amemorylength;
+		verbose = averbose;
 
 		bpm = 0;
-		bpms = 0.dup(memorylength);
+		bpms = 0.dup(amemorylength);
 		lastTime = 0;
 	}
 
@@ -35,7 +36,7 @@ TempoCalculator{
 		});
 		if (abpm < (bpms.last*0.6), { // hutsune. empty hit
 			abpm = bpms.last;
-			if (verbose > 0, {[abpm, (bpms.last*0.6), "***** gap"].postln});
+			if (verbose > 1, {[abpm, (bpms.last*0.6), "***** gap"].postln});
 		});
 
 		^abpm;
@@ -43,14 +44,15 @@ TempoCalculator{
 
 	process {arg value;
 		if (value == 0, { // signal
-			if (hit.not, {
+			if (hit.not, { // new hit arrived
 				hit = true;
 				bpm = this.calculate();
+				parent.newhit();
 			});
-			if (verbose > 0, {"-------------------".postln});
+			if (verbose > 2, {"-------------------".postln});
 		}, { //silence
 			hit = false;
-			if (verbose > 0, {".".postln});
+			if (verbose > 2, {".".postln});
 		});
 
 		^bpm;
@@ -70,5 +72,4 @@ TempoCalculator{
 
 		^newTempo;
 	}
-
 }
