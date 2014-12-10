@@ -616,8 +616,8 @@ s.doWhenBooted({
 			["play/stop", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			if ( butt.value.asBoolean, { txalaparta.play() },
-				                       { txalaparta.stop() });
+			if ( butt.value.asBoolean, { txalaparta.autoplay() },
+				                       { txalaparta.autostop() });
 		});
 		//.defaultKeyDownAction_(" ");
 		//playBut.defaultKeyDownAction = "";

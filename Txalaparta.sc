@@ -12,7 +12,7 @@ t.scheduleDraw= {"".postln};
 
 */
 Txalaparta{
-	var <samples, <>buffers, sndpath, netadd, server, playRoutine, currenttemposwing;
+	var <samples, <>buffers, sndpath, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
 	var >makilaF, >scheduleDraw, <scoreArray, <startTime;
 
 	*new {| server, path = "." |
@@ -74,10 +74,10 @@ Txalaparta{
 		scheduleDraw = {};
 		makilaF = {};
 
-		// AUTO TXALAPARTA LOOP ////////////////////
-		/* endless txalaparta rhythm using to globals
-		*/
-		playRoutine = Task({
+		// AUTO TXALAPARTA LOOP ////////////////////////
+		// endless txalaparta rhythm using to globals
+		////////////////////////////////////////////////
+		autoplayRoutine = Task({
 			var txakun = true; // classical txakun only is limited to two beats
 			var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
 
@@ -134,15 +134,27 @@ Txalaparta{
 			}) // end inf loop
 		}); // end  routine
 
+		//////////////////////////////////////////////////////////////////////////////////
+		// listens to incoming txalaparta sound stream, tries to find out the tempo and tries to
+		// answer in the proper positions
+		//////////////////////////////////////////////////////////////////////////////////
+		interactivePlayRoutine = Task({
+			inf.do({ arg stepc;
+				0.1.wait;
+			})
+		});
 	}
 
-	play {
-		playRoutine.play(SystemClock);
+
+
+
+	autoplay {
+		autoplayRoutine.play(SystemClock);
 		startTime = Main.elapsedTime;
 	}
 
-	stop {
-		playRoutine.stop;
+	autostop {
+		autoplayRoutine.stop;
 		startTime = 0;
 	}
 
