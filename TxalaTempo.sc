@@ -6,7 +6,7 @@ License GPL.
 by www.ixi-audio.net
 
 Usage as standalone panel:
-t = TxalaTempo.new(s, 0, true);
+t = TxalaTempo.new(parent, s, 0, true);
 t.bpm.postln;
 t.setCheckRate(40)
 t.setFallTime(0.1)
@@ -23,30 +23,32 @@ f = OSCFunc({ arg msg, time;
 
 TxalaTempo {
 
-	var <>bpm = 0, tempocalc, standalone;
+	var <>bpm = 0, tempocalc, standalone, dotanim;
 	var synth, channel, server;
-	var win, label; // gui
+	var win, label, parent; // gui
 
-	*new {| server, channel = 0, standalone=true |
-		^super.new.initTxalaTempo( server, channel, standalone );
+	*new {| parent, server, channel = 0, standalone=true |
+		^super.new.initTxalaTempo( parent, server, channel, standalone );
 	}
 
-	initTxalaTempo {| aserver, achannel, astandalone |
+	initTxalaTempo {| aparent, aserver, achannel, astandalone |
+		parent = aparent;
 		server = aserver;
 		standalone = astandalone;
+		channel = achannel;
+		dotanim = '';
 
 		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
-			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // this will be collected somewhere else
+			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).store;
 
-		channel = achannel;
 		this.reset();
 	}
 
 	reset {
-		tempocalc = TempoCalculator.new(2, 1);
+		tempocalc = TempoCalculator.new(this, 2, 0);
 		this.doAudio();
 		this.doGui();
 	}
@@ -63,14 +65,18 @@ TxalaTempo {
 
 	calculate {arg value;
 		bpm = tempocalc.process(value);
-		{label.string = "BPM:"+bpm}.defer;
-
+		dotanim = dotanim++"."; // just to know its alive
+		if (dotanim.size > 4, {dotanim = ''});
+		{label.string = "BPM:" + bpm + dotanim}.defer;
 		^bpm;
+	}
+
+	newhit { // this needs to tell the txalaparta instance that a new hit arrived
+		parent.newhit(bpm);
 	}
 
 	doAudio {
 		synth = Synth(\txalatempo, [\ch, channel]);
-
 		if (standalone, {
 			OSCFunc({ arg msg, time;
 				this.calculate(msg[3])
@@ -81,26 +87,50 @@ TxalaTempo {
 	doGui {
 		if (win.isNil.not, {win.close});
 		win = Window("tempo detection using silence. for txalaparta",  Rect(0, 0, 350, 110));
-		// free all OSC responders with /txalasil address
+
+		// here it should free all OSC responders with /txalasil address
 		win.onClose = {	synth.free };
 
-		label = StaticText(win, Rect(60, 0, 90, 25));
-		label.string = "BPM:"+bpm;
+		label = StaticText(win, Rect(10, 0, 90, 25));
+		label.string = "BPM:" + bpm;
 
-		Button( win, Rect(248,3,100,25))
-		.states_([
-			["reset", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			this.reset();
-		});
-
-		Button( win, Rect(148,3,100,25))
+		Button( win, Rect(115,3,70,25))
 		.states_([
 			["scope", Color.white, Color.black],
 		])
-		.action_({ arg butt;
+		.action_({ arg but;
 			server.scope(1).setProperties(1,8);
+		});
+
+
+		Button( win, Rect(188,3,20,25))
+		.states_([
+			["V", Color.white, Color.grey],
+			["V", Color.white, Color.blue],
+			["V", Color.white, Color.green],
+			["V", Color.white, Color.red]
+		])
+		.action_({ arg but;
+			tempocalc.verbose = but.value;
+		});
+
+
+		Button( win, Rect(208,3,70,25))
+		.states_([
+			["play/pause", Color.white, Color.black],
+			["play/pause", Color.black, Color.green],
+		])
+		.action_({ arg but;
+			synth.set(\ch, but.value-1);//this needs a simple way to stop listening
+		});
+
+
+		Button( win, Rect(278,3,70,25))
+		.states_([
+			["reset", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			this.reset();
 		});
 
 		EZSlider( win,
@@ -134,10 +164,6 @@ TxalaTempo {
 			labelWidth: 60;
 		);
 
-
 		win.front;
-
 	}
-
-
 }
