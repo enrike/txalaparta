@@ -7,10 +7,8 @@ by www.ixi-audio.net
 
 Usage:
 t = TempoCalculator.new(3, 1);
-t.process(0) // it can receive streams of 0s and 1s and will understand the change between 0 to 1 as a trigger for the tempo calculation
-t.calculate // if you deal with discrete events you can simple call this and it will return the tempo between the present call and the previous one
-
-
+t.process(0) // it receives a stream of 0/1 value and will understand the change between 0 to 1 as a trigger for the tempo calculation. for instance 0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1 it will calculate the tempo acording to the first 1 of each group or 1s
+t.calculate // if you deal with discrete events you can simple shut this and it will return the tempo between the present call and the previous one
 */
 
 TempoCalculator{

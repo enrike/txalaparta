@@ -12,11 +12,9 @@ t.setCheckRate(40)
 t.setFallTime(0.1)
 t.setAmp(0.3)
 
-
-Usage from an app. to trap the event from there:
-
+Usage from an app:
 t = TxalaTempo.new(s, 0, false);
-//collect its output this way
+//collect its output in a function like this
 f = OSCFunc({ arg msg, time;
 	msg.postln;
 },'/txalasil', s.addr);
