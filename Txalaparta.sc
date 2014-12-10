@@ -13,7 +13,7 @@ t.scheduleDraw= {"".postln};
 */
 Txalaparta{
 	var <samples, <>buffers, sndpath, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
-	var >makilaF, >scheduleDraw, <scoreArray, <startTime;
+	var >makilaF, >scheduleDraw, <scoreArray, <startTime, interstepcounter;
 
 	*new {| server, path = "." |
 		^super.new.initTxalaparta( server, path );
@@ -29,6 +29,7 @@ Txalaparta{
 		("available samples are" + samples).postln;
 
 		startTime = 0;
+		interstepcounter = 0;
 
 		buffers = Array.fill(8, {nil});
 
@@ -79,10 +80,10 @@ Txalaparta{
 		////////////////////////////////////////////////
 		autoplayRoutine = Task({
 			var txakun = true; // classical txakun only is limited to two beats
-			var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
+			var localtemposwing=0, zeroflag=false, idealtempo=0;
 
 			inf.do({ arg stepcounter; // txakun > errena cycle
-				var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation; // reset each loop
+				var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation, localamp, localstep=0; // reset each loop
 
 				outarray = outarray.add([1, ("is txakun?" + txakun)]);
 
@@ -94,8 +95,9 @@ Txalaparta{
 
 				// if none is allowed or if only 0 is allowed or no choices to choose any
 				// TO DO. more complex. needs to check if the allowed ones have valid choice
-				if ((beats.copyRange(1,beats.size).every(_.isNil) ||
-					~beatchance.normalizeSum.every(_.isNaN)), {
+		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
+		//	~beatchance.normalizeSum.every(_.isNaN)), {
+		if (this.arebeats(beats), {
 						"WARNING: no beats allowed or no choice to select any".postln;
 					},{
 						// beats
@@ -113,7 +115,9 @@ Txalaparta{
 								intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
 								if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
 								if (~mode, {scheduletime = localtemposwing});
-								this.schedulehits(scheduletime, ~mode, txakun, localamp, localstep, intermakilaswing, numbeats);
+
+								this.schedulehits(scheduletime, ~mode, txakun, localamp,
+									localstep, intermakilaswing, numbeats);
 
 								outstr = stepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
 								outarray = outarray.add([1, ["beat", stepcounter, txakun, numbeats]]);
@@ -138,15 +142,64 @@ Txalaparta{
 		// listens to incoming txalaparta sound stream, tries to find out the tempo and tries to
 		// answer in the proper positions
 		//////////////////////////////////////////////////////////////////////////////////
-		interactivePlayRoutine = Task({
-			inf.do({ arg stepc;
+/*		interactivePlayRoutine = Task({
+			inf.do({ arg step;
 				0.1.wait;
 			})
-		});
+		});*/
 	}
 
+	/* avoid if none is allowed or chances are none
+	*/
+	arebeats {arg beats;
+		^(beats.copyRange(1, beats.size).every(_.isNil) ||
+			~beatchance.normalizeSum.every(_.isNaN))
+	}
 
+	// this gets called when the other interpreter hits the first of its group. we then calculate
+	// where our answer should go and schedule it
+	newhit {arg bpm;
+		var txakun=false; //fixed
+		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;// should persist
 
+		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation; // reset each loop
+
+		scheduletime = (60.0/bpm)/2;
+
+		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
+
+		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
+		//	~beatchance.normalizeSum.every(_.isNaN)), {
+		if (this.arebeats(beats), {
+			"WARNING: no beats allowed or no choice to select any".postln;
+		},{
+			// beats
+			if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
+				{
+					if ((~zerolimit && zeroflag), // no two consecutive 0
+						{ beats = beats[1..beats.size]});
+
+					{ numbeats == nil }.while({
+						numbeats = beats.wchoose(~beatchance.normalizeSum)
+					});
+
+					zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
+					localstep = (~gap*2.0)/numbeats;
+					intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
+					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
+
+					this.schedulehits(scheduletime, true, txakun, localamp,
+						localstep, intermakilaswing, numbeats);
+
+					interstepcounter = interstepcounter + 1;
+
+					outstr = interstepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
+					outarray = outarray.add([1, ["beat", interstepcounter, txakun, numbeats]]);
+
+					{ this.postoutput(outarray) }.defer;
+			}); //end if beats
+		});
+	}
 
 	autoplay {
 		autoplayRoutine.play(SystemClock);
@@ -156,7 +209,19 @@ Txalaparta{
 	autostop {
 		autoplayRoutine.stop;
 		startTime = 0;
+		interstepcounter = 0;
 	}
+
+	interactiveplay {
+		interactivePlayRoutine.play(SystemClock);
+		startTime = Main.elapsedTime;
+	}
+
+	interactivestop {
+		interactivePlayRoutine.stop;
+		startTime = 0;
+	}
+
 
 	load {arg filename, index;
 		["loading"+(sndpath ++ filename) ].postln;
