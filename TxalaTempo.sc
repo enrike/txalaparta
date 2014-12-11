@@ -87,9 +87,11 @@ TxalaTempo {
 	}
 
 	// this is called by tempocalculator on new pattern detected
-	// it allows to grup together hits into patterns
-	newpattern {
-		parent.newpattern(bpm, curPattern);
+	// it allows to grup together hits into patterns.
+	// it is triggered when the first hit of a new pattern is detected.
+	// that means the previous pattern is finished and can be analysed
+	finisholdpattern {
+		parent.finisholdpattern(bpm, curPattern);
 		curPattern = nil; // because it starts a new one
 	}
 
@@ -101,18 +103,27 @@ TxalaTempo {
 
 		synthonset = Synth(\txalaonsetlistener);
 		OSCFunc({ arg msg, time;
-			if (curPattern.isNil, {patternsttime = Main.elapsedTime}); // start counting on first one
+			var hit, hittime;
 
-			[Main.elapsedTime - patternsttime].postln;
+			//[curPattern.isNil, Main.elapsedTime - patternsttime].postln;
 
-			curPattern = curPattern.add( // just add an empty event
-				().add(\time -> (Main.elapsedTime - patternsttime))
+			if (curPattern.isNil, {
+				hittime = 0; // start counting on first one
+				patternsttime = Main.elapsedTime;
+			},{
+				hittime = Main.elapsedTime - patternsttime;
+			});
+
+			hit = ().add(\time -> hittime)
 				.add(\amp -> msg[3])
 				.add(\player -> 1) //always 1 in this case
-				.add(\plank -> 1)// here needs to match mgs[5] against existing samples freq
-			);
+				.add(\plank -> 1);// here needs to match mgs[5] against existing samples freq
 
-			parent.newhit(curPattern.last); // for the score timeline
+			curPattern = curPattern.add(hit);
+
+			// now correct the time for the txalascore
+			hit.time = Main.elapsedTime - parent.startTime;
+			parent.newhit(hit); // now display this hit in txalascore
 		},'/txalaonset', server.addr);
 	}
 

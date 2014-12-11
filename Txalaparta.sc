@@ -157,12 +157,14 @@ Txalaparta{
 	}
 
 	newhit {arg hit;
-		scoreArray = scoreArray ++ hit;
+		//hit.postln;
+		scoreArray = scoreArray.add(hit);
+		//["newhit", scoreArray.size].postln;
 	}
 
-	// this gets called when the other interpreter hits the first of its group. we then calculate
-	// where our answer should go and schedule it
-	newpattern {arg bpm, prevPattern;
+	// this gets called when the other interpreter hits the first of its
+	// group. we then calculate where our answer should go and schedule it
+	finisholdpattern {arg bpm, prevPattern;
 		var txakun=false; //fixed
 		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
 		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
@@ -340,7 +342,7 @@ Txalaparta{
 							.add(\plank -> (pos + 1))
 						);
 
-						scoreArray.last.postln;
+						//["schedulehits", scoreArray.size].postln;
 
 						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);

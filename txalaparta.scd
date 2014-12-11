@@ -99,12 +99,12 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var presetspath, makilaF, txalascoreF, drawingSetBuffer, scoreArray, midioutdev, txalaparta;
+	var presetspath, makilaF, txalascoreF, drawingSetBuffer, midioutdev, txalaparta;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
-	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, enabledButs;
+	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, interactiveplayBut, enabledButs;
 	// GUI functions vars
 	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTxalaScoreNumPlanks;
 
@@ -165,11 +165,10 @@ s.doWhenBooted({
 
 
 	txalascoreF = Routine({
-		inf.do({ //arg count;
-			if (autoplayBut.value.asBoolean, {
-				//{
-				tscore.update(txalaparta.scoreArray, Main.elapsedTime - txalaparta.startTime)
-				//}.defer;
+		inf.do({
+			if ((autoplayBut.value.asBoolean.not || // if any of them is on
+				interactiveplayBut.value.asBoolean.not), {
+				tscore.update(txalaparta.scoreArray, Main.elapsedTime - txalaparta.startTime);
 			});
 			0.05.wait;
 		});
@@ -609,7 +608,7 @@ s.doWhenBooted({
 		//autoplayBut.defaultKeyDownAction = "";
 
 		// INTERACTIVE PLAY
-		autoplayBut = Button(window, Rect(xloc,yloc+225,200,35))
+		interactiveplayBut = Button(window, Rect(xloc,yloc+225,200,35))
 		.states_([
 			["interactive play", Color.white, Color.black],
 			["interactive play", Color.black, Color.green],
@@ -617,6 +616,8 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, {
 				TxalaTempo.new(txalaparta, s, 0, true);
+			},{
+				txalaparta.interactivestop();
 			});
 				//txalaparta.interactiveplay();
 			//}, { txalaparta.interactivestop() });
