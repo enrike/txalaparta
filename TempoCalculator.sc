@@ -47,7 +47,7 @@ TempoCalculator{
 			if (hit.not, { // new hit arrived
 				hit = true;
 				bpm = this.calculate();
-				parent.newhit();
+				parent.newpattern();// txalatempo
 			});
 			if (verbose > 2, {"-------------------".postln});
 		}, { //silence

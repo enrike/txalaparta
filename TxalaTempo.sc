@@ -23,8 +23,8 @@ f = OSCFunc({ arg msg, time;
 
 TxalaTempo {
 
-	var <>bpm = 0, tempocalc, standalone, dotanim;
-	var synth, channel, server;
+	var <>bpm = 0, tempocalc, standalone, dotanim, curPattern, patternsttime;
+	var synthtempo, synthonset, channel, server;
 	var win, label, parent; // gui
 
 	*new {| parent, server, channel = 0, standalone=true |
@@ -38,10 +38,26 @@ TxalaTempo {
 		channel = achannel;
 		dotanim = '';
 
+		curPattern = nil;
+		patternsttime = 0;
+
+		// silence detector
 		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
+		}).store;
+
+		//onset detector
+		SynthDef(\txalaonsetlistener, { |threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
+			var fft, onset, in, amp=0, freq=0, hasFreq=false;
+			in = SoundIn.ar(0);
+			fft = FFT(Buffer.alloc(server, 512), in);
+			onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
+			/*	*kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
+			amp = Amplitude.kr(in);
+			# freq, hasFreq = Pitch.kr(in, ampThreshold: 0.02, median: 7);
+			SendReply.kr(onset, '/txalaonset', [amp, hasFreq, freq]);
 		}).store;
 
 		this.reset();
@@ -52,36 +68,52 @@ TxalaTempo {
 		this.doAudio();
 		this.doGui();
 	}
-
 	setCheckRate {arg value;
-		synth.set(\checkrate, value);
+		synthtempo.set(\checkrate, value);
 	}
 	setFallTime {arg value;
-		synth.set(\falltime, value);
+		synthtempo.set(\falltime, value);
 	}
 	setAmp {arg value;
-		synth.set(\amp, value);
+		synthtempo.set(\amp, value);
 	}
 
 	calculate {arg value;
 		bpm = tempocalc.process(value);
 		dotanim = dotanim++"."; // just to know its alive
 		if (dotanim.size > 4, {dotanim = ''});
-		{label.string = "BPM:" + bpm + dotanim}.defer;
+		{ label.string = "BPM:" + bpm + dotanim }.defer;
 		^bpm;
 	}
 
-	newhit { // this needs to tell the txalaparta instance that a new hit arrived
-		parent.newhit(bpm);
+	// this is called by tempocalculator on new pattern detected
+	// it allows to grup together hits into patterns
+	newpattern {
+		parent.newpattern(bpm, curPattern);
+		curPattern = nil; // because it starts a new one
 	}
 
 	doAudio {
-		synth = Synth(\txalatempo, [\ch, channel]);
-		if (standalone, {
-			OSCFunc({ arg msg, time;
-				this.calculate(msg[3])
-			},'/txalasil', server.addr);
-		});
+		synthtempo = Synth(\txalatempo, [\ch, channel]);
+		OSCFunc({ arg msg, time;
+			this.calculate(msg[3])
+		},'/txalasil', server.addr);
+
+		synthonset = Synth(\txalaonsetlistener);
+		OSCFunc({ arg msg, time;
+			if (curPattern.isNil, {patternsttime = Main.elapsedTime}); // start counting on first one
+
+			[Main.elapsedTime - patternsttime].postln;
+
+			curPattern = curPattern.add( // just add an empty event
+				().add(\time -> (Main.elapsedTime - patternsttime))
+				.add(\amp -> msg[3])
+				.add(\player -> 1) //always 1 in this case
+				.add(\plank -> 1)// here needs to match mgs[5] against existing samples freq
+			);
+
+			parent.newhit(curPattern.last); // for the score timeline
+		},'/txalaonset', server.addr);
 	}
 
 	doGui {
@@ -89,7 +121,7 @@ TxalaTempo {
 		win = Window("tempo detection using silence. for txalaparta",  Rect(0, 0, 350, 110));
 
 		// here it should free all OSC responders with /txalasil address
-		win.onClose = {	synth.free };
+		win.onClose = {	synthtempo.free };
 
 		label = StaticText(win, Rect(10, 0, 90, 25));
 		label.string = "BPM:" + bpm;
@@ -101,7 +133,6 @@ TxalaTempo {
 		.action_({ arg but;
 			server.scope(1).setProperties(1,8);
 		});
-
 
 		Button( win, Rect(188,3,20,25))
 		.states_([
@@ -121,9 +152,8 @@ TxalaTempo {
 			["play/pause", Color.black, Color.green],
 		])
 		.action_({ arg but;
-			synth.set(\ch, but.value-1);//this needs a simple way to stop listening
+			synthtempo.set(\ch, but.value-1);//this needs a simple way to stop listening
 		});
-
 
 		Button( win, Rect(278,3,70,25))
 		.states_([
@@ -138,7 +168,7 @@ TxalaTempo {
 			"checkrate",
 			ControlSpec(1, 350, \lin, 1, 45, "Hz"),
 			{ arg ez;
-				synth.set(\checkrate, ez.value.asFloat);
+				synthtempo.set(\checkrate, ez.value.asFloat);
 			},
 			initVal: 45,
 			labelWidth: 60;
@@ -148,7 +178,7 @@ TxalaTempo {
 			"amp",
 			ControlSpec(0.01, 3, \lin, 0.01, 0.01, ""),
 			{ arg ez;
-				synth.set(\amp, ez.value.asFloat);
+				synthtempo.set(\amp, ez.value.asFloat);
 			},
 			initVal: 0.01,
 			labelWidth: 60;
@@ -158,7 +188,7 @@ TxalaTempo {
 			"falltime",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
-				synth.set(\falltime, ez.value.asFloat);
+				synthtempo.set(\falltime, ez.value.asFloat);
 			},
 			initVal: 0.1,
 			labelWidth: 60;

@@ -156,16 +156,20 @@ Txalaparta{
 			~beatchance.normalizeSum.every(_.isNaN))
 	}
 
+	newhit {arg hit;
+		scoreArray = scoreArray ++ hit;
+	}
+
 	// this gets called when the other interpreter hits the first of its group. we then calculate
 	// where our answer should go and schedule it
-	newhit {arg bpm;
+	newpattern {arg bpm, prevPattern;
 		var txakun=false; //fixed
-		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;// should persist
+		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
+		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
 
-		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation; // reset each loop
+		//["prev pattern", prevPattern.size].postln;
 
 		scheduletime = (60.0/bpm)/2;
-
 		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
 
 		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
@@ -195,7 +199,6 @@ Txalaparta{
 
 					outstr = interstepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
 					outarray = outarray.add([1, ["beat", interstepcounter, txakun, numbeats]]);
-
 					{ this.postoutput(outarray) }.defer;
 			}); //end if beats
 		});
@@ -336,6 +339,8 @@ Txalaparta{
 							.add(\player -> (flagindex + 1)) //1 or 2
 							.add(\plank -> (pos + 1))
 						);
+
+						scoreArray.last.postln;
 
 						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);

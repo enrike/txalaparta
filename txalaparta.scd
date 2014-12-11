@@ -106,17 +106,9 @@ s.doWhenBooted({
 	// GUI widgets
 	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, enabledButs;
 	// GUI functions vars
-	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, doTxalaTempo, updateTxalaScoreNumPlanks;
+	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTxalaScoreNumPlanks;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
-
-	//scoreArray = []; //stores all events as a score
-	/*	scoreArray = scoreArray.add( // just add an empty event
-	().add(\time -> 0)
-	.add(\amp -> 0)
-	.add(\player -> 1) //1 or 2
-	.add(\plank -> 1)
-	);*/
 
 	txalaparta = Txalaparta.new( s, thisProcess.nowExecutingPath.dirname );
 
@@ -161,12 +153,10 @@ s.doWhenBooted({
 	////////////////////////////////////////////////
 
 
-	/* return true if any of the items in the array or list is not nil
+	/* returns true if any of the items in the array or list is not nil
 	*/
-
 	findIndex = {arg plankmenu, path;
 		var returnval=0;
-		//plankmenu.postln;
 		plankmenu.items.do({arg file, i;
 			if (sndpath++file==path,{returnval = i});
 		});
@@ -565,14 +555,14 @@ s.doWhenBooted({
 			doTxalaScore.value;
 		});
 
-		// tempo listener
+/*		// tempo listener
 		Button(window, Rect(beatsxloc,yloc+200,100,25))
 		.states_([
 			["tempo listener", Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			doTxalaTempo.value();
-		});
+		});*/
 
 		// RANDOM MODE
 		Button(window, Rect(beatsxloc,yloc+230,100,25))
@@ -626,7 +616,7 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, {
-				doTxalaTempo.value();
+				TxalaTempo.new(txalaparta, s, 0, true);
 			});
 				//txalaparta.interactiveplay();
 			//}, { txalaparta.interactivestop() });
@@ -806,16 +796,6 @@ s.doWhenBooted({
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 				numactiveplanks);
 		});
-	};
-
-
-	// creates txalatempo window
-	doTxalaTempo = {
-		var tc, tt;
-		tt = TxalaTempo.new(txalaparta, s, 0, true);
-		OSCFunc({ arg msg, time;
-			tt.calculate(msg[3]);
-		},'/txalasil', s.addr);
 	};
 
 	// creates the timeline window
