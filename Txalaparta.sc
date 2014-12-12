@@ -197,6 +197,10 @@ Txalaparta{
 					this.schedulehits(scheduletime, true, txakun, localamp,
 						localstep, intermakilaswing, numbeats);
 
+					// mute when playing myself to avoid listening to myself
+					//{txalatempo.tooglelisten(false)}.defer(scheduletime);
+					//{txalatempo.tooglelisten(false)}.defer(scheduletime+(localstep*numbeats));
+
 					interstepcounter = interstepcounter + 1;
 
 					outstr = interstepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;

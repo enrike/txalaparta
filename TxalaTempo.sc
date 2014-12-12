@@ -6,7 +6,7 @@ License GPL.
 by www.ixi-audio.net
 
 Usage as standalone panel:
-t = TxalaTempo.new(parent, s, 0, true);
+t = TxalaTempo.new(nil, s, 0, true);
 t.bpm.postln;
 t.setCheckRate(40)
 t.setFallTime(0.1)
@@ -23,7 +23,7 @@ f = OSCFunc({ arg msg, time;
 
 TxalaTempo {
 
-	var <>bpm = 0, tempocalc, standalone, dotanim, curPattern, patternsttime;
+	var <>bpm = 0, tempocalc, standalone, curPattern, patternsttime;
 	var synthtempo, synthonset, channel, server;
 	var win, label, parent; // gui
 
@@ -36,12 +36,13 @@ TxalaTempo {
 		server = aserver;
 		standalone = astandalone;
 		channel = achannel;
-		dotanim = '';
 
 		curPattern = nil;
 		patternsttime = 0;
 
 		// silence detector
+		// this needs to stop listening when supercollider is playing
+		// to avoid listening to itself
 		SynthDef(\txalatempo, {|ch=0, amp=0.01, falltime=0.1, checkrate=45 |
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(ch), amp, falltime);
@@ -49,9 +50,9 @@ TxalaTempo {
 		}).store;
 
 		//onset detector
-		SynthDef(\txalaonsetlistener, { |threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
+		SynthDef(\txalaonsetlistener, { |ch=0, amp=1, threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
 			var fft, onset, in, amp=0, freq=0, hasFreq=false;
-			in = SoundIn.ar(0);
+			in = SoundIn.ar(ch) * amp;
 			fft = FFT(Buffer.alloc(server, 512), in);
 			onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
 			/*	*kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
@@ -80,10 +81,15 @@ TxalaTempo {
 
 	calculate {arg value;
 		bpm = tempocalc.process(value);
-		dotanim = dotanim++"."; // just to know its alive
-		if (dotanim.size > 4, {dotanim = ''});
-		{ label.string = "BPM:" + bpm + dotanim }.defer;
+		{ label.string = "BPM:" + bpm }.defer;
 		^bpm;
+	}
+
+	tooglelisten{arg flag; // 0 or amp
+		var value;
+		//if (flag, {value=})
+		synthtempo.set(\amp, flag.asInt);
+		synthonset.set(\amp, flag.asInt);
 	}
 
 	// this is called by tempocalculator on new pattern detected
@@ -128,33 +134,16 @@ TxalaTempo {
 	}
 
 	doGui {
+		var yloc = 0;
+
 		if (win.isNil.not, {win.close});
-		win = Window("tempo detection using silence. for txalaparta",  Rect(0, 0, 350, 110));
+		win = Window("tempo detection using silence. for txalaparta",  Rect(0, 0, 350, 350));
 
 		// here it should free all OSC responders with /txalasil address
 		win.onClose = {	synthtempo.free };
 
 		label = StaticText(win, Rect(10, 0, 90, 25));
 		label.string = "BPM:" + bpm;
-
-		Button( win, Rect(115,3,70,25))
-		.states_([
-			["scope", Color.white, Color.black],
-		])
-		.action_({ arg but;
-			server.scope(1).setProperties(1,8);
-		});
-
-		Button( win, Rect(188,3,20,25))
-		.states_([
-			["V", Color.white, Color.grey],
-			["V", Color.white, Color.blue],
-			["V", Color.white, Color.green],
-			["V", Color.white, Color.red]
-		])
-		.action_({ arg but;
-			tempocalc.verbose = but.value;
-		});
 
 
 		Button( win, Rect(208,3,70,25))
@@ -174,8 +163,36 @@ TxalaTempo {
 			this.reset();
 		});
 
+		Button( win, Rect(208,30,70,25))
+		.states_([
+			["scope", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			server.scope(1).setProperties(1,8);
+		});
+
+		Button( win, Rect(280,30,20,25))
+		.states_([
+			["V", Color.white, Color.grey],
+			["V", Color.white, Color.blue],
+			["V", Color.white, Color.green],
+			["V", Color.white, Color.red]
+		])
+		.action_({ arg but;
+			tempocalc.verbose = but.value;
+		});
+
+
+
+		// channel pull down here
+		StaticText(win, Rect(110, 0, 50, 25)).string = "channel";
+		PopUpMenu(win,Rect(160,3,40,20))
+		.items_( ["0","1","2","3","4","5","6","7","8","9","10"]);
+
+
+		StaticText(win, Rect(5, 45, 180, 25)).string = "Tempo detection";
 		EZSlider( win,
-			Rect(0,30,350,20),
+			Rect(0,yloc+70,350,20),
 			"checkrate",
 			ControlSpec(1, 350, \lin, 1, 45, "Hz"),
 			{ arg ez;
@@ -185,7 +202,7 @@ TxalaTempo {
 			labelWidth: 60;
 		);
 		EZSlider( win,
-			Rect(0,55,350,20),
+			Rect(0,yloc+90,350,20),
 			"amp",
 			ControlSpec(0.01, 3, \lin, 0.01, 0.01, ""),
 			{ arg ez;
@@ -195,7 +212,7 @@ TxalaTempo {
 			labelWidth: 60;
 		);
 		EZSlider( win,
-			Rect(0,80,350,20),
+			Rect(0,yloc+110,350,20),
 			"falltime",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
@@ -204,6 +221,50 @@ TxalaTempo {
 			initVal: 0.1,
 			labelWidth: 60;
 		);
+		//
+		//|ch=0, threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
+		StaticText(win, Rect(5, 145, 180, 25)).string = "Onset detection";
+		EZSlider( win,
+			Rect(0,yloc+170,350,20),
+			"threshold",
+			ControlSpec(0, 1, \lin, 0.01, 0.6, ""),
+			{ arg ez;
+				synthonset.set(\threshold, ez.value.asFloat);
+			},
+			initVal: 0.6,
+			labelWidth: 60;
+		);
+		EZSlider( win,
+			Rect(0,yloc+190,350,20),
+			"relaxtime",
+			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
+			{ arg ez;
+				synthonset.set(\relaxtime, ez.value.asFloat);
+			},
+			initVal: 2.1,
+			labelWidth: 60;
+		);
+		EZSlider( win,
+			Rect(0,yloc+210,350,20),
+			"floor",
+			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
+			{ arg ez;
+				synthonset.set(\floor, ez.value.asFloat);
+			},
+			initVal: 0.1,
+			labelWidth: 60;
+		);
+		EZSlider( win,
+			Rect(0,yloc+230,350,20),
+			"mingap",
+			ControlSpec(0.1, 20, \lin, 0.1, 10, "Ms"),
+			{ arg ez;
+				synthonset.set(\mingap, ez.value.asFloat);
+			},
+			initVal: 10,
+			labelWidth: 60;
+		);
+		StaticText(win, Rect(5, yloc+260, 280, 25)).string = "Some short of visualization goes here";
 
 		win.front;
 	}
