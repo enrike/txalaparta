@@ -95,9 +95,9 @@ Txalaparta{
 
 				// if none is allowed or if only 0 is allowed or no choices to choose any
 				// TO DO. more complex. needs to check if the allowed ones have valid choice
-		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
-		//	~beatchance.normalizeSum.every(_.isNaN)), {
-		if (this.arebeats(beats), {
+				//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
+				//	~beatchance.normalizeSum.every(_.isNaN)), {
+				if (this.arebeats(beats), {
 						"WARNING: no beats allowed or no choice to select any".postln;
 					},{
 						// beats
@@ -156,20 +156,34 @@ Txalaparta{
 			~beatchance.normalizeSum.every(_.isNaN))
 	}
 
+	/* new single hit detected by txalatempo. add it to score
+	*/
 	newhit {arg hit;
-		//hit.postln;
 		scoreArray = scoreArray.add(hit);
-		//["newhit", scoreArray.size].postln;
+	}
+
+	analisePattern{arg apattern;
+		var length = nil, intermakilagap=0, emphasis=0;
+
+		if (apattern.isNil, {^[0,0,0]});//skip
+		if (apattern.size > 1, {
+			length = apattern.last.hittime - apattern.first.hittime;
+			intermakilagap = length/apattern.size;
+			//emphasis = // collect all amps and get the index of the highest one.
+		});
+		^[length, intermakilagap, emphasis];
 	}
 
 	// this gets called when the other interpreter hits the first of its
 	// group. we then calculate where our answer should go and schedule it
-	finisholdpattern {arg bpm, prevPattern;
+	finisholdpattern {arg bpm, prevpattern;
 		var txakun=false; //fixed
 		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
 		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
+		var patterndata;
 
-		//["prev pattern", prevPattern.size].postln;
+		prevpattern.postln;
+		//patterndata = this.analisePattern(prevpattern);
 
 		scheduletime = (60.0/bpm)/2;
 		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
@@ -191,15 +205,16 @@ Txalaparta{
 
 					zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
 					localstep = (~gap*2.0)/numbeats;
-					intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
+					//intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
+					intermakilaswing = rand(patterndata[1]/numbeats);
 					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
 
 					this.schedulehits(scheduletime, true, txakun, localamp,
 						localstep, intermakilaswing, numbeats);
 
-					// mute when playing myself to avoid listening to myself
+					// mute while playing myself to avoid listening to myself
 					//{txalatempo.tooglelisten(false)}.defer(scheduletime);
-					//{txalatempo.tooglelisten(false)}.defer(scheduletime+(localstep*numbeats));
+					//{txalatempo.tooglelisten(true)}.defer(scheduletime+(localstep*numbeats));
 
 					interstepcounter = interstepcounter + 1;
 
@@ -230,7 +245,6 @@ Txalaparta{
 		interactivePlayRoutine.stop;
 		startTime = 0;
 	}
-
 
 	load {arg filename, index;
 		["loading"+(sndpath ++ filename) ].postln;
