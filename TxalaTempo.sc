@@ -25,7 +25,7 @@ TxalaTempo {
 
 	var <>bpm = 0, tempocalc, standalone, curPattern, patternsttime;
 	var synthtempo, synthonset, channel, server;
-	var win, label, parent; // gui
+	var win, label, parent, listeningDisplay; // gui
 
 	*new {| parent, server, channel = 0, standalone=true |
 		^super.new.initTxalaTempo( parent, server, channel, standalone );
@@ -51,14 +51,14 @@ TxalaTempo {
 
 		//onset detector
 		SynthDef(\txalaonsetlistener, { |ch=0, amp=1, threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
-			var fft, onset, in, amp=0, freq=0, hasFreq=false;
+			var fft, onset, in, level=0, freq=0, hasFreq=false;
 			in = SoundIn.ar(ch) * amp;
 			fft = FFT(Buffer.alloc(server, 512), in);
 			onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
 			/*	*kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
-			amp = Amplitude.kr(in);
+			level = Amplitude.kr(in);
 			# freq, hasFreq = Pitch.kr(in, ampThreshold: 0.02, median: 7);
-			SendReply.kr(onset, '/txalaonset', [amp, hasFreq, freq]);
+			SendReply.kr(onset, '/txalaonset', [level, hasFreq, freq]);
 		}).store;
 
 		this.reset();
@@ -88,6 +88,8 @@ TxalaTempo {
 	tooglelisten{arg flag; // 0 or amp
 		var value;
 		//if (flag, {value=})
+		["listening to myself?", flag.asInt].postln;
+		listeningDisplay.action(flag.asInt);
 		synthtempo.set(\amp, flag.asInt);
 		synthonset.set(\amp, flag.asInt);
 	}
@@ -97,6 +99,7 @@ TxalaTempo {
 	// it is triggered when the first hit of a new pattern is detected.
 	// that means the previous pattern is finished and can be analysed
 	finisholdpattern {
+		curPattern.postln; //POSTLN!!
 		parent.finisholdpattern(bpm, curPattern);
 		curPattern = nil; // because it starts a new one
 	}
@@ -110,8 +113,6 @@ TxalaTempo {
 		synthonset = Synth(\txalaonsetlistener);
 		OSCFunc({ arg msg, time;
 			var hit, hittime;
-
-			//[curPattern.isNil, Main.elapsedTime - patternsttime].postln;
 
 			if (curPattern.isNil, {
 				hittime = 0; // start counting on first one
@@ -145,6 +146,11 @@ TxalaTempo {
 		label = StaticText(win, Rect(10, 0, 90, 25));
 		label.string = "BPM:" + bpm;
 
+		listeningDisplay = Button( win, Rect(10,20,20,20))
+		.states_([
+			["", Color.white, Color.grey],
+			["", Color.white, Color.red]
+		]).valueAction_(1);
 
 		Button( win, Rect(208,3,70,25))
 		.states_([
@@ -267,5 +273,7 @@ TxalaTempo {
 		StaticText(win, Rect(5, yloc+260, 280, 25)).string = "Some short of visualization goes here";
 
 		win.front;
+
+		"++++++++++++++++++++++".postln;
 	}
 }
