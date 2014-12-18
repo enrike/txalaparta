@@ -24,7 +24,7 @@ f = OSCFunc({ arg msg, time;
 TxalaTempo {
 
 	var <>bpm = 0, tempocalc, standalone, curPattern, patternsttime;
-	var synthtempo, synthonset, channel, server;
+	var synthtempo, synthonset, synthtempoOSCcb, synthonsetOSCcb, channel, server;
 	var win, label, parent, listeningDisplay; // gui
 
 	*new {| parent, server, channel = 0, standalone=true |
@@ -61,13 +61,22 @@ TxalaTempo {
 			SendReply.kr(onset, '/txalaonset', [level, hasFreq, freq]);
 		}).store;
 
-		this.reset();
+		//this.reset();
+		this.doGui();
+	}
+
+	kill {
+		synthtempo.free;
+		synthonset.free;
+		synthtempoOSCcb.remove;
+		synthonsetOSCcb.remove;
 	}
 
 	reset {
+		this.kill();
+		tempocalc = nil;
 		tempocalc = TempoCalculator.new(this, 2, 0);
 		this.doAudio();
-		this.doGui();
 	}
 	setCheckRate {arg value;
 		synthtempo.set(\checkrate, value);
@@ -99,19 +108,24 @@ TxalaTempo {
 	// it is triggered when the first hit of a new pattern is detected.
 	// that means the previous pattern is finished and can be analysed
 	finisholdpattern {
-		curPattern.postln; //POSTLN!!
+		//curPattern.postln; //POSTLN!!
 		parent.finisholdpattern(bpm, curPattern);
 		curPattern = nil; // because it starts a new one
 	}
 
-	doAudio {
+	doAudio { // synths and OSC responders from synths here //
+		synthtempoOSCcb.remove;
+		synthonsetOSCcb.remove;
+		synthtempo.free;
+		synthonset.free;
+
 		synthtempo = Synth(\txalatempo, [\ch, channel]);
-		OSCFunc({ arg msg, time;
+		synthtempoOSCcb = OSCFunc({ arg msg, time; // change between signal and silence
 			this.calculate(msg[3])
 		},'/txalasil', server.addr);
 
 		synthonset = Synth(\txalaonsetlistener);
-		OSCFunc({ arg msg, time;
+		synthonsetOSCcb = OSCFunc({ arg msg, time; // new hot detected
 			var hit, hittime;
 
 			if (curPattern.isNil, {
@@ -127,6 +141,8 @@ TxalaTempo {
 				.add(\plank -> 1);// here needs to match mgs[5] against existing samples freq
 
 			curPattern = curPattern.add(hit);
+
+			//["new hit, curPattern state is",curPattern].postln;
 
 			// now correct the time for the txalascore
 			hit.time = Main.elapsedTime - parent.startTime;
@@ -158,7 +174,11 @@ TxalaTempo {
 			["play/pause", Color.black, Color.green],
 		])
 		.action_({ arg but;
-			synthtempo.set(\ch, but.value-1);//this needs a simple way to stop listening
+			if (but.value.asBoolean, {
+				this.reset()
+			},{
+				this.kill()
+			});
 		});
 
 		Button( win, Rect(278,3,70,25))
@@ -273,7 +293,5 @@ TxalaTempo {
 		StaticText(win, Rect(5, yloc+260, 280, 25)).string = "Some short of visualization goes here";
 
 		win.front;
-
-		"++++++++++++++++++++++".postln;
 	}
 }

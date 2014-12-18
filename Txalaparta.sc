@@ -164,14 +164,12 @@ Txalaparta{
 
 	analisePattern{arg apattern;
 		var length = nil, intermakilagap=0, emphasis=0;
-
-		if (apattern.isNil, {^[0,0,0]});//skip
 		if (apattern.size > 1, {
-			length = apattern.last.hittime - apattern.first.hittime;
+			length = apattern.last.time - apattern.first.time;
 			intermakilagap = length/apattern.size;
 			//emphasis = // collect all amps and get the index of the highest one.
 		});
-		^[length, intermakilagap, emphasis];
+		^[length, intermakilagap]; //emphasis];
 	}
 
 	// this gets called when the other interpreter hits the first of its
@@ -182,8 +180,8 @@ Txalaparta{
 		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
 		var patterndata;
 
-		prevpattern.postln;
-		//patterndata = this.analisePattern(prevpattern);
+		patterndata = this.analisePattern(prevpattern);
+		["pattern size and ndata", prevpattern.size,  patterndata, prevpattern].postln;
 
 		scheduletime = (60.0/bpm)/2;
 		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
@@ -206,7 +204,7 @@ Txalaparta{
 					zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
 					localstep = (~gap*2.0)/numbeats;
 					//intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
-					intermakilaswing = rand(patterndata[1]/numbeats);
+					intermakilaswing = rrand(patterndata[1]/(numbeats*8), patterndata[1]/(numbeats*4));
 					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
 
 					this.schedulehits(scheduletime, true, txakun, localamp,

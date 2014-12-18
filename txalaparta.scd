@@ -99,7 +99,7 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var presetspath, makilaF, txalascoreF, drawingSetBuffer, midioutdev, txalaparta;
+	var presetspath, makilaF, txalascoreF, drawingSetBuffer, midioutdev, txalaparta, txalatempo;
 
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
@@ -615,9 +615,11 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean, {
-				TxalaTempo.new(txalaparta, s, 0, true);
+				txalatempo = TxalaTempo.new(txalaparta, s, 0, true);
 			},{
 				txalaparta.interactivestop();
+				txalatempo.kill();
+				txalatempo = nil;
 			});
 				//txalaparta.interactiveplay();
 			//}, { txalaparta.interactivestop() });
