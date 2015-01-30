@@ -7,68 +7,52 @@ by www.ixi-audio.net
 
 Usage:
 t = TempoCalculator.new(3, 1);
-t.process(0) // it receives a stream of 0/1 value and will understand the change between 0 to 1 as a trigger for the tempo calculation (being 0 signal and 1 silence).
-t.calculate // if you deal with discrete events you can simple shut this and it will return the tempo between the present call and the previous one
+t.calculate // returns the BPMs from last time calculate() was called
+t.lasttime // returns the time when a calculate() was called last time
 */
 
 TempoCalculator{
 
-	var <memorylength, >verbose=0, hit = false, bpm=0, bpms, lastTime, sanityCheck, parent;
+	var memorylength, bpms, bpm, <lasttime;
 
-	*new {| parent=nil, memorylength = 2, verbose = 0 |
-		^super.new.initTempoCalculator( parent, memorylength, verbose );
+	*new {| memorylength = 2 |
+		^super.new.initTempoCalculator( memorylength );
 	}
 
-	initTempoCalculator {| aparent, amemorylength, averbose |
-		parent = aparent;
+	initTempoCalculator {| amemorylength |
 		memorylength = amemorylength;
-		verbose = averbose;
+		this.reset();
+	}
 
-		bpm = 0;
-		bpms = 0.dup(amemorylength);
-		lastTime = 0;
+	reset {
+		bpms = 0.dup(memorylength);
+		lasttime = 0;
+	}
+
+	pushlasttime { // push to next compass
+		lasttime = lasttime + (60/bpm);
 	}
 
 	sanityCheck {arg abpm;
 		if (abpm == inf, {
 			abpm = bpms.last;
-			if (verbose > 0, {"inf".postln});
+			"inf".postln;
 		});
-		if (abpm < (bpms.last*0.6), { // hutsune. empty hit
-			abpm = bpms.last;
-			if (verbose > 1, {[abpm, (bpms.last*0.6), "***** gap"].postln});
-		});
+		if (abpm > 250, { abpm = bpms.last}); // if too high something went wrong
 
 		^abpm;
 	}
 
-	process {arg value;
-		if (value == 0, { // signal
-			if (hit.not, { // new hit arrived
-				hit = true;
-				parent.finisholdpattern();// txalatempo before calculating new values
-				bpm = this.calculate();
-			});
-			if (verbose > 2, {"-------------------".postln});
-		}, { //silence
-			hit = false;
-			if (verbose > 2, {".".postln});
-		});
-
-		^bpm;
-	}
-
 	calculate {
-		// there should be a timeout calculated from previous tempo values
-		// to avoid getting wrong values when gaps are introduced
 		var newTempo, nowTime;
 
 		nowTime = SystemClock.seconds;
-		newTempo = (60/(nowTime - lastTime)).round(0.1);
+		newTempo = (60/(nowTime - lasttime)).round(0.1);
 		newTempo = this.sanityCheck(newTempo);
 		bpms = bpms.shift(1, newTempo); // store
 		newTempo = (bpms.sum/bpms.size); // average of all stored tempos
-		lastTime = nowTime;
+		bpm = newTempo;
+		lasttime = nowTime;
 
 		^newTempo;
 	}

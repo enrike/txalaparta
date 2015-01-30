@@ -28,7 +28,8 @@ amount of vibration allowed by supports (different materials used)
 Music modes
 Old txalaparta (one table, only partials, txakun does not change)
 New txalaparta
-Newest txalaparta (tuned, one harmonic per table, emphasis on second beat, allows for 3 and 4 hits per beat,          ritmos ternarios y cuaternarios)
+Newest txalaparta (tuned, one harmonic per table, emphasis on second beat, allows for 3 and 4 hits per beat,
+ritmos ternarios y cuaternarios)
 
 Limits
 Max amplitude
@@ -104,7 +105,7 @@ s.doWhenBooted({
 	// GUI vars
 	var window, timelinewin, clock, output, slidersauto, makilasliders, nextautopilot, sndpath, samples, buffers, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
-	var sliders, beatbuttons, beatsliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, interactiveplayBut, enabledButs;
+	var sliders, beatButtons, beatSliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, planksMenus, ampBut, autoplayBut, interactiveplayBut, enabledButs;
 	// GUI functions vars
 	var doWindow, doMakilas, doTimeControls, doButtons, doPlanks, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet, updateTxalaScoreNumPlanks;
 
@@ -115,8 +116,8 @@ s.doWhenBooted({
 	presetspath = thisProcess.nowExecutingPath.dirname ++ "/presets/";
 	presets = (presetspath++"*").pathMatch;
 
-	beatbuttons = [Array.fill(5, {nil}), Array.fill(5, {nil})];
-	beatsliders = Array.fill(5, {nil});
+	beatButtons = [Array.fill(5, {nil}), Array.fill(5, {nil})];
+	beatSliders = Array.fill(5, {nil});
 	sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 	slidersauto = Array.fill(4, {nil}); // keep a ref to the ones available for autopilot
 	makilasliders = [[nil, nil], [nil, nil]]; // two for each player
@@ -163,7 +164,15 @@ s.doWhenBooted({
 		returnval;
 	};
 
+/*
+		});
+		if(values.size>0, {true}, {false});
+	};
 
+
+	/* this is just to avoid the data being overwriten
+	*/
+	scheduleDraw = {arg data;*/
 	txalascoreF = Routine({
 		inf.do({
 			if ((autoplayBut.value.asBoolean.not || // if any of them is on
@@ -483,7 +492,7 @@ s.doWhenBooted({
 			["go zaharra", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			beatbuttons.do({arg butset;
+			beatButtons.do({arg butset;
 				butset.do({arg but, ind;
 					if ( but != nil, {
 						if ( ind < 3, {but.valueAction = 1}, {but.valueAction = 0});
@@ -508,7 +517,7 @@ s.doWhenBooted({
 				var thecolor;
 				if (index%2==0, {thecolor=Color.red}, {thecolor=Color.blue});
 
-				beatbuttons[index][subindex] = Button(window, Rect(beatsxloc+(20*index),yloc+(25*subindex),20,25))
+				beatButtons[index][subindex] = Button(window, Rect(beatsxloc+(20*index),yloc+(25*subindex),20,25))
 				.states_([
 					[subindex.asString, Color.white, Color.black],
 					[subindex.asString, Color.black, thecolor],
@@ -518,19 +527,19 @@ s.doWhenBooted({
 						{~allowedbeats[index][subindex] = subindex},
 						{~allowedbeats[index][subindex] = nil});
 				});
-				beatbuttons[index][subindex].valueAction = 0;
+				beatButtons[index][subindex].valueAction = 0;
 			});
 
-			beatsliders[subindex] = Slider(window,
+			beatSliders[subindex] = Slider(window,
 				Rect(beatsxloc+40,yloc+(25*subindex),75,25))
 			.action_({arg sl;
 				~beatchance[subindex] = sl.value;
 			}).orientation = \horizontal;
-			beatsliders[subindex].valueAction = ~beatchance[subindex];
+			beatSliders[subindex].valueAction = ~beatchance[subindex];
 		});
 
-		beatbuttons[0][2].valueAction = 1; // activate by default
-		beatbuttons[1][2].valueAction = 1;
+		beatButtons[0][2].valueAction = 1; // activate by default
+		beatButtons[1][2].valueAction = 1;
 
 
 		// Allow repeat 0 more than once
@@ -573,10 +582,10 @@ s.doWhenBooted({
 			sliders.do({arg slarray;
 				//slarray[0].valueAction = 0;// to do random
 			});
-			beatsliders.do({arg slarray;
+			beatSliders.do({arg slarray;
 				//slarray.valueAction = 0;
 			});
-			beatbuttons.do({arg slarray;
+			beatButtons.do({arg slarray;
 				//slarray.valueAction = 0;
 			});
 		})
@@ -896,7 +905,7 @@ s.doWhenBooted({
 			});
 
 			try { //bckwads compatible again
-				beatbuttons.do({arg playerbuttons, index;
+				beatButtons.do({arg playerbuttons, index;
 					playerbuttons.do({arg but, subindex;
 						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
 						/* if (~allowedbeats[index][subindex]!=nil,
@@ -907,7 +916,7 @@ s.doWhenBooted({
 				});
 			} {|error|
 				["setting beat buttons error", error, ~allowedbeats].postln;
-				beatbuttons[1][2].value = 1; // emergency activate this one
+				beatButtons[1][2].value = 1; // emergency activate this one
 			};
 
 			~pulse = data[\pulse];
@@ -935,7 +944,7 @@ s.doWhenBooted({
 
 			try {
 				~beatchance = data[\beatchance];
-				beatsliders.do({arg beatsl, index;
+				beatSliders.do({arg beatsl, index;
 					beatsl.valueAction = ~beatchance[index];
 				});
 			} {|error|

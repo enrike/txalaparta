@@ -5,20 +5,6 @@ listens to incomming signal distinguising silence/signal. Calculates tempo betwe
 License GPL.
 by www.ixi-audio.net
 
-Usage as standalone panel:
-t = TxalaTempo.new(nil, s, 0, true);
-t.bpm.postln;
-t.setCheckRate(40)
-t.setFallTime(0.1)
-t.setAmp(0.3)
-
-Usage from an app:
-t = TxalaTempo.new(s, 0, false);
-//collect its output in a function like this
-f = OSCFunc({ arg msg, time;
-	msg.postln;
-},'/txalasil', s.addr);
-
 */
 
 TxalaTempo {
@@ -53,7 +39,7 @@ TxalaTempo {
 		SynthDef(\txalaonsetlistener, { |ch=0, amp=1, threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
 			var fft, onset, in, level=0, freq=0, hasFreq=false;
 			in = SoundIn.ar(ch) * amp;
-			fft = FFT(Buffer.alloc(server, 512), in);
+			fft = FFT(LocalBuf(2048), in);
 			onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
 			/*	*kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
 			level = Amplitude.kr(in);
@@ -108,7 +94,6 @@ TxalaTempo {
 	// it is triggered when the first hit of a new pattern is detected.
 	// that means the previous pattern is finished and can be analysed
 	finisholdpattern {
-		//curPattern.postln; //POSTLN!!
 		parent.finisholdpattern(bpm, curPattern);
 		curPattern = nil; // because it starts a new one
 	}
@@ -162,16 +147,15 @@ TxalaTempo {
 		label = StaticText(win, Rect(10, 0, 90, 25));
 		label.string = "BPM:" + bpm;
 
-		listeningDisplay = Button( win, Rect(10,20,20,20))
+		listeningDisplay = Button( win, Rect(10,20,20,20)) // should go off when I am playing myself
 		.states_([
-			["", Color.white, Color.grey],
 			["", Color.white, Color.red]
 		]).valueAction_(1);
 
 		Button( win, Rect(208,3,70,25))
 		.states_([
-			["play/pause", Color.white, Color.black],
-			["play/pause", Color.black, Color.green],
+			["listen/pause", Color.white, Color.black],
+			["listen/pause", Color.black, Color.green],
 		])
 		.action_({ arg but;
 			if (but.value.asBoolean, {
@@ -215,7 +199,7 @@ TxalaTempo {
 		PopUpMenu(win,Rect(160,3,40,20))
 		.items_( ["0","1","2","3","4","5","6","7","8","9","10"]);
 
-
+		// |ch=0, amp=0.01, falltime=0.1, checkrate=45 |
 		StaticText(win, Rect(5, 45, 180, 25)).string = "Tempo detection";
 		EZSlider( win,
 			Rect(0,yloc+70,350,20),
@@ -247,17 +231,18 @@ TxalaTempo {
 			initVal: 0.1,
 			labelWidth: 60;
 		);
-		//
+
+		// Onset detection. counts the beats and stores its characteristics
 		//|ch=0, threshold=0.6, relaxtime = 2.1, floor=0.1, mingap=10|
-		StaticText(win, Rect(5, 145, 180, 25)).string = "Onset detection";
+		StaticText(win, Rect(5, 145, 180, 25)).string = "Pattern detection";
 		EZSlider( win,
 			Rect(0,yloc+170,350,20),
 			"threshold",
-			ControlSpec(0, 1, \lin, 0.01, 0.6, ""),
+			ControlSpec(0, 1, \lin, 0.01, 0.2, ""),
 			{ arg ez;
 				synthonset.set(\threshold, ez.value.asFloat);
 			},
-			initVal: 0.6,
+			initVal: 0.2,
 			labelWidth: 60;
 		);
 		EZSlider( win,

@@ -159,6 +159,7 @@ Txalaparta{
 	/* new single hit detected by txalatempo. add it to score
 	*/
 	newhit {arg hit;
+		["new hit", hit].postln;
 		scoreArray = scoreArray.add(hit);
 	}
 
@@ -181,10 +182,13 @@ Txalaparta{
 		var patterndata;
 
 		patterndata = this.analisePattern(prevpattern);
-		["pattern size and ndata", prevpattern.size,  patterndata, prevpattern].postln;
+		["PREV pattern size ", prevpattern.size].postln;
 
 		scheduletime = (60.0/bpm)/2;
 		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
+
+		// everything below should be scheduled for the time we should assume that the prev pattern
+		// must have already finished. at that point we should read the pattern and respond to it.
 
 		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
 		//	~beatchance.normalizeSum.every(_.isNaN)), {
