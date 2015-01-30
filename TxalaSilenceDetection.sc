@@ -12,7 +12,7 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 TxalaSilenceDetection{
 
 	var server, parent, tempocalc, <compass, hitflag, hutsunetimeout;
-	var >processflag, resettime, <>answerposition, grouplength;
+	var >processflag, resettime, <>answerposition; //, grouplength;
 	var synthOSCcb, <synth;
 
 	*new {| aparent, aserver, ananswerposition = true | //  mode = 0,
@@ -90,7 +90,7 @@ TxalaSilenceDetection{
 	groupstart {
 		hitflag = true;
 		compass = compass + 1;
-		grouplength = Main.elapsedTime;
+		//grouplength = Main.elapsedTime;
 		~bpm = tempocalc.calculate();
 		hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm)/2); // next expected hit should go before that
 		if( (~answer && answerposition.not), { parent.answer() }); //schedule here the answer time acording to bpm
@@ -101,7 +101,7 @@ TxalaSilenceDetection{
 	// on the answer time. there is no silence between groups or that silence is too short.
 	groupend {
 		hitflag = false;
-		grouplength = Main.elapsedTime - grouplength;
+		//grouplength = Main.elapsedTime - grouplength;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
 		if((~answer && answerposition), { parent.answer() }); // schedule here the answer time acording to bpm
 		("--------------------- end"+compass).postln;

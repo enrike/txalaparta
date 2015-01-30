@@ -41,7 +41,7 @@ TxalaOnsetDetection{
 		 	fft = FFT(LocalBuf(2048), signal);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
 		 	/*	*kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
-		 	level = Amplitude.kr(in);
+		 	level = Amplitude.kr(signal);
 		 	# freq, hasFreq = Pitch.kr(in, ampThreshold: 0.02, median: 7);
 		 	SendReply.kr(onset, '/txalaonset', [level, hasFreq, freq]);
 		 }).add;

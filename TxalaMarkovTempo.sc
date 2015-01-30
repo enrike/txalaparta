@@ -51,22 +51,22 @@ TxalaMarkovTempo{
 		this.doGUI();
 	}
 
-
-
 	init {
 		~bpm = 60;
 		~volume = 0.6;
 		~answer = false;
 		~answermode = 0; //0,1,2,3: imitation, random (with GUI parameters), markov1, markov2
+
 		~swing = 0.1;
 		~intermakilaswing = 0.01;
 		~spread = 0.7;
 
+		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
 		~listenparemeters.tempo = ().add(\threshold->0.2).add(\falltime->0.1).add(\checkrate->20);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->2.1).add(\floor->0.1).add(\mingap->0.1);
 
-		lastPattern = nil; // needed?
+		lastPattern = nil;
 
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset= TxalaOnsetDetection.new(this, server);
@@ -74,8 +74,6 @@ TxalaMarkovTempo{
 
 		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level
 	}
-
-
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
@@ -213,23 +211,23 @@ TxalaMarkovTempo{
 		EZSlider( win,
 			Rect(0,yloc+(gap*6),350,20),
 			"threshold",
-			ControlSpec(0, 1, \lin, 0.01, 0.5, ""),
+			ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
 			{ arg ez;
 				txalaonset.synth.set(\threshold, ez.value.asFloat);
 				~listenparemeters.onset.threshold = ez.value.asFloat;
 			},
-			initVal: 0.5,
+			initVal: 0.4,
 			labelWidth: 60;
 		);
 		EZSlider( win,
 			Rect(0,yloc+(gap*7),350,20),
 			"relaxtime",
-			ControlSpec(0.01, 4, \lin, 0.01, 0.8, "ms"),
+			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
 			{ arg ez;
 				txalaonset.synth.set(\relaxtime, ez.value.asFloat);
 				~listenparemeters.onset.relaxtime = ez.value.asFloat;
 			},
-			initVal: 0.8,
+			initVal: 2.1,
 			labelWidth: 60;
 		);
 		EZSlider( win,
@@ -301,8 +299,6 @@ TxalaMarkovTempo{
 		},{
 			gap = 0;
 		});
-
-		//[curhits, gap].postln;
 
 		curhits.do({arg index;
 			var playtime = timetogo + (gap * index) + rrand(~intermakilaswing.neg, ~intermakilaswing);
