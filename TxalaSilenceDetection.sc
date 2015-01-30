@@ -1,10 +1,5 @@
 /*
 t = TxalaSilenceDetection.new(this, s, true)
-t.hutsune = {"hutsune".postln};
-t.answer = {"play now!".postln};
-t.loop = {("BPM"+~bpm).postln};
-t.reset = {"reseting".postln};
-t.broadcastgroupended = {"a group of hits must have ended right now".postln};
 (not implemented yet) second argument is mode. 0 audioin, 1 MIDI in, 2 OSC in
 third argument is answer mode. it sets the answer schedule time to groupdetect or groupend events
 */
@@ -34,7 +29,7 @@ TxalaSilenceDetection{
 		processflag = false;
 		hitflag = false;
 		resettime = 3;
-		grouplength = 0;
+		//grouplength = 0;
 
 		// conditional initialise audio, MIDI or OSC listening
 		/*if (mode==0, {},

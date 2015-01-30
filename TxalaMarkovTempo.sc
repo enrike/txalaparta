@@ -163,8 +163,6 @@ TxalaMarkovTempo{
 		.valueAction_(~answermode);
 
 		// DetectSilence controls //
-
-
 		StaticText(win, Rect(5, yloc+gap, 180, 25)).string = "Tempo detection";
 
 		EZSlider( win,
@@ -308,7 +306,7 @@ TxalaMarkovTempo{
 
 			{
 				if (index==0, { this.processflag(true) }); // repeated
-				if ((index==(lastPattern.size-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
+				if ((index==(curhits-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
 				Synth(\playBuf, [\amp, (~volume+rrand(-0.05, 0.05)), \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
 				// if MIDI flag then send MIDIOUT here
 				// if OSC flag then send OSC out messages here
