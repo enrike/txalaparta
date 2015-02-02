@@ -3,35 +3,26 @@
 // by www.ixi-audio.net
 
 /*
-each interpreter takes into consideration the state of the other interpreter. if playerA just hit 3 then playerB will hit N
-*/
-
-
-/* detection:
-+ tempo: DetectSilence
-group of hits start point
-grup of hits end point
-duration of group of hits
-deviation from ideal tempo position for group start
-- calculate the bpm when a group starts by measuring the distance from the previous group
-- trigger the answer when the group finish
-- check for hutsunes and asnwer
-
-+ number of hits per group: OnSets
-+ distance between hits
-+ amplitude of each hit
-+ pitch of each hit
-+ deviations from each hits
-*/
-
-/*
-
 (
 s.boot;
 s.waitForBoot{
    t = TxalaMarkovTempo.new(s)
 }
 )
+*/
+
+/* detection:
++ tempo: DetectSilence
+group of hits start point
+grup of hits end point
+- calculate the bpm when a group starts by measuring the distance from the previous group
+- trigger the answer when the group finish
+- check for hutsunes and answer to those
+
++ number of hits per group: OnSets
+- distance between hits
+- amplitude of each hit
+- pitch of each hit (to do)
 */
 
 TxalaMarkovTempo{
@@ -68,9 +59,10 @@ TxalaMarkovTempo{
 
 		lastPattern = nil;
 
-		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
+/*		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset= TxalaOnsetDetection.new(this, server);
-		markov = TxalaMarkov.new;
+		markov = TxalaMarkov.new;*/
+		this.reset();
 
 		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level
 	}
@@ -107,9 +99,17 @@ TxalaMarkovTempo{
 
 	reset  {
 		"+++++++++ RESET ++++++++++++++++++++++++++++++++++++++++++++++++++++++++".postln;
-		markov.reset();
-		txalasilence.reset();
-		txalaonset.reset();
+
+		try {
+			txalasilence.kill();
+			txalaonset.kill();
+		} {|error|
+
+		};
+
+		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
+		txalaonset= TxalaOnsetDetection.new(this, server);
+		markov = TxalaMarkov.new;
 	}
 
 
@@ -152,7 +152,7 @@ TxalaMarkovTempo{
 
 		// mode menu
 		StaticText(win, Rect(10, yloc-3, 100, 25)).string = "answer mode";
-		PopUpMenu(win,Rect(100,yloc, 100,20))
+		PopUpMenu(win,Rect(100,yloc, 110,20))
 		.items_(["imitation", "markov", "markov learning"])
 		.action_({ arg menu;
 		    ~answermode = menu.value.asInt;

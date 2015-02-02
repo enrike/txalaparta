@@ -1,3 +1,6 @@
+// license GPL
+// by www.ixi-audio.net
+
 /* just first order markov chain with tipical txalaparta rhythm values. 0,1,2,3,4 hits
 m = TxalaMarkov.new
 m.next // first order markov chain with preset values in matrix

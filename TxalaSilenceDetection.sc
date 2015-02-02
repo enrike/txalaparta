@@ -1,3 +1,6 @@
+// license GPL
+// by www.ixi-audio.net
+
 /*
 t = TxalaSilenceDetection.new(this, s, true)
 (not implemented yet) second argument is mode. 0 audioin, 1 MIDI in, 2 OSC in

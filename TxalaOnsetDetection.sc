@@ -1,7 +1,9 @@
+// license GPL
+// by www.ixi-audio.net
+
 /*
 t = TxalaOnsetDetection.new(s)
-
-to do: detected amplitude range and values doublecheck
+to do: improve detected amplitude range and values
 */
 
 TxalaOnsetDetection{
@@ -55,31 +57,31 @@ TxalaOnsetDetection{
 			\mingap, ~listenparemeters.onset.mingap
 		]);
 
-		OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalaonset', server.addr);
+		OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg)}, '/txalaonset', server.addr);
 	}
 
-	process { arg value;
-		var hitdata, hittime;
+	process { arg msg;
+		var hitdata, hittime, freq=nil;
 
 		if (processflag.not, {
-
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = Main.elapsedTime;
-				//numcompasses = numcompasses + 1;
 				parent.newgroup();
 				("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ new group" + (patternsttime-sttime) + patternsttime).postln;
-				},{
-					hittime = Main.elapsedTime - patternsttime; // distance from first hit of this group
+			},{
+				hittime = Main.elapsedTime - patternsttime; // distance from first hit of this group
 			});
 
+			if ( msg[4].asBoolean, {freq = msg[5]});
+
 			hitdata = ().add(\time -> hittime)
-			.add(\amp -> value)
+			.add(\amp -> msg[3])
 			.add(\player -> 1) //always 1 in this case
-			.add(\plank -> 1);// here needs to match mgs[5] against existing samples freq
+			.add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
-			("++++++++++++++++++++++++++++++++++++++++++++++++++++" + curPattern.size + value).postln;
-			parent.newonset(hittime, value, 1, 1);
+			("++++++++++++++++++++++++++++++++++++++++++++++++++++" + curPattern.size + msg[3]).postln;
+			parent.newonset(hittime, msg[3], 1, freq);
 		});
 
 	}
