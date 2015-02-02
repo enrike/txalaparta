@@ -52,7 +52,7 @@ TxalaSilenceDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalatempo, {| amp=1, in=0, threshold=0.2, falltime=0.1, checkrate=30 | //thres=0,1
+		SynthDef(\txalatempo, {| in=0, amp=1, threshold=0.5, falltime=0.1, checkrate=30 | //thres=0,1
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(in)*amp, threshold, falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else

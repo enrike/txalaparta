@@ -37,7 +37,7 @@ TxalaOnsetDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.4, relaxtime=2.1, floor=0.1, mingap=0.1|
+		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=0.1|
 		 	var fft, onset, signal, level=0, freq=0, hasFreq=false;
 		 	signal = SoundIn.ar(in) * amp;
 		 	fft = FFT(LocalBuf(2048), signal);
@@ -76,12 +76,12 @@ TxalaOnsetDetection{
 			if ( msg[4].asBoolean, {freq = msg[5]});
 
 			hitdata = ().add(\time -> hittime)
-			.add(\amp -> msg[3])
-			.add(\player -> 1) //always 1 in this case
-			.add(\plank -> freq);
+			            .add(\amp -> msg[3])
+			            .add(\player -> 1) //always 1 in this case
+			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
 			("++++++++++++++++++++++++++++++++++++++++++++++++++++" + curPattern.size + msg[3]).postln;
-			parent.newonset(hittime, msg[3], 1, freq);
+			parent.newonset(Main.elapsedTime, msg[3], 1, freq);
 		});
 
 	}
