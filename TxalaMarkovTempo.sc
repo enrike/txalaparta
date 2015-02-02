@@ -77,7 +77,7 @@ TxalaMarkovTempo{
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
-		markov.lasthit = 0;
+		//markov.lasthits[1] = 0; // me, detected
 		lastPattern = nil;
 	}
 
@@ -85,10 +85,9 @@ TxalaMarkovTempo{
 		{ label.string = "BPM" + ~bpm + "\nCompass" + txalasilence.compass}.defer
 	}
 
-	broadcastgroupended { // silence detection must call this.
-		lastPattern = txalaonset.closegroup();
-		//lastPattern.size.postln;
-	} // send to onset detector to close groups.
+	broadcastgroupended { // silence detection calls this.
+		lastPattern = txalaonset.closegroup(); // to close onset detector
+	}
 
 	newgroup {
 		//txalasilence.groupstart();
@@ -117,7 +116,6 @@ TxalaMarkovTempo{
 	doGUI  {
 		var win, yloc = 35, gap=20;
 		win = Window("tempo detection using silence. for txalaparta",  Rect(10, 50, 355, 245));
-		// here it should free all OSC responders with /txalasil address
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
@@ -155,7 +153,7 @@ TxalaMarkovTempo{
 		// mode menu
 		StaticText(win, Rect(10, yloc-3, 100, 25)).string = "answer mode";
 		PopUpMenu(win,Rect(100,yloc, 100,20))
-		.items_(["imitation", "markov1"])
+		.items_(["imitation", "markov", "markov learning"])
 		.action_({ arg menu;
 		    ~answermode = menu.value.asInt;
 			("changing to answer mode:" + menu.item).postln;
@@ -259,38 +257,44 @@ TxalaMarkovTempo{
 		txalaonset.processflag = flag;
 	}
 
-	limitedrandom {}
-	markov2 {}
-
 	// modes: imitation, random (with GUI parameters), markov1, markov2
 	answer {
 		var halfcompass, timetogo=0;
 
 		"SCHEDULE ANSWER".postln;
 		halfcompass = (60/~bpm/2);
+
+		// we have to make some fine tuning here removing some time -0.1
 		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime; // when in the future needs to happen this group
 
 		switch (~answermode,
-			    0, { this.imitation(timetogo) },
-			    1, { this.markov1(timetogo) }
+			0, { this.imitation(timetogo) },
+			1, { this.markov(timetogo) },
+			2, { this.markov(timetogo, lastPattern.size) }
 		);
 	}
 
 	imitation { arg timetogo;
-		lastPattern.do({arg hit, index;
+		var aPattern = lastPattern;
+		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
+		aPattern.do({arg hit, index;
 			{
 				if (index==0, { this.processflag(true) }); // repeated
-				if ((index==(lastPattern.size-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
+				if ((index==(aPattern.size-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
 				Synth(\playBuf, [\amp, hit.amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
 				("+++++++++++++++++++++++++++"+index).postln
 			}.defer(timetogo + hit.time);
 		});
 	}
 
-	markov1 {arg timetogo;
+	markov {arg timetogo, size=nil;
 		var gap, curhits;
 
-		curhits = markov.next(); //
+		if (size.isNil, {
+			curhits = markov.next();
+		},{
+			curhits = markov.next2nd(size);
+		});
 
 		if (curhits > 0, {
 			gap = ((60/~bpm/2) * ~spread) / curhits;
@@ -298,7 +302,7 @@ TxalaMarkovTempo{
 			gap = 0;
 		});
 
-		curhits.do({arg index;
+		curhits.do({ arg index;
 			var playtime = timetogo + (gap * index) + rrand(~intermakilaswing.neg, ~intermakilaswing);
 
 			if ( playtime.isNaN, { playtime = 0 } );
@@ -314,5 +318,4 @@ TxalaMarkovTempo{
 			}.defer(playtime);
 		});
 	}
-
 }
