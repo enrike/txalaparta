@@ -46,7 +46,7 @@ TempoCalculator{
 	calculate {
 		var newTempo, nowTime;
 
-		nowTime = SystemClock.seconds;
+		nowTime = Main.elapsedTime;// SystemClock.seconds;
 		newTempo = (60/(nowTime - lasttime)).round(0.1);
 		newTempo = this.sanityCheck(newTempo);
 		bpms = bpms.shift(1, newTempo); // store
