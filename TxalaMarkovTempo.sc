@@ -2,6 +2,13 @@
 // license GPL
 // by www.ixi-audio.net
 
+/* to do
+- presets store and load system (copy from old app)
+- start/stop button
+- visualization in the control window instead of the post window?
+- check txalasilence answerposition property. expose in the interface?
+*/
+
 /*
 (
 s.boot;
@@ -63,7 +70,7 @@ TxalaMarkovTempo{
 
 		this.reset();
 
-		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level
+		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level. use abstract path system for mac standalone
 	}
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
@@ -102,6 +109,72 @@ TxalaMarkovTempo{
 		txalaonset= TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
 		txalascoreGUI = TxalaScoreGUI.new;
+	}
+
+		processflag { arg flag;
+		txalasilence.processflag = flag;
+		txalaonset.processflag = flag;
+	}
+
+	// modes: imitation, random (with GUI parameters), markov1, markov2
+	answer {
+		var halfcompass, timetogo=0;
+
+		"SCHEDULE ANSWER".postln;
+		halfcompass = (60/~bpm/2);
+
+		// we have to make some fine tuning here removing a short time like halfcompass/10
+		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
+		switch (~answermode,
+			0, { this.imitation(timetogo) },
+			1, { this.markov(timetogo) },
+			2, { this.markov(timetogo, lastPattern.size) }
+		);
+	}
+
+	imitation { arg timetogo;
+		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
+		lastPattern.do({arg hit, index;
+			{
+				this.playhit(hit.amp, 0, plank, index, lastPattern.size)
+			}.defer(timetogo + hit.time);
+		});
+	}
+
+	markov {arg timetogo, size=nil;
+		var gap, curhits;
+
+		if (size.isNil, {
+			curhits = markov.next();
+		},{
+			curhits = markov.next2nd(size);
+		});
+
+		if (curhits > 0, {
+			gap = ((60/~bpm/2) * ~spread) / curhits;
+		},{
+			gap = 0;
+		});
+
+		curhits.do({ arg index;
+			var playtime = timetogo + (gap * index) + rrand(~intermakilaswing.neg, ~intermakilaswing);
+			if ( playtime.isNaN, { playtime = 0 } );
+			if ( playtime == inf, { playtime = 0 } );
+			{
+				this.playhit((~volume+rrand(-0.05, 0.05)), 0, plank, index, curhits)
+			}.defer(playtime);
+		});
+	}
+
+	playhit { arg amp, player, plank, index, total;
+		if (index==0, { this.processflag(true) }); // repeated
+		if ((index==(total-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
+		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
+		txalascoreGUI.hit(Main.elapsedTime, amp, 0, plank.bufnum);
+		// if MIDI flag then send MIDIOUT here
+		// if OSC flag then send OSC out messages here
+		("+++++++++++++++++++++++++++"+index).postln
+
 	}
 
 
@@ -220,7 +293,6 @@ TxalaMarkovTempo{
 			"falltime",
 			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
-				//txalasilence.updatefalltime(ez.value.asFloat);
 				txalasilence.synth.set(\falltime, ez.value.asFloat);
 				~listenparemeters.tempo.falltime = ez.value.asFloat;
 			},
@@ -290,70 +362,183 @@ TxalaMarkovTempo{
 
 		win.front;
 	}
-
-	processflag { arg flag;
-		txalasilence.processflag = flag;
-		txalaonset.processflag = flag;
-	}
-
-	// modes: imitation, random (with GUI parameters), markov1, markov2
-	answer {
-		var halfcompass, timetogo=0;
-
-		"SCHEDULE ANSWER".postln;
-		halfcompass = (60/~bpm/2);
-
-		// we have to make some fine tuning here removing a short time like halfcompass/10
-		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
-		switch (~answermode,
-			0, { this.imitation(timetogo) },
-			1, { this.markov(timetogo) },
-			2, { this.markov(timetogo, lastPattern.size) }
-		);
-	}
-
-	imitation { arg timetogo;
-		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
-		lastPattern.do({arg hit, index;
-			{
-				this.playhit(hit.amp, 0, plank, index, lastPattern.size)
-			}.defer(timetogo + hit.time);
-		});
-	}
-
-	markov {arg timetogo, size=nil;
-		var gap, curhits;
-
-		if (size.isNil, {
-			curhits = markov.next();
-		},{
-			curhits = markov.next2nd(size);
-		});
-
-		if (curhits > 0, {
-			gap = ((60/~bpm/2) * ~spread) / curhits;
-		},{
-			gap = 0;
-		});
-
-		curhits.do({ arg index;
-			var playtime = timetogo + (gap * index) + rrand(~intermakilaswing.neg, ~intermakilaswing);
-			if ( playtime.isNaN, { playtime = 0 } );
-			if ( playtime == inf, { playtime = 0 } );
-			{
-				this.playhit((~volume+rrand(-0.05, 0.05)), 0, plank, index, curhits)
-			}.defer(playtime);
-		});
-	}
-
-	playhit { arg amp, player, plank, index, total;
-		if (index==0, { this.processflag(true) }); // repeated
-		if ((index==(total-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
-		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		txalascoreGUI.hit(Main.elapsedTime, amp, 0, plank.bufnum);
-		// if MIDI flag then send MIDIOUT here
-		// if OSC flag then send OSC out messages here
-		("+++++++++++++++++++++++++++"+index).postln
-
-	}
 }
+
+/*
+
+	doPresets = { arg xloc, yloc;
+		var popupmenu, newpreset;
+
+		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Presets";
+
+		PopUpMenu(window,Rect(xloc,yloc,200,20))
+		.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
+		.mouseDownAction_({arg menu;
+			presets = (presetspath++"*").pathMatch;
+			presets.insert(0, "---");
+			menu.items = presets.asArray.collect({arg item;
+				PathName.new(item).fileName});
+		})
+		.action_({ arg menu;
+			var data;
+			("loading..." + presetspath ++ menu.item).postln;
+			data = Object.readArchive(presetspath ++ menu.item);
+			data.asCompileString.postln;
+
+			~tempo = data[\tempo];
+			sliders[0][0].value = ~tempo;//slider
+			sliders[0][1].value = data[\slidersauto][0].asInt;//button
+			if (data[\slidersauto][0]==true,
+				{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
+
+			~swing = data[\swing];
+			sliders[1][0].value = ~swing;//slider
+			sliders[1][1].value = data[\slidersauto][1].asInt;//button
+			if (data[\slidersauto][1]==true,
+				{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
+
+			~gap = data[\gap];
+			sliders[2][0].value = ~gap;
+			sliders[2][1].value = data[\slidersauto][2].asInt;
+			if (data[\slidersauto][2]==true,
+				{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
+
+			~gapswing = data[\gapswing];
+			sliders[3][0].value = ~gapswing;
+			sliders[3][1].value = data[\slidersauto][3].asInt;
+			if (data[\slidersauto][3]==true,
+				{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
+
+			~amp = data[\amp];
+			ampBut.value = ~amp;
+
+			~allowedbeats = data[\allowedbeats];
+			if(~allowedbeats.size>2, // backwards compatible with old presets
+				{~allowedbeats=[~allowedbeats, [nil,nil,nil,nil,nil]]
+			});
+
+			try { //bckwads compatible again
+				beatButtons.do({arg playerbuttons, index;
+					playerbuttons.do({arg but, subindex;
+						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
+						/* if (~allowedbeats[index][subindex]!=nil,
+						{but.value = 1},
+						{but.value = 0}
+						); */
+					});
+				});
+			} {|error|
+				["setting beat buttons error", error, ~allowedbeats].postln;
+				beatButtons[1][2].value = 1; // emergency activate this one
+			};
+
+			~pulse = data[\pulse];
+			pulseBut.value = ~pulse;
+
+			~lastemphasis = data[\emphasis];
+			try {
+				emphasisBut.value = ~lastemphasis.asInt;
+			} {|error|
+				~lastemphasis = data[\emphasis][1]; //bkwds compatibility
+			};
+
+			~enabled = data[\enabled];
+			enabledButs[0].value = ~enabled[0];
+			enabledButs[1].value = ~enabled[1];
+			// txakun-errena buttons
+			~autopilotrange = data[\autopilotrange]; // no widget!
+
+			try {
+				~plankchance = data[\plankchance];
+				// to do update widgets!!!
+			} {|error|
+				"not plankchance in preset".postln;
+			};
+
+			try {
+				~beatchance = data[\beatchance];
+				beatSliders.do({arg beatsl, index;
+					beatsl.valueAction = ~beatchance[index];
+				});
+			} {|error|
+				"not beatchance in preset".postln;
+			};
+
+
+			planksMenus.do({arg plank, i;
+				try {
+					plank[0].valueAction = data[\buffers][i][1].asInt;
+				} {|error|
+					plank[0].valueAction = 0;
+					["catch plank0 error", error, i].postln;
+				};
+
+				try {
+					plank[1].valueAction = data[\buffers][i][2].asInt;// set er button
+				} {|error|
+					plank[1].valueAction = 0;
+					["catch plank1 error", error, i].postln;
+				};
+
+				try {
+					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
+				} {|error|
+					plank[2].valueAction = 0;
+					["catch plank2 error", error, i].postln;
+				};
+
+			});
+
+		});
+		//.valueAction_(0);
+
+		newpreset = TextField(window, Rect(xloc, yloc+22, 125, 25));
+
+		Button(window, Rect(xloc+130,yloc+22,70,25))
+		.states_([
+			["save", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			var filename, data;
+			if (newpreset.string == "",
+				{filename = Date.getDate.stamp++".preset"},
+				{filename = newpreset.string++".preset"}
+			);
+
+			data = Dictionary.new;
+			data.put(\tempo, ~tempo);
+			data.put(\swing, ~swing);
+			data.put(\gap, ~gap);
+			data.put(\gapswing, ~gapswing);
+			data.put(\amp, ~amp);
+			data.put(\allowedbeats, ~allowedbeats);
+			data.put(\pulse, ~pulse);
+			data.put(\emphasis, ~lastemphasis);
+			//data.put(\classictxakun, ~classictxakun);
+			data.put(\enabled, ~enabled);
+			data.put(\autopilotrange, ~autopilotrange);
+			data.put(\beatchance, ~beatchance);
+			data.put(\plankchance, ~plankchance);
+			data.put(\slidersauto, [
+				slidersauto[0]!=nil, // store true or false
+				slidersauto[1]!=nil,
+				slidersauto[2]!=nil,
+				slidersauto[3]!=nil,
+			]);
+			data.put(\buffers, [ //path to file, tx flag, err flag
+				[ buffers[0][0].path, ~buffersenabled[1][0], ~buffersenabled[2][0] ],
+				[ buffers[1][0].path, ~buffersenabled[1][1], ~buffersenabled[2][1] ],
+				[ buffers[2][0].path, ~buffersenabled[1][2], ~buffersenabled[2][2] ],
+				[ buffers[3][0].path, ~buffersenabled[1][3], ~buffersenabled[2][3] ],
+				[ buffers[4][0].path, ~buffersenabled[1][4], ~buffersenabled[2][4] ],
+				[ buffers[5][0].path, ~buffersenabled[1][5], ~buffersenabled[2][5] ],
+				[ buffers[6][0].path, ~buffersenabled[1][6], ~buffersenabled[2][6] ],
+				[ buffers[7][0].path, ~buffersenabled[1][7], ~buffersenabled[2][7] ],
+			]);
+
+			data.writeArchive(presetspath++filename);
+
+			newpreset.string = ""; //clean field
+		});
+
+	};*/
