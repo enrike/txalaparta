@@ -12,7 +12,7 @@ m.reset
 
 TxalaMarkov{
 
-	var beatweigths, beatweights2nd, beatdata2nd, lasthits, options;
+	var beatweigths, beatweights2nd, <>beatdata2nd, lasthits, options;
 
 	*new {
 		^super.new.initTxalaMarkov;
@@ -37,6 +37,48 @@ TxalaMarkov{
 
 		beatdata2nd = Array.fillND([5, 5, 5], { 0 }); // store here the data of changes
 		beatweights2nd = Array.fillND([5, 5, 5], { 0 }); //store % of changes
+
+		/*		2nd-order matrix for txalaparta beats
+beat 0 1 2 3 4
+00   N N N N N
+01   N N N N N
+02   N N N N N
+03   N N N N N
+04   N N N N N
+10   N N N N N
+11   N N N N N
+12   N N N N N
+13   N N N N N
+14   N N N N N
+20   N N N N N
+21   N N N N N
+22   N N N N N
+23   N N N N N
+24   N N N N N
+30   N N N N N
+31   N N N N N
+32   N N N N N
+33   N N N N N
+34   N N N N N
+40   N N N N N
+41   N N N N N
+42   N N N N N
+43   N N N N N
+44   N N N N N*/
+
+	}
+
+	new2ndmatrix {arg matrix;
+		this.reset();
+		beatdata2nd = matrix;
+		// update the whole beatweights2nd matrix here
+		beatweights2nd.do({arg row, n;
+			row.do({arg slot, nn;
+				slot.do({arg values, nnn;
+					beatweights2nd[n][nn][nnn] = beatweights2nd[n][nn][nnn] / beatweights2nd[n][nn].sum
+				});
+			});
+		});
 	}
 
 	next {
