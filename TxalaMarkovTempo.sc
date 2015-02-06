@@ -4,7 +4,7 @@
 
 /* to do
 - presets store and load system (copy from old app)
-- start/stop button
+- start/stop button?
 - visualization in the control window instead of the post window?
 - check txalasilence answerposition property. expose in the interface?
 */
@@ -13,7 +13,8 @@
 (
 s.boot;
 s.waitForBoot{
-   t = TxalaMarkovTempo.new(s)
+	p = thisProcess.nowExecutingPath.dirname;
+	t = TxalaMarkovTempo.new(s, p)
 }
 )
 */
@@ -37,16 +38,16 @@ TxalaMarkovTempo{
 	var loopF, plank, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune;
 	var txalasilence, txalaonset, markov, lastPattern;
-	var txalascoreGUI;
+	var txalascoreGUI, presets, presetspath;
 
-	*new {| aserver |
-		^super.new.initTxalaMarkovTempo(aserver);
+	*new {| aserver, apath="" |
+		^super.new.initTxalaMarkovTempo(aserver, apath);
 	}
 
-	initTxalaMarkovTempo { arg aserver;
+	initTxalaMarkovTempo { arg aserver, apath;
 		server = aserver;
+		presetspath = apath;
 		this.init();
-		this.reset();
 		this.doGUI();
 	}
 
@@ -68,9 +69,14 @@ TxalaMarkovTempo{
 
 		lastPattern = nil;
 
-		this.reset();
-
 		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level. use abstract path system for mac standalone
+
+		presetspath = presetspath ++ "/presets_listen/";
+		presets = (presetspath ++ "*").pathMatch;
+
+		this.start();
+		this.stop();
+
 	}
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
@@ -95,23 +101,29 @@ TxalaMarkovTempo{
 	}
 	/////////////////////////////////////////////////////////////////////////////
 
-	reset  {
-		"+++++++++ RESET ++++++++++++++++++++++++++++++++++++++++++++++++++++++++".postln;
-
+	stop {
 		try {
 			txalasilence.kill();
 			txalaonset.kill();
 		} {|error|
 
 		};
+	}
 
+	start {
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset= TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
 		txalascoreGUI = TxalaScoreGUI.new;
 	}
 
-		processflag { arg flag;
+	reset  {
+		"+++++++++ RESET ++++++++++++++++++++++++++++++++++++++++++++++++++++++++".postln;
+		this.stop();
+		this.start();
+	}
+
+	processflag { arg flag;
 		txalasilence.processflag = flag;
 		txalaonset.processflag = flag;
 	}
@@ -179,8 +191,8 @@ TxalaMarkovTempo{
 
 
 	doGUI  {
-		var win, yloc = 35, gap=20;
-		win = Window("tempo detection using silence. for txalaparta",  Rect(10, 50, 355, 300));
+		var win, yloc = 35, gap=20, guielements = Array.fill(10, {nil});
+		win = Window("tempo detection using silence. for txalaparta",  Rect(10, 50, 355, 370));
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
@@ -190,7 +202,20 @@ TxalaMarkovTempo{
 		label.string = "BPM:" + ~bpm;
 
 		// row of buttons on top side
+
 		Button( win, Rect(140,3,70,25))
+		.states_([
+			["play", Color.white, Color.black],
+			["play", Color.black, Color.green],
+		])
+		.action_({ arg but;
+			if (but.value.asBoolean, {
+				this.start();
+			},{
+				this.stop();
+			})
+		});
+		Button( win, Rect(210,3,70,25))
 		.states_([
 			["answer", Color.white, Color.black],
 			["answer", Color.black, Color.green],
@@ -199,25 +224,18 @@ TxalaMarkovTempo{
 			~answer = but.value.asBoolean;
 		});
 
-		Button( win, Rect(210,3,70,25))
+		Button( win, Rect(280,3,70,25))
 		.states_([
-			["reset", Color.white, Color.black],
+			["pre answer", Color.white, Color.black],
+			["post answer", Color.black, Color.green],
 		])
 		.action_({ arg but;
-			this.reset();
-		});
-
-		Button( win, Rect(285,3,70,25)) //Rect(140,30,70,25))
-		.states_([
-			["scope in", Color.white, Color.black],
-		])
-		.action_({ arg but;
-			server.scope(1,8);
+			txalasilence.answerposition = but.value.asBoolean;
 		});
 
 		// mode menu
 		StaticText(win, Rect(10, yloc-3, 100, 25)).string = "Answer mode";
-		PopUpMenu(win,Rect(100,yloc, 110,20))
+		PopUpMenu(win,Rect(95,yloc, 110,20))
 		.items_(["imitation", "markov", "markov learning"])
 		.action_({ arg menu;
 		    ~answermode = menu.value.asInt;
@@ -225,17 +243,24 @@ TxalaMarkovTempo{
 		})
 		.valueAction_(~answermode);
 
-		Button( win, Rect(220,yloc-5,70,25))
+		Button( win, Rect(210,yloc-5,70,25))
 		.states_([
 			["score", Color.white, Color.black],
-			["score", Color.black, Color.green],
 		])
 		.action_({ arg but;
 			txalascoreGUI.doTxalaScore()
 		});
 
+		Button( win, Rect(280,yloc-5,70,25)) //Rect(140,30,70,25))
+		.states_([
+			["scope in", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			server.scope(1,8);
+		});
+
 		// answer time correction
-		EZSlider( win,
+		guielements[0] = EZSlider( win,
 			Rect(0,yloc+(gap),350,20),
 			"time correction",
 			ControlSpec(1, 10, \lin, 0.01, 6, ""),
@@ -248,7 +273,7 @@ TxalaMarkovTempo{
 
 		// amplitudes
 		// incomming amp correction
-		EZSlider( win,
+		guielements[1] = EZSlider( win,
 			Rect(0,yloc+(gap*2),350,20),
 			"in amp",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
@@ -261,7 +286,7 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 		// ~amplitude
-		EZSlider( win,
+		guielements[2] = EZSlider( win,
 			Rect(0,yloc+(gap*3),350,20),
 			"out amp",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
@@ -276,7 +301,7 @@ TxalaMarkovTempo{
 		// DetectSilence controls //
 		StaticText(win, Rect(5, yloc+(gap*4), 180, 25)).string = "Tempo detection";
 
-		EZSlider( win,
+		guielements[3] = EZSlider( win,
 			Rect(0,yloc+(gap*5),350,20),
 			"threshold",
 			ControlSpec(0.01, 1.5, \lin, 0.01, 0.2, ""),
@@ -286,9 +311,9 @@ TxalaMarkovTempo{
 			},
 			initVal: ~listenparemeters.tempo.threshold,
 			labelWidth: 60;
-		).valueAction_(~listenparemeters.tempo.threshold);
+		);//.valueAction_(~listenparemeters.tempo.threshold);
 
-		EZSlider( win,
+		guielements[4] = EZSlider( win,
 			Rect(0,yloc+(gap*6),350,20),
 			"falltime",
 			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
@@ -300,7 +325,7 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
-		EZSlider( win,
+		guielements[5] = EZSlider( win,
 			Rect(0,yloc+(gap*7),350,20),
 			"rate",
 			ControlSpec(5, 60, \lin, 1, 30, ""),
@@ -315,7 +340,7 @@ TxalaMarkovTempo{
 		// Onset pattern detection controls //
 		StaticText(win, Rect(5, yloc+(gap*8), 180, 25)).string = "Hit onset detection";
 
-		EZSlider( win,
+		guielements[6] = EZSlider( win,
 			Rect(0,yloc+(gap*9),350,20),
 			"threshold",
 			ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
@@ -326,7 +351,7 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.threshold,
 			labelWidth: 60;
 		);
-		EZSlider( win,
+		guielements[7] = EZSlider( win,
 			Rect(0,yloc+(gap*10),350,20),
 			"relaxtime",
 			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
@@ -337,7 +362,7 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.relaxtime,
 			labelWidth: 60;
 		);
-		EZSlider( win,
+		guielements[8] = EZSlider( win,
 			Rect(0,yloc+(gap*11),350,20),
 			"floor",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
@@ -348,7 +373,7 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.floor,
 			labelWidth: 60;
 		);
-		EZSlider( win,
+		guielements[9] = EZSlider( win,
 			Rect(0,yloc+(gap*12),350,20),
 			"mingap",
 			ControlSpec(0.1, 20, \lin, 0.1, 0.1, "Ms"),
@@ -360,18 +385,18 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
+		this.doPresets(win, 7, yloc+(gap*13), guielements);
+
 		win.front;
 	}
-}
 
-/*
 
-	doPresets = { arg xloc, yloc;
+	doPresets { arg win, xloc, yloc, guielements;
 		var popupmenu, newpreset;
 
-		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Presets";
+		StaticText(win, Rect(xloc, yloc, 200, 20)).string = "Presets";
 
-		PopUpMenu(window,Rect(xloc,yloc,200,20))
+		PopUpMenu(win,Rect(xloc,yloc+20,200,20))
 		.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
 			presets = (presetspath++"*").pathMatch;
@@ -385,116 +410,25 @@ TxalaMarkovTempo{
 			data = Object.readArchive(presetspath ++ menu.item);
 			data.asCompileString.postln;
 
-			~tempo = data[\tempo];
-			sliders[0][0].value = ~tempo;//slider
-			sliders[0][1].value = data[\slidersauto][0].asInt;//button
-			if (data[\slidersauto][0]==true,
-				{slidersauto[0]=sliders[0][0]}, {slidersauto[0]=nil});
+			~answertimecorrection = data[\answertimecorrection];
+			~volume = data[\volume];
+			~listenparemeters = data[\listenparemeters];
 
-			~swing = data[\swing];
-			sliders[1][0].value = ~swing;//slider
-			sliders[1][1].value = data[\slidersauto][1].asInt;//button
-			if (data[\slidersauto][1]==true,
-				{slidersauto[1]=sliders[1][0]}, {slidersauto[1]=nil});
-
-			~gap = data[\gap];
-			sliders[2][0].value = ~gap;
-			sliders[2][1].value = data[\slidersauto][2].asInt;
-			if (data[\slidersauto][2]==true,
-				{slidersauto[2]=sliders[2][0]}, {slidersauto[2]=nil});
-
-			~gapswing = data[\gapswing];
-			sliders[3][0].value = ~gapswing;
-			sliders[3][1].value = data[\slidersauto][3].asInt;
-			if (data[\slidersauto][3]==true,
-				{slidersauto[3]=sliders[3][0]}, {slidersauto[3]=nil});
-
-			~amp = data[\amp];
-			ampBut.value = ~amp;
-
-			~allowedbeats = data[\allowedbeats];
-			if(~allowedbeats.size>2, // backwards compatible with old presets
-				{~allowedbeats=[~allowedbeats, [nil,nil,nil,nil,nil]]
-			});
-
-			try { //bckwads compatible again
-				beatButtons.do({arg playerbuttons, index;
-					playerbuttons.do({arg but, subindex;
-						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
-						/* if (~allowedbeats[index][subindex]!=nil,
-						{but.value = 1},
-						{but.value = 0}
-						); */
-					});
-				});
-			} {|error|
-				["setting beat buttons error", error, ~allowedbeats].postln;
-				beatButtons[1][2].value = 1; // emergency activate this one
-			};
-
-			~pulse = data[\pulse];
-			pulseBut.value = ~pulse;
-
-			~lastemphasis = data[\emphasis];
-			try {
-				emphasisBut.value = ~lastemphasis.asInt;
-			} {|error|
-				~lastemphasis = data[\emphasis][1]; //bkwds compatibility
-			};
-
-			~enabled = data[\enabled];
-			enabledButs[0].value = ~enabled[0];
-			enabledButs[1].value = ~enabled[1];
-			// txakun-errena buttons
-			~autopilotrange = data[\autopilotrange]; // no widget!
-
-			try {
-				~plankchance = data[\plankchance];
-				// to do update widgets!!!
-			} {|error|
-				"not plankchance in preset".postln;
-			};
-
-			try {
-				~beatchance = data[\beatchance];
-				beatSliders.do({arg beatsl, index;
-					beatsl.valueAction = ~beatchance[index];
-				});
-			} {|error|
-				"not beatchance in preset".postln;
-			};
-
-
-			planksMenus.do({arg plank, i;
-				try {
-					plank[0].valueAction = data[\buffers][i][1].asInt;
-				} {|error|
-					plank[0].valueAction = 0;
-					["catch plank0 error", error, i].postln;
-				};
-
-				try {
-					plank[1].valueAction = data[\buffers][i][2].asInt;// set er button
-				} {|error|
-					plank[1].valueAction = 0;
-					["catch plank1 error", error, i].postln;
-				};
-
-				try {
-					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
-				} {|error|
-					plank[2].valueAction = 0;
-					["catch plank2 error", error, i].postln;
-				};
-
-			});
-
+			guielements[0].value = ~answertimecorrection;
+			guielements[1].value = ~listenparemeters.amp;
+			guielements[2].value = ~volume;
+			guielements[3].value = ~listenparemeters.tempo.threshold;
+			guielements[4].value = ~listenparemeters.tempo.falltime;
+			guielements[5].value = ~listenparemeters.tempo.checkrate;
+			guielements[6].value = ~listenparemeters.onset.threshold;
+			guielements[7].value = ~listenparemeters.onset.relaxtime;
+			guielements[8].value = ~listenparemeters.onset.floor;
+			guielements[9].value = ~listenparemeters.onset.mingap;
 		});
 		//.valueAction_(0);
 
-		newpreset = TextField(window, Rect(xloc, yloc+22, 125, 25));
-
-		Button(window, Rect(xloc+130,yloc+22,70,25))
+		newpreset = TextField(win, Rect(xloc, yloc+42, 125, 25));
+		Button(win, Rect(xloc+130,yloc+42,70,25))
 		.states_([
 			["save", Color.white, Color.grey]
 		])
@@ -506,39 +440,17 @@ TxalaMarkovTempo{
 			);
 
 			data = Dictionary.new;
-			data.put(\tempo, ~tempo);
-			data.put(\swing, ~swing);
-			data.put(\gap, ~gap);
-			data.put(\gapswing, ~gapswing);
-			data.put(\amp, ~amp);
-			data.put(\allowedbeats, ~allowedbeats);
-			data.put(\pulse, ~pulse);
-			data.put(\emphasis, ~lastemphasis);
-			//data.put(\classictxakun, ~classictxakun);
-			data.put(\enabled, ~enabled);
-			data.put(\autopilotrange, ~autopilotrange);
-			data.put(\beatchance, ~beatchance);
-			data.put(\plankchance, ~plankchance);
-			data.put(\slidersauto, [
-				slidersauto[0]!=nil, // store true or false
-				slidersauto[1]!=nil,
-				slidersauto[2]!=nil,
-				slidersauto[3]!=nil,
-			]);
-			data.put(\buffers, [ //path to file, tx flag, err flag
-				[ buffers[0][0].path, ~buffersenabled[1][0], ~buffersenabled[2][0] ],
-				[ buffers[1][0].path, ~buffersenabled[1][1], ~buffersenabled[2][1] ],
-				[ buffers[2][0].path, ~buffersenabled[1][2], ~buffersenabled[2][2] ],
-				[ buffers[3][0].path, ~buffersenabled[1][3], ~buffersenabled[2][3] ],
-				[ buffers[4][0].path, ~buffersenabled[1][4], ~buffersenabled[2][4] ],
-				[ buffers[5][0].path, ~buffersenabled[1][5], ~buffersenabled[2][5] ],
-				[ buffers[6][0].path, ~buffersenabled[1][6], ~buffersenabled[2][6] ],
-				[ buffers[7][0].path, ~buffersenabled[1][7], ~buffersenabled[2][7] ],
-			]);
+
+			data.put(\answertimecorrection, ~answertimecorrection);
+			data.put(\volume, ~volume);
+			data.put(\listenparemeters, ~listenparemeters);
 
 			data.writeArchive(presetspath++filename);
 
-			newpreset.string = ""; //clean field
+			(presetspath++filename).postln;
+
+			newpreset.string = ""; //clean field*/
 		});
 
-	};*/
+	}
+}
