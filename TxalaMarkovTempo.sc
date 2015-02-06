@@ -38,7 +38,7 @@ TxalaMarkovTempo{
 	var loopF, plank, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune;
 	var txalasilence, txalaonset, markov, lastPattern;
-	var txalascoreGUI, presets, presetspath;
+	var txalascoreGUI, presetslisten, presetmatrix, presetspath;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaMarkovTempo(aserver, apath);
@@ -71,8 +71,8 @@ TxalaMarkovTempo{
 
 		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level. use abstract path system for mac standalone
 
-		presetspath = presetspath ++ "/presets_listen/";
-		presets = (presetspath ++ "*").pathMatch;
+/*		presetspath = presetspath ++ "/presets_listen/";
+		presets = (presetspath ++ "*").pathMatch;*/
 
 		this.start();
 		this.stop();
@@ -205,8 +205,8 @@ TxalaMarkovTempo{
 
 		Button( win, Rect(140,3,70,25))
 		.states_([
-			["play", Color.white, Color.black],
-			["play", Color.black, Color.green],
+			["listen", Color.white, Color.black],
+			["listen", Color.black, Color.green],
 		])
 		.action_({ arg but;
 			if (but.value.asBoolean, {
@@ -236,7 +236,7 @@ TxalaMarkovTempo{
 		// mode menu
 		StaticText(win, Rect(10, yloc-3, 100, 25)).string = "Answer mode";
 		PopUpMenu(win,Rect(95,yloc, 110,20))
-		.items_(["imitation", "markov", "markov learning"])
+		.items_(["imitation", "fixed chances", "learning"])
 		.action_({ arg menu;
 		    ~answermode = menu.value.asInt;
 			("changing to answer mode:" + menu.item).postln;
@@ -386,28 +386,29 @@ TxalaMarkovTempo{
 		);
 
 		this.doPresets(win, 7, yloc+(gap*13), guielements);
+		this.doMatrixGUI(win, 180, yloc+(gap*13));
 
 		win.front;
 	}
 
 
 	doPresets { arg win, xloc, yloc, guielements;
-		var popupmenu, newpreset;
+		var newpreset;
 
-		StaticText(win, Rect(xloc, yloc, 200, 20)).string = "Presets";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
 
-		PopUpMenu(win,Rect(xloc,yloc+20,200,20))
-		.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
+		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
+		.items_(presetslisten.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
-			presets = (presetspath++"*").pathMatch;
-			presets.insert(0, "---");
-			menu.items = presets.asArray.collect({arg item;
+			presetslisten = (presetspath++"/presets_listen/*").pathMatch;
+			presetslisten.insert(0, "---");
+			menu.items = presetslisten.asArray.collect({arg item;
 				PathName.new(item).fileName});
 		})
 		.action_({ arg menu;
 			var data;
-			("loading..." + presetspath ++ menu.item).postln;
-			data = Object.readArchive(presetspath ++ menu.item);
+			("loading..." + presetspath ++ "/presets_listen/" ++ menu.item).postln;
+			data = Object.readArchive(presetspath ++ "/presets_listen/" ++ menu.item);
 			data.asCompileString.postln;
 
 			~answertimecorrection = data[\answertimecorrection];
@@ -427,8 +428,8 @@ TxalaMarkovTempo{
 		});
 		//.valueAction_(0);
 
-		newpreset = TextField(win, Rect(xloc, yloc+42, 125, 25));
-		Button(win, Rect(xloc+130,yloc+42,70,25))
+		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
+		Button(win, Rect(xloc+100,yloc+42,70,25))
 		.states_([
 			["save", Color.white, Color.grey]
 		])
@@ -445,9 +446,54 @@ TxalaMarkovTempo{
 			data.put(\volume, ~volume);
 			data.put(\listenparemeters, ~listenparemeters);
 
-			data.writeArchive(presetspath++filename);
+			data.writeArchive(presetspath ++ "/presets_listen/" ++ filename);
 
-			(presetspath++filename).postln;
+			newpreset.string = ""; //clean field*/
+		});
+
+	}
+
+	doMatrixGUI { arg win, xloc, yloc, guielements;
+		var newpreset;
+
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chance matrix manager";
+
+		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
+		.items_(presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
+		.mouseDownAction_({arg menu;
+			presetmatrix = (presetspath ++ "/presets_matrix/" ++ "*").pathMatch;
+			presetmatrix.insert(0, "---");
+			menu.items = presetmatrix.asArray.collect({arg item;
+				PathName.new(item).fileName});
+		})
+		.action_({ arg menu;
+			var data;
+			("loading..." + presetspath  ++ "/presets_matrix/" ++  menu.item).postln;
+			data = Object.readArchive(presetspath  ++ "/presets_matrix/" ++  menu.item);
+			data.asCompileString.postln;
+
+			markov.new2ndmatrix( data[\beatdata] );
+
+		});
+		//.valueAction_(0);
+
+		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
+		Button(win, Rect(xloc+100,yloc+42,70,25))
+		.states_([
+			["save", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			var filename, data;
+			if (newpreset.string == "",
+				{filename = Date.getDate.stamp++".preset"},
+				{filename = newpreset.string++".preset"}
+			);
+
+			data = Dictionary.new;
+
+			data.put(\beatdata, markov.beatdata2nd);
+
+			data.writeArchive(presetspath ++ "/presets_matrix/" ++ filename);
 
 			newpreset.string = ""; //clean field*/
 		});
