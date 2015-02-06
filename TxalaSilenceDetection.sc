@@ -10,10 +10,10 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 TxalaSilenceDetection{
 
 	var server, parent, tempocalc, <compass, hitflag, hutsunetimeout;
-	var >processflag, resettime, <>answerposition; //, grouplength;
+	var >processflag, resettime, <>answerposition;
 	var synthOSCcb, <synth;
 
-	*new {| aparent, aserver, ananswerposition = true | //  mode = 0,
+	*new {| aparent, aserver, ananswerposition = true |
 		^super.new.initTxalaSilenceDetection(aparent, aserver, ananswerposition);
 	}
 
@@ -32,19 +32,13 @@ TxalaSilenceDetection{
 		processflag = false;
 		hitflag = false;
 		resettime = 3;
-		//grouplength = 0;
 
-		// conditional initialise audio, MIDI or OSC listening
-		/*if (mode==0, {},
-
-		{
-				if ();
-		});*/
 		this.doAudio();
 	}
 
 	kill {
 		synth.free;
+		synth = nil;
 		OSCdef(\txalasilenceOSCdef).clear;
 		OSCdef(\txalasilenceOSCdef).free;
 	}
@@ -69,16 +63,19 @@ TxalaSilenceDetection{
 		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
 
-	doMIDI {} // for MIDI IN events
-	doOSC {} // for OSC incomming events
+/*	doMIDI {} // for MIDI IN events
+	doOSC {} // for OSC incomming events*/
 
 	updatethreshold { arg value;
 		synth.free; // supercollider does not allow to update the amp parameter on the fly
-		synth = Synth(\txalatempo, [\threshold, value]);
-	}
-
-	updatefalltime{ arg value;
-		synth.set(\falltime, value);
+		synth = nil;
+		synth = Synth(\txalatempo, [
+			\in, ~listenparemeters.in,
+			\amp, ~listenparemeters.amp,
+			\threshold, value,
+			\falltime, ~listenparemeters.tempo.falltime,
+			\checktime, ~listenparemeters.tempo.checkrate,
+		])
 	}
 
 	lasthittime {
@@ -99,7 +96,6 @@ TxalaSilenceDetection{
 	// on the answer time. there is no silence between groups or that silence is too short.
 	groupend {
 		hitflag = false;
-		//grouplength = Main.elapsedTime - grouplength;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
 		if((~answer && answerposition), { parent.answer() }); // schedule here the answer time acording to bpm
 		("--------------------- end"+compass).postln;

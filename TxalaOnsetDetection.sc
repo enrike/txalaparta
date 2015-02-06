@@ -30,6 +30,7 @@ TxalaOnsetDetection{
 
 	kill {
 		synth.free;
+		synth = nil;
 		OSCdef(\txalaonsetOSCdef).clear;
 		OSCdef(\txalaonsetOSCdef).free;
 	}
