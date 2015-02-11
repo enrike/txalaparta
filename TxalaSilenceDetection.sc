@@ -85,7 +85,6 @@ TxalaSilenceDetection{
 	groupstart {
 		hitflag = true;
 		compass = compass + 1;
-		//grouplength = Main.elapsedTime;
 		~bpm = tempocalc.calculate();
 		hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm)/2); // next expected hit should go before that
 		if( (~answer && answerposition.not), { parent.answer() }); //schedule here the answer time acording to bpm
