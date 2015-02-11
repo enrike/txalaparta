@@ -2,13 +2,6 @@
 // license GPL
 // by www.ixi-audio.net
 
-/* to do
-- presets store and load system (copy from old app)
-- start/stop button?
-- visualization in the control window instead of the post window?
-- check txalasilence answerposition property. expose in the interface?
-*/
-
 /*
 (
 s.boot;
@@ -69,15 +62,14 @@ TxalaMarkovTempo{
 
 		lastPattern = nil;
 
-		plank = Buffer.read(server, "./sounds/00_ugarte3.wav"); // TO DO: transfer to higher level. use abstract path system for mac standalone
-
-/*		presetspath = presetspath ++ "/presets_listen/";
-		presets = (presetspath ++ "*").pathMatch;*/
+		// TO DO: transfer to higher level. add more sounds
+		plank = Buffer.read(server, presetspath ++ "/sounds/00_ugarte3.wav");
 
 		this.start();
 		this.stop();
 
 	}
+
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
@@ -134,6 +126,8 @@ TxalaMarkovTempo{
 
 		"SCHEDULE ANSWER".postln;
 		halfcompass = (60/~bpm/2);
+
+		//lastPattern.do({arg hit; hit.plank.postln});
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
@@ -426,7 +420,6 @@ TxalaMarkovTempo{
 			guielements[8].value = ~listenparemeters.onset.floor;
 			guielements[9].value = ~listenparemeters.onset.mingap;
 		});
-		//.valueAction_(0);
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
 		Button(win, Rect(xloc+100,yloc+42,70,25))
@@ -448,7 +441,7 @@ TxalaMarkovTempo{
 
 			data.writeArchive(presetspath ++ "/presets_listen/" ++ filename);
 
-			newpreset.string = ""; //clean field*/
+			newpreset.string = ""; //clean field
 		});
 
 	}
@@ -474,8 +467,9 @@ TxalaMarkovTempo{
 
 			markov.new2ndmatrix( data[\beatdata] );
 
+			markov.beatdata2nd.plot;
+
 		});
-		//.valueAction_(0);
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
 		Button(win, Rect(xloc+100,yloc+42,70,25))
@@ -493,10 +487,11 @@ TxalaMarkovTempo{
 
 			data.put(\beatdata, markov.beatdata2nd);
 
+			markov.beatdata2nd.plot;
+
 			data.writeArchive(presetspath ++ "/presets_matrix/" ++ filename);
 
-			newpreset.string = ""; //clean field*/
+			newpreset.string = ""; //clean field
 		});
-
 	}
 }
