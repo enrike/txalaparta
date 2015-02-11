@@ -1,9 +1,9 @@
 // license GPL
 // by www.ixi-audio.net
 
-/* just first order markov chain with tipical txalaparta rhythm values. 0,1,2,3,4 hits
+/* markov chain with tipical txalaparta rhythm values. defaults to 0,1,2,3,4 hits
 m = TxalaMarkov.new
-m.next // first order markov chain with preset values in matrix
+m.next // first order markov chain with preset values in beatweigths matrix
 m.next2nd(4) // learning 2nd order markov chain
 m.reset
 */
@@ -12,20 +12,21 @@ m.reset
 
 TxalaMarkov{
 
-	var beatweigths, beatweights2nd, <>beatdata2nd, lasthits, options;
+	var beatweigths, beatweights2nd, <>beatdata2nd, lasthits, options, dimension;
 
-	*new {
-		^super.new.initTxalaMarkov;
+	*new { | adimension = 5 |
+		^super.new.initTxalaMarkov(adimension);
 	}
 
-	initTxalaMarkov {
-		this.reset()
+	initTxalaMarkov { |adimension|
+		dimension = adimension;
+		this.reset();
 	}
 
 	reset {
 		lasthits = [2, 2]; // me, detected
 
-		options = [0, 1, 2, 3, 4];
+		options = Array.fill(dimension, {arg n=0; n});
 
 		beatweigths = [
 			[0.0,  0.3,  0.4,  0.2,  0.1 ],
@@ -35,8 +36,8 @@ TxalaMarkov{
 			[0.0,  0.1,  0.4,  0.2,  0.3 ]
 		];
 
-		beatdata2nd = Array.fillND([5, 5, 5], { 0 }); // store here the data of changes
-		beatweights2nd = Array.fillND([5, 5, 5], { 0 }); //store % of changes
+		beatdata2nd = Array.fillND([options.size, options.size, options.size], { 0 }); // store here the data of changes
+		beatweights2nd = Array.fillND([options.size, options.size, options.size], { 0 }); //store % of changes
 
 		/*		2nd-order matrix for txalaparta beats
 beat 0 1 2 3 4
