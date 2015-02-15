@@ -28,10 +28,10 @@ grup of hits end point
 
 TxalaMarkovTempo{
 
-	var loopF, plank, intermakilagap, server;
-	var doGUI, label, reset, answer, hutsune;
+	var loopF, intermakilagap, server;
+	var doGUI, label, reset, answer, hutsune, win;
 	var txalasilence, txalaonset, markov, lastPattern;
-	var txalascoreGUI, presetslisten, presetmatrix, presetspath;
+	var presetslisten, presetmatrix, basepath;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaMarkovTempo(aserver, apath);
@@ -39,21 +39,20 @@ TxalaMarkovTempo{
 
 	initTxalaMarkovTempo { arg aserver, apath;
 		server = aserver;
-		presetspath = apath;
+		basepath = apath;
 		this.init();
 		this.doGUI();
 	}
 
 	init {
 		~bpm = 60;
-		~volume = 0.6;
+		//~volume = 0.6;
 		~answer = false;
 		~answermode = 0; //0,1,2,3: imitation, random (with GUI parameters), markov1, markov2
 		~answertimecorrection = 6;
 
-		~swing = 0.1;
-		~intermakilaswing = 0.01;
-		~spread = 0.7;
+		//~gapswing = 0.01;
+		//~spread = 0.7;
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
@@ -63,7 +62,7 @@ TxalaMarkovTempo{
 		lastPattern = nil;
 
 		// TO DO: transfer to higher level. add more sounds
-		plank = Buffer.read(server, presetspath ++ "/sounds/00_ugarte3.wav");
+		//plank = Buffer.read(server, basepath ++ "/sounds/00_ugarte3.wav");
 
 		this.start();
 		this.stop();
@@ -88,8 +87,10 @@ TxalaMarkovTempo{
 		//txalasilence.groupstart();
 	}
 
-	newonset { arg hittime, amp, player, freq;
-		txalascoreGUI.hit(hittime, amp, player, plank);
+	newonset { arg hittime, amp, player, plank;
+		if (~txalascore.isNil.not, {
+			~txalascore.hit(hittime, amp, player, plank);
+		});
 	}
 	/////////////////////////////////////////////////////////////////////////////
 
@@ -106,7 +107,7 @@ TxalaMarkovTempo{
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset= TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
-		txalascoreGUI = TxalaScoreGUI.new;
+		//~txalascore = ~txalascore.new;
 	}
 
 	reset  {
@@ -142,7 +143,7 @@ TxalaMarkovTempo{
 		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
 		lastPattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp, 0, plank, index, lastPattern.size)
+				this.playhit(hit.amp, 0, index, lastPattern.size)
 			}.defer(timetogo + hit.time);
 		});
 	}
@@ -157,36 +158,50 @@ TxalaMarkovTempo{
 		});
 
 		if (curhits > 0, {
-			gap = ((60/~bpm/2) * ~spread) / curhits;
+			gap = ((60/~bpm/2) * ~gap) / curhits;
 		},{
 			gap = 0;
 		});
 
 		curhits.do({ arg index;
-			var playtime = timetogo + (gap * index) + rrand(~intermakilaswing.neg, ~intermakilaswing);
+			var playtime = timetogo + (gap * index) + rrand(~gapswing.neg, ~gapswing);
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
 			{
-				this.playhit((~volume+rrand(-0.05, 0.05)), 0, plank, index, curhits)
+				this.playhit((~amp+rrand(-0.05, 0.05)), 0, index, curhits)
 			}.defer(playtime);
 		});
 	}
 
-	playhit { arg amp, player, plank, index, total;
+	playhit { arg amp, player, index, total;
+		var plank, pos;
 		if (index==0, { this.processflag(true) }); // repeated
 		if ((index==(total-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
+
+		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
+		{
+			~buffersenabled[1][pos] == false; // 1 because here we are always errena
+		}.while({
+			pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
+		});
+		plank = ~buffers[pos];
+
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		txalascoreGUI.hit(Main.elapsedTime, amp, 0, plank.bufnum);
-		// if MIDI flag then send MIDIOUT here
+		~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum);
+		~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
 
 	}
 
+	closeGUI {
+		win.close()
+	}
+
 
 	doGUI  {
-		var win, yloc = 35, gap=20, guielements = Array.fill(10, {nil});
-		win = Window("tempo detection using silence. for txalaparta",  Rect(10, 50, 355, 370));
+		var yloc = 35, gap=20, guielements = Array.fill(10, {nil});
+		win = Window("Listening module for txalaparta",  Rect(10, 50, 355, 370));
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
@@ -242,7 +257,7 @@ TxalaMarkovTempo{
 			["score", Color.white, Color.black],
 		])
 		.action_({ arg but;
-			txalascoreGUI.doTxalaScore()
+			~txalascore.doTxalaScore()
 		});
 
 		Button( win, Rect(280,yloc-5,70,25)) //Rect(140,30,70,25))
@@ -280,16 +295,16 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 		// ~amplitude
-		guielements[2] = EZSlider( win,
+/*		guielements[2] = EZSlider( win,
 			Rect(0,yloc+(gap*3),350,20),
 			"out amp",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
 			{ arg ez;
-				~volume = ez.value.asFloat;
+				~amp = ez.value.asFloat;
 			},
 			initVal: ~volume,
 			labelWidth: 60;
-		);
+		);*/
 
 
 		// DetectSilence controls //
@@ -298,7 +313,7 @@ TxalaMarkovTempo{
 		guielements[3] = EZSlider( win,
 			Rect(0,yloc+(gap*5),350,20),
 			"threshold",
-			ControlSpec(0.01, 1.5, \lin, 0.01, 0.2, ""),
+			ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
 				txalasilence.updatethreshold(ez.value.asFloat); // this is different because a bug? in supercollider
 				~listenparemeters.tempo.threshold = ez.value.asFloat;
@@ -394,24 +409,24 @@ TxalaMarkovTempo{
 		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
 		.items_(presetslisten.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
-			presetslisten = (presetspath++"/presets_listen/*").pathMatch;
+			presetslisten = (basepath++"/presets_listen/*").pathMatch;
 			presetslisten.insert(0, "---");
 			menu.items = presetslisten.asArray.collect({arg item;
 				PathName.new(item).fileName});
 		})
 		.action_({ arg menu;
 			var data;
-			("loading..." + presetspath ++ "/presets_listen/" ++ menu.item).postln;
-			data = Object.readArchive(presetspath ++ "/presets_listen/" ++ menu.item);
+			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
+			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
 			data.asCompileString.postln;
 
 			~answertimecorrection = data[\answertimecorrection];
-			~volume = data[\volume];
+			//~volume = data[\volume];
 			~listenparemeters = data[\listenparemeters];
 
 			guielements[0].value = ~answertimecorrection;
 			guielements[1].value = ~listenparemeters.amp;
-			guielements[2].value = ~volume;
+			//guielements[2].value = ~volume;
 			guielements[3].value = ~listenparemeters.tempo.threshold;
 			guielements[4].value = ~listenparemeters.tempo.falltime;
 			guielements[5].value = ~listenparemeters.tempo.checkrate;
@@ -436,10 +451,10 @@ TxalaMarkovTempo{
 			data = Dictionary.new;
 
 			data.put(\answertimecorrection, ~answertimecorrection);
-			data.put(\volume, ~volume);
+			//data.put(\volume, ~volume);
 			data.put(\listenparemeters, ~listenparemeters);
 
-			data.writeArchive(presetspath ++ "/presets_listen/" ++ filename);
+			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
 
 			newpreset.string = ""; //clean field
 		});
@@ -454,15 +469,15 @@ TxalaMarkovTempo{
 		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
 		.items_(presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
-			presetmatrix = (presetspath ++ "/presets_matrix/" ++ "*").pathMatch;
+			presetmatrix = (basepath ++ "/presets_matrix/" ++ "*").pathMatch;
 			presetmatrix.insert(0, "---");
 			menu.items = presetmatrix.asArray.collect({arg item;
 				PathName.new(item).fileName});
 		})
 		.action_({ arg menu;
 			var data;
-			("loading..." + presetspath  ++ "/presets_matrix/" ++  menu.item).postln;
-			data = Object.readArchive(presetspath  ++ "/presets_matrix/" ++  menu.item);
+			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
+			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 			data.asCompileString.postln;
 
 			markov.new2ndmatrix( data[\beatdata] );
@@ -489,7 +504,7 @@ TxalaMarkovTempo{
 
 			markov.beatdata2nd.plot;
 
-			data.writeArchive(presetspath ++ "/presets_matrix/" ++ filename);
+			data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
 
 			newpreset.string = ""; //clean field
 		});
