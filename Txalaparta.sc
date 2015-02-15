@@ -12,8 +12,8 @@ t.scheduleDraw= {"".postln};
 
 */
 Txalaparta{
-	var <samples, <>buffers, sndpath, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
-	var >makilaF, >scheduleDraw, <scoreArray, <startTime, interstepcounter;
+	var <samples, sndpath, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
+	var <scoreArray, <startTime, interstepcounter; // >makilaF, >scheduleDraw,
 
 	*new {| server, path = "." |
 		^super.new.initTxalaparta( server, path );
@@ -23,7 +23,7 @@ Txalaparta{
 
 		server = aserver;
 
-		sndpath = apath ++ "/sounds/"; //thisProcess.nowExecutingPath.dirname ++ "/sounds/";
+		sndpath = apath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
@@ -31,9 +31,9 @@ Txalaparta{
 		startTime = 0;
 		interstepcounter = 0;
 
-		buffers = Array.fill(8, {nil});
+		~buffers = Array.fill(8, {nil});
 
-		netadd = NetAddr("127.0.0.1", 6666);// which port to use?
+		//netadd = NetAddr("127.0.0.1", 6666);// which port to use?
 
 		scoreArray = scoreArray.add( // just add an empty event
 			().add(\time -> 0)
@@ -55,16 +55,18 @@ Txalaparta{
 		~lastemphasis = true; // which one is stronger. actualy just using first or last
 		~zerolimit = true; //allow 0 more than once or not?
 		~enabled = [true, true]; // switch on/off txakun and errena
-		//~allowedbeats = [0, 1, 2, nil, nil]; // 0,1,2,3,4
 		~allowedbeats = [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]];
 		~beatchance = [0.15, 0.25, 0.35, 0.15, 0.1];
-		~plankchance = (Array.fill(buffers.size, {1}));
+		~plankchance = (Array.fill(~buffers.size, {1}));
 		~autopilotrange = [5, 10]; // for instance
 		~mode = true; // old style hit position calulation?
-		~oscout = false;
-		~midiout = false;// not yet
 
-		~buffersenabled = [Array.fill(buffers.size, {false}), Array.fill(buffers.size, {false})]; // [enabledtxakun, enablederrena]
+		MIDIClient.init;
+		MIDIClient.destinations;
+		MIDIIn.connectAll;
+		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);
+
+		~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})]; // [enabledtxakun, enablederrena]
 
 		SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
 			Out.ar(outbus,
@@ -72,8 +74,6 @@ Txalaparta{
 			)
 		}).store;
 
-		scheduleDraw = {};
-		makilaF = {};
 
 		// AUTO TXALAPARTA LOOP ////////////////////////
 		// endless txalaparta rhythm using to globals
@@ -137,16 +137,6 @@ Txalaparta{
 				txakun = txakun.not;
 			}) // end inf loop
 		}); // end  routine
-
-		//////////////////////////////////////////////////////////////////////////////////
-		// listens to incoming txalaparta sound stream, tries to find out the tempo and tries to
-		// answer in the proper positions
-		//////////////////////////////////////////////////////////////////////////////////
-/*		interactivePlayRoutine = Task({
-			inf.do({ arg step;
-				0.1.wait;
-			})
-		});*/
 	}
 
 	/* avoid if none is allowed or chances are none
@@ -211,8 +201,7 @@ Txalaparta{
 					intermakilaswing = rrand(patterndata[1]/(numbeats*8), patterndata[1]/(numbeats*4));
 					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
 
-					this.schedulehits(scheduletime, true, txakun, localamp,
-						localstep, intermakilaswing, numbeats);
+					this.schedulehits(scheduletime, true, txakun, localamp, localstep, intermakilaswing, numbeats);
 
 					// mute while playing myself to avoid listening to myself
 					//{txalatempo.tooglelisten(false)}.defer(scheduletime);
@@ -250,7 +239,7 @@ Txalaparta{
 
 	load {arg filename, index;
 		["loading"+(sndpath ++ filename) ].postln;
-		buffers[index] = Buffer.read(server, sndpath ++ filename);
+		~buffers[index] = Buffer.read(server, sndpath ++ filename);
 	}
 
 	/* receives an array of arrays each of them with two items:
@@ -266,7 +255,7 @@ Txalaparta{
 
 	getnumactiveplanks {
 		var numactiveplanks=0;
-		buffers.do({arg arr, ind; // checks if enabled for any of the players
+		~buffers.do({arg arr, ind; // checks if enabled for any of the players
 			if( (~buffersenabled[0][ind]||~buffersenabled[1][ind]),
 				{numactiveplanks = numactiveplanks + 1})});
 		^numactiveplanks;
@@ -276,7 +265,7 @@ Txalaparta{
 	*/
 	getplankindex { arg plank;
 		var pos=0;
-		buffers.do({arg buf, index;
+		~buffers.do({arg buf, index;
 			if (buf.bufnum == plank.bufnum, { pos = index });
 		});
 		^pos;
@@ -294,7 +283,7 @@ Txalaparta{
 	*/
 	schedulehits {arg delaytime=0, mode=0, txakun, localamp, localstep, intermakilaswing, numbeats;
 
-		var flagindex=txakun.not.asInt, outarray=Array.new, emph, drawingSet = Array.fill(buffers.size, {[-1, 0, false, 10]});
+		var flagindex=txakun.not.asInt, outarray=Array.new, emph, drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
 
 		// txakun true 1 -> 1 // errena false 0 -> 2
 		//if (txakun, {flagindex=1},{flagindex=2});
@@ -332,13 +321,13 @@ Txalaparta{
 
 					// here we could mute randomly one of the hits on >1 phrases to
 					// emulate constructions such as ||:|   :|   |:| and so on...
-					pos = Array.fill(buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
+					pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
 					{
 						~buffersenabled[flagindex][pos] == false;
 					}.while({
-						pos = Array.fill(buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
+						pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
 					});
-					plank = buffers[pos];
+					plank = ~buffers[pos];
 
 					hitfreq = ~freqs.choose + rrand(-0.002, 0.002); // just a small freq swing
 
@@ -353,16 +342,16 @@ Txalaparta{
 					{ // deferred function
 						Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, plank.bufnum]);
 
-						makilaF.value(txakun.not.asInteger, makilaindex, 0.2);//slider animation
+						~makilaanims.makilaF(txakun.not.asInteger, makilaindex, 0.2);//slider animation
 
-						scoreArray = scoreArray.add( // just add an empty event
+/*						scoreArray = scoreArray.add( // just add an empty event
 							().add(\time -> (Main.elapsedTime - startTime))
 							.add(\amp -> hitamp)
 							.add(\player -> (flagindex + 1)) //1 or 2
 							.add(\plank -> (pos + 1))
-						);
-
-						//["schedulehits", scoreArray.size].postln;
+						);*/
+						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos + 1));
+						~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
 
 						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
@@ -373,9 +362,9 @@ Txalaparta{
 					drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
 				}); // END NUMBEATS LOOP
 
-				{ scheduleDraw.value(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
+				{ ~makilaanims.scheduleDraw(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
 
-		}, {"WARNING: no sound selected for beat".postln; buffers.postln});
+		}, {"WARNING: no sound selected for beat".postln; ~buffers.postln});
 	}
 
 
