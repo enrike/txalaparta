@@ -22,8 +22,10 @@ TxalaScoreGUI{
 	reset {
 		txalascoreF = Routine({
 			inf.do({
-				var now = Main.elapsedTime - txalascoresttime;
-				txalascore.update(txalascoreevents, now);
+				if (txalascore.isNil.not, {
+					var now = Main.elapsedTime - txalascoresttime;
+					txalascore.update(txalascoreevents, now);
+				});
 				0.05.wait;
 			});
 		});
@@ -44,12 +46,21 @@ TxalaScoreGUI{
 		});
 	}
 
-	doTxalaScore { arg xloc=0, yloc=600, width=1020, height=350, timeframe=4;
-		var view, xstep=0, drawspeed=1, numactiveplanks=0;
+	updateNumPlanks { arg numplanks;
+		txalascore = nil;
+		if (timelinewin.isNil.not, {
+			txalascore = TxalaScore.new(timelinewin,
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
+				numplanks)
+		})
+	}
+
+	doTxalaScore { arg xloc=0, yloc=600, width=1020, height=350, timeframe=4, numactiveplanks=1;
+		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 
-			numactiveplanks = 1;//txalaparta.getnumactiveplanks();
+			//numactiveplanks = 1;//txalaparta.getnumactiveplanks();
 
 		    txalascoresttime = Main.elapsedTime;
 
