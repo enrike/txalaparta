@@ -19,6 +19,10 @@ TxalaDisplayGraphics {
 		var ind = 0, thegap = 0;
 
 		win = Window("Txalaparta", Rect(ax,ay,aw,ah));
+		win.onClose = {
+			~makilaanims = nil;
+		};
+
 		xloc = ax;
 		yloc = ay;
 		width = aw;
