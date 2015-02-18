@@ -31,7 +31,8 @@ TxalaMarkovTempo{
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win;
 	var txalasilence, txalaonset, markov, lastPattern;
-	var presetslisten, presetmatrix, basepath;
+	var presetslisten, presetmatrix, basepath, sndpath, <samples;
+	var planksMenus;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaMarkovTempo(aserver, apath);
@@ -46,13 +47,28 @@ TxalaMarkovTempo{
 
 	init {
 		~bpm = 60;
-		//~volume = 0.6;
+		~amp = 1;
 		~answer = false;
 		~answermode = 0; //0,1,2,3: imitation, random (with GUI parameters), markov1, markov2
 		~answertimecorrection = 6;
 
-		//~gapswing = 0.01;
+		~gap = 0.5; // CORRECT THIS
+		~gapswing = 0.01; // THIS TOO
+
 		//~spread = 0.7;
+		if (~buffer.isNil, {
+			~buffers = Array.fill(8, {nil});
+		});
+
+		if (~plankchance.isNil, {
+			~plankchance = (Array.fill(~buffers.size, {1}));
+		});
+
+		if (~buffersenabled.isNil, {
+			~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})];
+		});
+
+		//planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
@@ -61,8 +77,15 @@ TxalaMarkovTempo{
 
 		lastPattern = nil;
 
-		// TO DO: transfer to higher level. add more sounds
-		//plank = Buffer.read(server, basepath ++ "/sounds/00_ugarte3.wav");
+		sndpath = basepath ++ "/sounds/";
+		samples = (sndpath++"*").pathMatch;
+		("sndpath is" + sndpath).postln;
+		("available samples are" + samples).postln;
+
+		MIDIClient.init;
+		MIDIClient.destinations;
+		MIDIIn.connectAll;
+		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);
 
 		this.start();
 		this.stop();
@@ -105,7 +128,7 @@ TxalaMarkovTempo{
 
 	start {
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
-		txalaonset= TxalaOnsetDetection.new(this, server);
+		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
 		//~txalascore = ~txalascore.new;
 	}
@@ -187,7 +210,7 @@ TxalaMarkovTempo{
 		plank = ~buffers[pos];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum);
+		if (~txalascrore.isNil.not, { ~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum) });
 		~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
@@ -201,7 +224,7 @@ TxalaMarkovTempo{
 
 	doGUI  {
 		var yloc = 35, gap=20, guielements = Array.fill(10, {nil});
-		win = Window("Listening module for txalaparta",  Rect(10, 50, 355, 370));
+		win = Window("Listening module for txalaparta",  Rect(10, 50, 355, 570));
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
@@ -394,10 +417,72 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
-		this.doPresets(win, 7, yloc+(gap*13), guielements);
-		this.doMatrixGUI(win, 180, yloc+(gap*13));
+		this.doPresets(win, 7, yloc+(gap*13.5), guielements);
+		this.doMatrixGUI(win, 180, yloc+(gap*13.5));
+
+		//TxalaPlankControls.new(win, 0,yloc+(gap*20), 300, 20, samples.asArray.collect({arg item; PathName.new(item).fileName}));
+		this.doPlanks(-15,yloc+(gap*18), 20, 220, 20);
 
 		win.front;
+	}
+
+
+	doPlanks { arg xloc, yloc, gap, width, height;
+		var menuxloc = xloc + 44;
+		var playxloc = menuxloc+200+2;
+
+		// PLANKS - OHOLAK //////////////////////////////////
+		//StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
+		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
+		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
+		StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
+
+		planksMenus = Array.fill(~buffers.size, {[nil,nil]});
+
+		////////////////
+		~buffers.size.do({ arg index;
+
+			// errena row buttons
+			planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
+			.states_([
+				[(index+1).asString, Color.white, Color.black],
+				[(index+1).asString, Color.black, Color.blue],
+			])
+			.action_({ arg butt;
+				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
+				this.updateTxalaScoreNumPlanks();
+			});
+
+			if (index==0, {
+				planksMenus[index][0].valueAction = 1;
+				//planksMenus[index][1].valueAction = 1;
+			});// ONLY activate first ones
+
+			// menus for each plank
+			planksMenus[index][1] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),200,20))
+			.items_( samples.asArray.collect({arg item; PathName.new(item).fileName}) )
+			.action_({ arg menu;
+				~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
+			})
+			.valueAction_(index);
+
+			// play buttons row
+			Button(win, Rect(playxloc,yloc+(gap*index),20,20))
+			.states_([
+				[">", Color.white, Color.black]
+			])
+			.action_({ arg butt;// play a single shot
+				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+			});
+
+			Slider(win,Rect(menuxloc+225,yloc+(gap*index),75,20))
+			.action_({arg sl;
+				~plankchance[index] = sl.value;
+			})
+			.orientation_(\horizontal)
+			.valueAction_(1);
+		});
+
 	}
 
 
@@ -509,4 +594,19 @@ TxalaMarkovTempo{
 			newpreset.string = ""; //clean field
 		});
 	}
+
+
+	updateTxalaScoreNumPlanks {
+		var numactiveplanks = this.getnumactiveplanks();
+		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( numactiveplanks ) });
+	}
+
+	getnumactiveplanks {
+		var numactiveplanks=0;
+		~buffers.do({arg arr, ind; // checks if enabled for any of the players
+			if( (~buffersenabled[0][ind]||~buffersenabled[1][ind]),
+				{numactiveplanks = numactiveplanks + 1})});
+		^numactiveplanks;
+	}
+
 }
