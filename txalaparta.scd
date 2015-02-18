@@ -290,13 +290,13 @@ s.doWhenBooted({
 		});
 
 		// INTERACTIVE PLAY
-		interactiveplayBut = Button(window, Rect(xloc,yloc+225,200,35))
+/*		interactiveplayBut = Button(window, Rect(xloc,yloc+225,200,35))
 		.states_([
 			["interactive play", Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			txalatempo = TxalaMarkovTempo.new(s, currentpath);
-		});
+		});*/
 	};
 
 
@@ -456,7 +456,7 @@ s.doWhenBooted({
 
 	};
 
-	doWindow.value(450, 620, "Txalaparta. www.ixi-audio.net");
+	doWindow.value(430, 580, "Txalaparta. www.ixi-audio.net");
 	timecontrols = TxalaTimeControls.new(window);
 	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20, ~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
 
