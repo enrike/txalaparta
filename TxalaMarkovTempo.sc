@@ -49,13 +49,13 @@ TxalaMarkovTempo{
 		~bpm = 60;
 		~amp = 1;
 		~answer = false;
-		~answermode = 0; //0,1,2,3: imitation, random (with GUI parameters), markov1, markov2
+		~answermode = 0; //0,1,3: imitation, markov1, markov2
 		~answertimecorrection = 6;
+		~hutsunelookup = 0.5;
 
-		~gap = 0.5; // CORRECT THIS
-		~gapswing = 0.01; // THIS TOO
+		~gap = 0.5;
+		~gapswing = 0.01;
 
-		//~spread = 0.7;
 		if (~buffer.isNil, {
 			~buffers = Array.fill(8, {nil});
 		});
@@ -87,6 +87,8 @@ TxalaMarkovTempo{
 		MIDIIn.connectAll;
 		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);
 
+		~txalascore = TxalaScoreGUI.new;
+
 		this.start();
 		this.stop();
 
@@ -99,7 +101,7 @@ TxalaMarkovTempo{
 	}
 
 	loop {
-		{ label.string = "BPM" + ~bpm + "\nCompass" + txalasilence.compass}.defer
+		{ label.string = "BPM" + ~bpm + "     Compass" + txalasilence.compass}.defer
 	}
 
 	broadcastgroupended { // silence detection calls this.
@@ -130,7 +132,7 @@ TxalaMarkovTempo{
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
-		//~txalascore = ~txalascore.new;
+		~txalascore.reset();
 	}
 
 	reset  {
@@ -148,10 +150,7 @@ TxalaMarkovTempo{
 	answer {
 		var halfcompass, timetogo=0;
 
-		"SCHEDULE ANSWER".postln;
 		halfcompass = (60/~bpm/2);
-
-		//lastPattern.do({arg hit; hit.plank.postln});
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
@@ -210,7 +209,7 @@ TxalaMarkovTempo{
 		plank = ~buffers[pos];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		if (~txalascrore.isNil.not, { ~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum) });
+		if (~txalascore.isNil.not, { ~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum) });
 		~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
@@ -223,19 +222,19 @@ TxalaMarkovTempo{
 
 
 	doGUI  {
-		var yloc = 35, gap=20, guielements = Array.fill(10, {nil});
-		win = Window("Listening module for txalaparta",  Rect(10, 50, 355, 570));
+		var yindex=0, yloc = 35, gap=20, guielements = Array.fill(10, {nil});
+		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 570));
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
 		};
 
-		label = StaticText(win, Rect(10, 3, 130, 25));
+		label = StaticText(win, Rect(10, 0, 250, 25));
 		label.string = "BPM:" + ~bpm;
 
 		// row of buttons on top side
 
-		Button( win, Rect(140,3,70,25))
+		Button( win, Rect(70,yloc-10,70,25))
 		.states_([
 			["listen", Color.white, Color.black],
 			["listen", Color.black, Color.green],
@@ -247,7 +246,7 @@ TxalaMarkovTempo{
 				this.stop();
 			})
 		});
-		Button( win, Rect(210,3,70,25))
+		Button( win, Rect(140,yloc-10,70,25))
 		.states_([
 			["answer", Color.white, Color.black],
 			["answer", Color.black, Color.green],
@@ -255,7 +254,7 @@ TxalaMarkovTempo{
 		.action_({ arg but;
 			~answer = but.value.asBoolean;
 		});
-
+/*
 		Button( win, Rect(280,3,70,25))
 		.states_([
 			["pre answer", Color.white, Color.black],
@@ -263,19 +262,11 @@ TxalaMarkovTempo{
 		])
 		.action_({ arg but;
 			txalasilence.answerposition = but.value.asBoolean;
-		});
+		});*/
 
-		// mode menu
-		StaticText(win, Rect(10, yloc-3, 100, 25)).string = "Answer mode";
-		PopUpMenu(win,Rect(95,yloc, 110,20))
-		.items_(["imitation", "fixed chances", "learning"])
-		.action_({ arg menu;
-		    ~answermode = menu.value.asInt;
-			("changing to answer mode:" + menu.item).postln;
-		})
-		.valueAction_(~answermode);
 
-		Button( win, Rect(210,yloc-5,70,25))
+
+		Button( win, Rect(210,yloc-10,70,25))
 		.states_([
 			["score", Color.white, Color.black],
 		])
@@ -283,7 +274,7 @@ TxalaMarkovTempo{
 			~txalascore.doTxalaScore()
 		});
 
-		Button( win, Rect(280,yloc-5,70,25)) //Rect(140,30,70,25))
+		Button( win, Rect(280,yloc-10,70,25)) //Rect(140,30,70,25))
 		.states_([
 			["scope in", Color.white, Color.black],
 		])
@@ -291,22 +282,12 @@ TxalaMarkovTempo{
 			server.scope(1,8);
 		});
 
-		// answer time correction
-		guielements[0] = EZSlider( win,
-			Rect(0,yloc+(gap),350,20),
-			"time correction",
-			ControlSpec(1, 10, \lin, 0.01, 6, ""),
-			{ arg ez;
-				~answertimecorrection = ez.value.asFloat;
-			},
-			initVal: ~answertimecorrection,
-			labelWidth: 60;
-		);
+		yindex = yindex + 1;
 
 		// amplitudes
 		// incomming amp correction
-		guielements[1] = EZSlider( win,
-			Rect(0,yloc+(gap*2),350,20),
+		guielements[0] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"in amp",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
@@ -317,9 +298,12 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.amp,
 			labelWidth: 60;
 		);
+
+		yindex = yindex + 1;
+
 		// ~amplitude
-/*		guielements[2] = EZSlider( win,
-			Rect(0,yloc+(gap*3),350,20),
+		guielements[1] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"out amp",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
 			{ arg ez;
@@ -327,14 +311,71 @@ TxalaMarkovTempo{
 			},
 			initVal: ~volume,
 			labelWidth: 60;
-		);*/
+		);
 
+
+		yindex = yindex + 1.5;
+
+		// mode menu
+		StaticText(win, Rect(10, yloc+(gap*yindex), 120, 25)).string = "Answer mode";
+		PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
+		.items_(["imitation", "fixed chances", "learning chances"])
+		.action_({ arg menu;
+		    ~answermode = menu.value.asInt;
+			("changing to answer mode:" + menu.item).postln;
+		})
+		.valueAction_(~answermode);
+
+		yindex = yindex + 1;
+
+		// answer time correction
+		guielements[3] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"correction",
+			ControlSpec(1, 10, \lin, 0.01, 6, ""),
+			{ arg ez;
+				~answertimecorrection = ez.value.asFloat;
+			},
+			initVal: ~answertimecorrection,
+			labelWidth: 60;
+		);
+
+		yindex = yindex + 1;
+
+		guielements[4] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"spread",
+			ControlSpec(0, 1, \lin, 0.01, 1, ""),
+			{ arg ez;
+				~gap = ez.value.asFloat;
+			},
+			initVal: ~gap,
+			labelWidth: 60;
+		);
+
+		yindex = yindex + 1;
+
+		guielements[5] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"swing",
+			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
+			{ arg ez;
+				~gapswing = ez.value.asFloat;
+			},
+			initVal: ~gapswing,
+			labelWidth: 60;
+		);
+
+
+yindex = yindex + 1.5;
 
 		// DetectSilence controls //
-		StaticText(win, Rect(5, yloc+(gap*4), 180, 25)).string = "Tempo detection";
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Tempo detection";
 
-		guielements[3] = EZSlider( win,
-			Rect(0,yloc+(gap*5),350,20),
+		yindex = yindex + 1;
+
+		guielements[5] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"threshold",
 			ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
@@ -345,8 +386,10 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);//.valueAction_(~listenparemeters.tempo.threshold);
 
-		guielements[4] = EZSlider( win,
-			Rect(0,yloc+(gap*6),350,20),
+		yindex = yindex + 1;
+
+		guielements[6] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"falltime",
 			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
@@ -357,8 +400,10 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
-		guielements[5] = EZSlider( win,
-			Rect(0,yloc+(gap*7),350,20),
+		yindex = yindex + 1;
+
+		guielements[7] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"rate",
 			ControlSpec(5, 60, \lin, 1, 30, ""),
 			{ arg ez;
@@ -369,11 +414,33 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
-		// Onset pattern detection controls //
-		StaticText(win, Rect(5, yloc+(gap*8), 180, 25)).string = "Hit onset detection";
+yindex = yindex + 1.5;
 
-		guielements[6] = EZSlider( win,
-			Rect(0,yloc+(gap*9),350,20),
+		// hutsune timeout control
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hutsune detection";
+
+		yindex = yindex + 1;
+
+		guielements[7] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"lookup",
+			ControlSpec(0, 1, \lin, 0.01, 1, ""),
+			{ arg ez;
+				~hutsunelookup = ez.value.asFloat;
+			},
+			initVal: ~hutsunelookup,
+			labelWidth: 60;
+		);
+
+		yindex = yindex + 1.5;
+
+		// Onset pattern detection controls //
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hit onset detection";
+
+		yindex = yindex + 1;
+
+		guielements[8] = EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
 			"threshold",
 			ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
 			{ arg ez;
@@ -383,8 +450,11 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.threshold,
 			labelWidth: 60;
 		);
+
+		yindex = yindex + 1;
+
 		guielements[7] = EZSlider( win,
-			Rect(0,yloc+(gap*10),350,20),
+			Rect(0,yloc+(gap*yindex),350,20),
 			"relaxtime",
 			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
 			{ arg ez;
@@ -394,8 +464,11 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.relaxtime,
 			labelWidth: 60;
 		);
+
+		yindex = yindex + 1;
+
 		guielements[8] = EZSlider( win,
-			Rect(0,yloc+(gap*11),350,20),
+			Rect(0,yloc+(gap*yindex),350,20),
 			"floor",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
@@ -405,8 +478,11 @@ TxalaMarkovTempo{
 			initVal: ~listenparemeters.onset.floor,
 			labelWidth: 60;
 		);
+
+		yindex = yindex + 1;
+
 		guielements[9] = EZSlider( win,
-			Rect(0,yloc+(gap*12),350,20),
+			Rect(0,yloc+(gap*yindex),350,20),
 			"mingap",
 			ControlSpec(0.1, 20, \lin, 0.1, 0.1, "Ms"),
 			{ arg ez;
@@ -417,11 +493,13 @@ TxalaMarkovTempo{
 			labelWidth: 60;
 		);
 
-		this.doPresets(win, 7, yloc+(gap*13.5), guielements);
-		this.doMatrixGUI(win, 180, yloc+(gap*13.5));
+		yindex = yindex + 1.5;
+
+		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
+		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 
 		//TxalaPlankControls.new(win, 0,yloc+(gap*20), 300, 20, samples.asArray.collect({arg item; PathName.new(item).fileName}));
-		this.doPlanks(-15,yloc+(gap*18), 20, 220, 20);
+		this.doPlanks(350,yloc, 20, 220, 20);
 
 		win.front;
 	}

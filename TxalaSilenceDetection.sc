@@ -31,7 +31,7 @@ TxalaSilenceDetection{
 		hutsunetimeout = nil;
 		processflag = false;
 		hitflag = false;
-		resettime = 3;
+		resettime = 3; // how many secs to wait before reseting the system
 
 		this.doAudio();
 	}
@@ -63,9 +63,6 @@ TxalaSilenceDetection{
 		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
 
-/*	doMIDI {} // for MIDI IN events
-	doOSC {} // for OSC incomming events*/
-
 	updatethreshold { arg value;
 		synth.free; // supercollider does not allow to update the amp parameter on the fly
 		synth = nil;
@@ -86,7 +83,9 @@ TxalaSilenceDetection{
 		hitflag = true;
 		compass = compass + 1;
 		~bpm = tempocalc.calculate();
-		hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm)/2); // next expected hit should go before that
+		if ( (~hutsunelookup > 0), {
+			hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should go before that
+		});
 		if( (~answer && answerposition.not), { parent.answer() }); //schedule here the answer time acording to bpm
 		("--------------------- start"+compass).postln;
 	}
