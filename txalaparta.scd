@@ -38,7 +38,7 @@ s.doWhenBooted({
 	// GUI widgets
 	var beatButtons, beatSliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, ampBut, autoplayBut, interactiveplayBut,timecontrols, plankcontrols;
 	// GUI functions vars
-	var doWindow, doMakilas, doButtons, doPresets, doTxalaScore, scheduleDraw, postOutput, doControPanel, drawHitSet;
+	var doWindow, doMakilas, doButtons, doPresets, doTxalaScore, postOutput, doControPanel, drawHitSet;
 
 	"STARTING TXALAPARTA !!!!!!!".postln;
 
@@ -256,7 +256,15 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			~txalascore.doTxalaScore();
-			//doTxalaScore.value;
+		});
+
+		// txakascore timeline
+		Button(window, Rect(beatsxloc,yloc+200,100,25))
+		.states_([
+			["show animation", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			~makilaanims = TxalaDisplayGraphics.new( 10 , 10, 270, 620, 10);
 		});
 
 		// MODE
@@ -450,7 +458,6 @@ s.doWhenBooted({
 
 	doWindow.value(450, 620, "Txalaparta. www.ixi-audio.net");
 	timecontrols = TxalaTimeControls.new(window);
-	~makilaanims = TxalaDisplayGraphics.new( 10 , 10, 270, 620, 10);
 	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20, ~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
 
 	doButtons.value(10, 350);
