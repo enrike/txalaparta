@@ -342,7 +342,9 @@ Txalaparta{
 					{ // deferred function
 						Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, plank.bufnum]);
 
-						~makilaanims.makilaF(txakun.not.asInteger, makilaindex, 0.2);//slider animation
+						if (~makilaanims.isNil.not, {
+							~makilaanims.makilaF(txakun.not.asInteger, makilaindex, 0.2);//slider animation
+						});
 
 /*						scoreArray = scoreArray.add( // just add an empty event
 							().add(\time -> (Main.elapsedTime - startTime))
@@ -362,8 +364,9 @@ Txalaparta{
 					drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
 				}); // END NUMBEATS LOOP
 
-				{ ~makilaanims.scheduleDraw(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
-
+				if (~makilaanims.isNil.not, {
+					{ ~makilaanims.scheduleDraw(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
+				});
 		}, {"WARNING: no sound selected for beat".postln; ~buffers.postln});
 	}
 
