@@ -1,7 +1,10 @@
 // license GPL
 // by www.ixi-audio.net
 
-/* TxalaPlanlControls
+/*
+w = Window.new("", Rect(0, 100, 400, 400));
+TxalaPlankControls.new(w, 0,0,200,200, []);
+w.front;
 */
 
 
@@ -18,7 +21,6 @@ TxalaPlankControls {
 		var menuxloc = ax + 44;
 		var playxloc = menuxloc+250+2;
 
-		planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
 
 		//[awin, ax, ay, aw, agap, somesamples].postln;
 
@@ -35,19 +37,30 @@ TxalaPlankControls {
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		StaticText(win, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
 
+		if (~buffer.isNil, {
+			~buffers = Array.fill(8, {nil});
+		});
+
+		if (~plankchance.isNil, {
+			~plankchance = (Array.fill(~buffers.size, {1}));
+		});
+
+		planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
+
+
 		////////////////
 		~buffers.size.do({ arg index;
 
-			// txakun row buttons
+			//txakun row buttons
 			planksMenus[index][0] = Button(win, Rect(xloc,yloc+(gap*index),20,20))
 			.states_([
-				[(index+1).asString, Color.white, Color.black],
-				[(index+1).asString, Color.black, Color.red],
-			])
-			.action_({ arg butt;
-				~buffersenabled[0][index] = butt.value.asBoolean;
-				this.updateTxalaScoreNumPlanks();
-			});
+			 	[(index+1).asString, Color.white, Color.black],
+			 	[(index+1).asString, Color.black, Color.red],
+			 ])
+			 .action_({ arg butt;
+			 	~buffersenabled[0][index] = butt.value.asBoolean;
+			 	this.updateTxalaScoreNumPlanks();
+			 });
 
 			// errena row buttons
 			planksMenus[index][1] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
@@ -59,6 +72,7 @@ TxalaPlankControls {
 				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
 				this.updateTxalaScoreNumPlanks();
 			});
+
 
 			if (index==0, {
 				planksMenus[index][0].valueAction = 1;
@@ -81,6 +95,7 @@ TxalaPlankControls {
 			.action_({ arg butt;// play a single shot
 				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
 			});
+
 
 			Slider(win,Rect(menuxloc+275,yloc+(gap*index),75,20))
 			.action_({arg sl;
