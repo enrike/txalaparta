@@ -165,6 +165,7 @@ TxalaMarkovTempo{
 		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
 		lastPattern.do({arg hit, index;
 			{
+				hit.postln;
 				this.playhit(hit.amp, 0, index, lastPattern.size)
 			}.defer(timetogo + hit.time);
 		});
@@ -222,7 +223,7 @@ TxalaMarkovTempo{
 
 
 	doGUI  {
-		var yindex=0, yloc = 35, gap=20, guielements = Array.fill(10, {nil});
+		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
 		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 570));
 		win.onClose = {
 			txalasilence.kill();
@@ -230,7 +231,7 @@ TxalaMarkovTempo{
 		};
 
 		label = StaticText(win, Rect(10, 0, 250, 25));
-		label.string = "BPM:" + ~bpm;
+		label.string = "BPM: ---";
 
 		// row of buttons on top side
 
@@ -286,7 +287,7 @@ TxalaMarkovTempo{
 
 		// amplitudes
 		// incomming amp correction
-		guielements[0] = EZSlider( win,
+		guielements.add(\inamp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"in amp",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
@@ -297,39 +298,41 @@ TxalaMarkovTempo{
 			},
 			initVal: ~listenparemeters.amp,
 			labelWidth: 60;
-		);
+		));
 
 		yindex = yindex + 1;
 
 		// ~amplitude
-		guielements[1] = EZSlider( win,
+		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"out amp",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
-			initVal: ~volume,
+			initVal: ~amp,
 			labelWidth: 60;
-		);
+		));
 
 
 		yindex = yindex + 1.5;
 
 		// mode menu
 		StaticText(win, Rect(10, yloc+(gap*yindex), 120, 25)).string = "Answer mode";
-		PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
-		.items_(["imitation", "fixed chances", "learning chances"])
-		.action_({ arg menu;
-		    ~answermode = menu.value.asInt;
-			("changing to answer mode:" + menu.item).postln;
-		})
-		.valueAction_(~answermode);
+		guielements.add(\answermode->
+				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
+				.items_(["imitation", "fixed chances", "learning chances"])
+				.action_({ arg menu;
+					~answermode = menu.value.asInt;
+					("changing to answer mode:" + menu.item).postln;
+				})
+				.valueAction_(~answermode)
+			);
 
 		yindex = yindex + 1;
 
 		// answer time correction
-		guielements[3] = EZSlider( win,
+		guielements.add(\answertimecorrection->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"correction",
 			ControlSpec(1, 10, \lin, 0.01, 6, ""),
@@ -338,11 +341,11 @@ TxalaMarkovTempo{
 			},
 			initVal: ~answertimecorrection,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[4] = EZSlider( win,
+		guielements.add(\gap->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"spread",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
@@ -351,11 +354,11 @@ TxalaMarkovTempo{
 			},
 			initVal: ~gap,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[5] = EZSlider( win,
+		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"swing",
 			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
@@ -364,7 +367,7 @@ TxalaMarkovTempo{
 			},
 			initVal: ~gapswing,
 			labelWidth: 60;
-		);
+			));
 
 
 yindex = yindex + 1.5;
@@ -374,7 +377,8 @@ yindex = yindex + 1.5;
 
 		yindex = yindex + 1;
 
-		guielements[5] = EZSlider( win,
+		guielements.add(\tempothreshold->
+		EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"threshold",
 			ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
@@ -384,11 +388,12 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.tempo.threshold,
 			labelWidth: 60;
-		);//.valueAction_(~listenparemeters.tempo.threshold);
+			));//.valueAction_(~listenparemeters.tempo.threshold);
 
 		yindex = yindex + 1;
 
-		guielements[6] = EZSlider( win,
+		guielements.add(\falltime->
+		EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"falltime",
 			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
@@ -398,11 +403,11 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.tempo.falltime,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[7] = EZSlider( win,
+		guielements.add(\checkrate-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"rate",
 			ControlSpec(5, 60, \lin, 1, 30, ""),
@@ -412,7 +417,7 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.tempo.checkrate,
 			labelWidth: 60;
-		);
+			));
 
 yindex = yindex + 1.5;
 
@@ -421,7 +426,7 @@ yindex = yindex + 1.5;
 
 		yindex = yindex + 1;
 
-		guielements[7] = EZSlider( win,
+		guielements.add(\hutsunelookup ->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"lookup",
 			ControlSpec(0, 1, \lin, 0.01, 1, ""),
@@ -430,7 +435,7 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~hutsunelookup,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1.5;
 
@@ -439,7 +444,7 @@ yindex = yindex + 1.5;
 
 		yindex = yindex + 1;
 
-		guielements[8] = EZSlider( win,
+		guielements.add(\onsetthreshold->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"threshold",
 			ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
@@ -449,11 +454,11 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.onset.threshold,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[7] = EZSlider( win,
+		guielements.add(\relaxtime->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"relaxtime",
 			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
@@ -463,11 +468,11 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.onset.relaxtime,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[8] = EZSlider( win,
+		guielements.add(\floor->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"floor",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
@@ -477,11 +482,11 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.onset.floor,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1;
 
-		guielements[9] = EZSlider( win,
+		guielements.add(\mingap->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"mingap",
 			ControlSpec(0.1, 20, \lin, 0.1, 0.1, "Ms"),
@@ -491,14 +496,13 @@ yindex = yindex + 1.5;
 			},
 			initVal: ~listenparemeters.onset.mingap,
 			labelWidth: 60;
-		);
+			));
 
 		yindex = yindex + 1.5;
 
 		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 
-		//TxalaPlankControls.new(win, 0,yloc+(gap*20), 300, 20, samples.asArray.collect({arg item; PathName.new(item).fileName}));
 		this.doPlanks(350,yloc, 20, 220, 20);
 
 		win.front;
@@ -510,7 +514,6 @@ yindex = yindex + 1.5;
 		var playxloc = menuxloc+200+2;
 
 		// PLANKS - OHOLAK //////////////////////////////////
-		//StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
 		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
@@ -584,19 +587,31 @@ yindex = yindex + 1.5;
 			data.asCompileString.postln;
 
 			~answertimecorrection = data[\answertimecorrection];
-			//~volume = data[\volume];
+			~amp = data[\amp];
+			~gap = data[\gap];
+			~gapswing = data[\gapswing];
+			~answermode = data[\answermode];
+			~hutsunelookup = data[\hutsunelookup];
 			~listenparemeters = data[\listenparemeters];
 
-			guielements[0].value = ~answertimecorrection;
-			guielements[1].value = ~listenparemeters.amp;
-			//guielements[2].value = ~volume;
-			guielements[3].value = ~listenparemeters.tempo.threshold;
-			guielements[4].value = ~listenparemeters.tempo.falltime;
-			guielements[5].value = ~listenparemeters.tempo.checkrate;
-			guielements[6].value = ~listenparemeters.onset.threshold;
-			guielements[7].value = ~listenparemeters.onset.relaxtime;
-			guielements[8].value = ~listenparemeters.onset.floor;
-			guielements[9].value = ~listenparemeters.onset.mingap;
+			[guielements].postln;
+
+			// is the saved data correct?
+			guielements.gap.valueAction = ~gap;
+			guielements.gapswing.valueAction = ~gapswing;
+			guielements.answermode.valueAction = ~answermode; //menu
+			guielements.hutsunelookup.valueAction = ~hutsunelookup;
+			guielements.answertimecorrection.valueAction = ~answertimecorrection;
+			guielements.amp.valueAction = ~amp;
+
+			guielements.inamp.valueAction = ~listenparemeters.amp;
+			guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+			guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+			guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+			guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
+			guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+			guielements.floor.valueAction = ~listenparemeters.onset.floor;
+			guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
 		});
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
@@ -614,8 +629,14 @@ yindex = yindex + 1.5;
 			data = Dictionary.new;
 
 			data.put(\answertimecorrection, ~answertimecorrection);
-			//data.put(\volume, ~volume);
+			data.put(\amp, ~amp);
 			data.put(\listenparemeters, ~listenparemeters);
+			data.put(\hutsunelookup, ~hutsunelookup);
+			data.put(\gap, ~gap);
+			data.put(\gapswing, ~gapswing);
+			data.put(\answermode, ~answermode);
+
+			(basepath ++ "/presets_listen/" ++ filename).postln;
 
 			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
 
@@ -641,10 +662,8 @@ yindex = yindex + 1.5;
 			var data;
 			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
-			data.asCompileString.postln;
 
 			markov.new2ndmatrix( data[\beatdata] );
-
 			markov.beatdata2nd.plot;
 
 		});

@@ -432,7 +432,6 @@ s.doWhenBooted({
 			data.put(\allowedbeats, ~allowedbeats);
 			data.put(\pulse, ~pulse);
 			data.put(\emphasis, ~lastemphasis);
-			//data.put(\classictxakun, ~classictxakun);
 			data.put(\enabled, ~enabled);
 			data.put(\autopilotrange, ~autopilotrange);
 			data.put(\beatchance, ~beatchance);
