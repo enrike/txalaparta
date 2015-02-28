@@ -82,10 +82,10 @@ TxalaMarkovTempo{
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
 
-		MIDIClient.init;
+/*		MIDIClient.init;
 		MIDIClient.destinations;
 		MIDIIn.connectAll;
-		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);
+		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);*/
 
 		~txalascore = TxalaScoreGUI.new;
 
@@ -154,18 +154,22 @@ TxalaMarkovTempo{
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
-		switch (~answermode,
-			0, { this.imitation(timetogo) },
-			1, { this.markov(timetogo) },
-			2, { this.markov(timetogo, lastPattern.size) }
-		);
+		timetogo.postln;
+
+		if (timetogo.isNaN.not, {
+			switch (~answermode,
+				0, { this.imitation(timetogo) },
+				1, { this.markov(timetogo) },
+				2, { this.markov(timetogo, lastPattern.size) }
+			);
+		});
 	}
 
 	imitation { arg timetogo;
 		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
+
 		lastPattern.do({arg hit, index;
 			{
-				hit.postln;
 				this.playhit(hit.amp, 0, index, lastPattern.size)
 			}.defer(timetogo + hit.time);
 		});
@@ -198,6 +202,7 @@ TxalaMarkovTempo{
 
 	playhit { arg amp, player, index, total;
 		var plank, pos;
+
 		if (index==0, { this.processflag(true) }); // repeated
 		if ((index==(total-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
 
@@ -211,7 +216,7 @@ TxalaMarkovTempo{
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum) });
-		~midiout.noteOn(player, plank.bufnum, amp*127);
+		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
 
@@ -272,7 +277,9 @@ TxalaMarkovTempo{
 			["score", Color.white, Color.black],
 		])
 		.action_({ arg but;
-			~txalascore.doTxalaScore()
+			var num;
+			num = this.getnumactiveplanks();
+			~txalascore.doTxalaScore(numactiveplanks:num);
 		});
 
 		Button( win, Rect(280,yloc-10,70,25)) //Rect(140,30,70,25))
