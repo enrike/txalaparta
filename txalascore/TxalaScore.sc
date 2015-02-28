@@ -2,21 +2,27 @@
 
 TxalaScore {
 
-	var win, view, events, selected, timeoffset, image, record, recordtask;
+	var win, view, >events, selected, timeoffset, image, record, recordtask, <numplanks;
+	var <>drawmode;
 	var timeframe = 12;
 	var imageArray;
 
-	*new {|parent, rect, numPlanks=3|
-		^super.new.initTxalaScore( parent, rect, numPlanks );
+	*new {|parent, rect, numPlanks=3, drawmode = 0|
+		^super.new.initTxalaScore( parent, rect, numPlanks, drawmode );
 	}
 
-	initTxalaScore {|parent, rect, numPlanks|
+	initTxalaScore {|parent, rect, numPlanks, dmode|
 		var plankheight;
 		selected = nil;
 		win = parent;
 		imageArray = [];
+		numplanks = numPlanks; // store but dont use it now
+		drawmode = dmode;
+		if (drawmode.asBoolean.not, { numPlanks = 1 }); //*
+
 		view = UserView.new(parent, rect);
 		view.background = Color.white;
+
 		plankheight = (view.bounds.height/(numPlanks+1));
 		view.drawFunc_({
 			// the planks
@@ -33,13 +39,30 @@ TxalaScore {
 			// the events themselves
 			Pen.color = Color.black;
 			events.do({arg event;
-			//	var time = (event.time-timeoffset-speed) * (view.bounds.width/speed);
+				var posy, labely, liney;
 				var time = (event.time-timeoffset) * (view.bounds.width/timeframe);
+
+				posy = (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs;
+				liney = posy+8;
+
+				if ( drawmode.asBoolean.not, {
+					if ((event.player == 2), { //mode 0
+						posy = (view.bounds.height+((event.amp*plankheight) - (plankheight*event.plank)-4)).abs;
+						liney = posy;
+					});
+
+					labely = if(event.player == 1, {posy-15}, {posy+10});
+					Pen.stringAtPoint (event.plank.asString, Point(time-4, labely));//, font, color)
+				});
+
 				Pen.color = if(event.player == 1, {Color.red.alpha_(0.5)}, {Color.blue.alpha_(0.5)});
-				Pen.fillRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
+				Pen.fillRect(Rect(time-4, posy, 8, 8));
 				Pen.color = Color.black;
-				Pen.line(Point(time, (view.bounds.height-(plankheight*event.plank)).abs), Point(time, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-8)).abs));
-				Pen.addRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
+
+				Pen.line( Point(time, (view.bounds.height-(plankheight*event.plank)).abs),
+						Point(time, liney));
+
+				Pen.addRect(Rect(time-4, posy, 8, 8));
 				Pen.stroke;
 			});
 		});
@@ -127,6 +150,15 @@ TxalaScore {
 	timeframe_{arg timef;
 		timeframe = timef;
 	}
+
+	// setdrawmode { arg mode;
+	// 	if (mode.asBoolean, {
+	//
+	// 		},{
+	//
+	// 	});
+	// 	drawmode = mode;
+	// }
 
 	sortEvents {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });
