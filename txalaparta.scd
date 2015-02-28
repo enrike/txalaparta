@@ -21,11 +21,12 @@ s.unmute
 
 
 // this is to avoid problem in some windows machines
-Platform.case(
+/*Platform.case(
 	//\osx,       { "OSX".postln },
 	\linux,     { Server.default = Server.internal },
 	\windows,   { Server.default = Server.internal }
-);
+);*/
+(
 
 s.boot; //////// BOOT SERVER //////////////////
 
@@ -39,8 +40,6 @@ s.doWhenBooted({
 	var beatButtons, beatSliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, ampBut, autoplayBut, interactiveplayBut,timecontrols, plankcontrols;
 	// GUI functions vars
 	var doWindow, doMakilas, doButtons, doPresets, doTxalaScore, postOutput, doControPanel, drawHitSet;
-
-	"STARTING TXALAPARTA !!!!!!!".postln;
 
 	currentpath = thisProcess.nowExecutingPath.dirname;
 
@@ -90,9 +89,10 @@ s.doWhenBooted({
 		//window.alwaysOnTop = true;
 		window.onClose = {
 			if (txalatempo.isNil.not, {txalatempo.closeGUI()});
+			if (~makilaanims.isNil.not, {~makilaanims.close()});
 			AppClock.clear;
 			SystemClock.clear;
-			~makilaanims.close();
+
 		};
 		window.front;
 
@@ -231,6 +231,14 @@ s.doWhenBooted({
 				~beatchance[subindex] = sl.value;
 			}).orientation = \horizontal;
 			beatSliders[subindex].valueAction = ~beatchance[subindex];
+
+			Button(window, Rect(beatsxloc+115,yloc+(25*subindex),20,20))
+			.states_([
+				["P", Color.white, Color.black],
+			])
+			.action_({ arg butt;
+				ParamWin.new("~beatchance["++subindex++"]", ControlSpec(0.001, 1), beatSliders[subindex]);
+			});
 		});
 
 		beatButtons[0][2].valueAction = 1; // activate by default
@@ -255,7 +263,9 @@ s.doWhenBooted({
 			["show score", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			~txalascore.doTxalaScore();
+			var num;
+			num = ~txalaparta.getnumactiveplanks();
+			~txalascore.doTxalaScore(numactiveplanks:num);
 		});
 
 		// txakascore timeline
@@ -264,7 +274,9 @@ s.doWhenBooted({
 			["show animation", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			~makilaanims = TxalaDisplayGraphics.new( 10 , 10, 270, 620, 10);
+			if (~makilaanims.isNil, {
+				~makilaanims = TxalaDisplayGraphics.new( 10 , 10, 270, 620, 10)
+			});
 		});
 
 		// MODE
@@ -313,7 +325,8 @@ s.doWhenBooted({
 			presets = (presetspath++"*").pathMatch;
 			presets.insert(0, "---");
 			menu.items = presets.asArray.collect({arg item;
-				PathName.new(item).fileName});
+				PathName.new(item).fileName
+			});
 		})
 		.action_({ arg menu;
 			var data, sliders;
@@ -327,8 +340,8 @@ s.doWhenBooted({
 			~gapswing = data[\gapswing];
 			timecontrols.updatesliders();
 
-			~amp = data[\amp];
-			ampBut.value = ~amp;
+			//~amp = data[\amp];
+			//ampBut.value = ~amp;
 
 			~allowedbeats = data[\allowedbeats];
 			if(~allowedbeats.size>2, // backwards compatible with old presets
@@ -339,10 +352,6 @@ s.doWhenBooted({
 				beatButtons.do({arg playerbuttons, index;
 					playerbuttons.do({arg but, subindex;
 						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
-						/* if (~allowedbeats[index][subindex]!=nil,
-						{but.value = 1},
-						{but.value = 0}
-						); */
 					});
 				});
 			} {|error|
@@ -361,14 +370,15 @@ s.doWhenBooted({
 			};
 
 			~enabled = data[\enabled];
-/*			enabledButs[0].value = ~enabled[0];
-			enabledButs[1].value = ~enabled[1];*/
+
 			// txakun-errena buttons
 			~autopilotrange = data[\autopilotrange]; // no widget!
 
 			try {
 				~plankchance = data[\plankchance];
-				// to do update widgets!!!
+				plankcontrols.planksChanceMenus.do({arg plank, i;
+					plank.valueAction = data[\plankchance][i];
+				});
 			} {|error|
 				"not plankchance in preset".postln;
 			};
@@ -382,8 +392,7 @@ s.doWhenBooted({
 				"not beatchance in preset".postln;
 			};
 
-
-			~plankcontrols.planksMenus.do({arg plank, i;
+			plankcontrols.planksMenus.do({arg plank, i;
 				try {
 					plank[0].valueAction = data[\buffers][i][1].asInt;
 				} {|error|
@@ -438,15 +447,15 @@ s.doWhenBooted({
 			data.put(\plankchance, ~plankchance);
 
 			data.put(\buffers, [ //path to file, tx flag, err flag
-				[ ~buffers[0][0].path, ~buffersenabled[1][0], ~buffersenabled[2][0] ],
-				[ ~buffers[1][0].path, ~buffersenabled[1][1], ~buffersenabled[2][1] ],
-				[ ~buffers[2][0].path, ~buffersenabled[1][2], ~buffersenabled[2][2] ],
-				[ ~buffers[3][0].path, ~buffersenabled[1][3], ~buffersenabled[2][3] ],
-				[ ~buffers[4][0].path, ~buffersenabled[1][4], ~buffersenabled[2][4] ],
-				[ ~buffers[5][0].path, ~buffersenabled[1][5], ~buffersenabled[2][5] ],
-				[ ~buffers[6][0].path, ~buffersenabled[1][6], ~buffersenabled[2][6] ],
-				[ ~buffers[7][0].path, ~buffersenabled[1][7], ~buffersenabled[2][7] ],
-			]);
+			 	[ ~buffers[0].path, ~buffersenabled[0][0], ~buffersenabled[1][0] ],
+			 	[ ~buffers[1].path, ~buffersenabled[0][1], ~buffersenabled[1][1] ],
+			 	[ ~buffers[2].path, ~buffersenabled[0][2], ~buffersenabled[1][2] ],
+			 	[ ~buffers[3].path, ~buffersenabled[0][3], ~buffersenabled[1][3] ],
+			 	[ ~buffers[4].path, ~buffersenabled[0][4], ~buffersenabled[1][4] ],
+			 	[ ~buffers[5].path, ~buffersenabled[0][5], ~buffersenabled[1][5] ],
+			 	[ ~buffers[6].path, ~buffersenabled[0][6], ~buffersenabled[1][6] ],
+				[ ~buffers[7].path, ~buffersenabled[0][7], ~buffersenabled[1][7] ],
+			 ]);
 
 			data.writeArchive(presetspath++filename);
 
@@ -457,14 +466,15 @@ s.doWhenBooted({
 
 	doWindow.value(430, 580, "Txalaparta. www.ixi-audio.net");
 	timecontrols = TxalaTimeControls.new(window);
-	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20, ~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
+	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20,
+		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
 
 	doButtons.value(10, 350);
 	doPresets.value(10, 490);
-
 
 	if (~verbose>0, {currentEnvironment.postln});
 	if (~verbose>0, {~buffers});
 
 }); // this to be able to run from command line sclang txalaparta.sc
 
+)
