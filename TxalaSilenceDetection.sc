@@ -52,13 +52,16 @@ TxalaSilenceDetection{
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).add;
 
-		synth = Synth(\txalatempo, [
+
+		{
+			synth = Synth(\txalatempo, [
 			\in, ~listenparemeters.in,
 			\amp, ~listenparemeters.amp,
 			\threshold, ~listenparemeters.tempo.threshold,
 			\falltime, ~listenparemeters.tempo.falltime,
 			\checktime, ~listenparemeters.tempo.checkrate,
-		]);
+			]);
+		}.defer(1);
 
 		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
