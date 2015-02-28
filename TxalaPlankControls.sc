@@ -11,7 +11,7 @@ w.front;
 
 TxalaPlankControls {
 
-	var win, buttonxloc, >planksMenus, samples, xloc, yloc, width, gap;
+	var win, buttonxloc, <planksMenus, <planksChanceMenus, samples, xloc, yloc, width, gap;
 
 	*new { | awin, ax=10 ay=160, aw=400, agap=20, somesamples |
 		^super.new.initTxalaPlankControls(awin, ax, ay, aw, agap, somesamples);
@@ -46,6 +46,7 @@ TxalaPlankControls {
 		});
 
 		planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
+		planksChanceMenus = Array.fill(~buffers.size, {nil});
 
 
 		////////////////
@@ -96,13 +97,21 @@ TxalaPlankControls {
 				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
 			});
 
-
-			Slider(win,Rect(menuxloc+275,yloc+(gap*index),75,20))
+			// chance sliders
+			planksChanceMenus[index] = Slider(win,Rect(menuxloc+275,yloc+(gap*index),75,20))
 			.action_({arg sl;
 				~plankchance[index] = sl.value;
 			})
 			.orientation_(\horizontal)
 			.valueAction_(1);
+
+			Button(win, Rect(menuxloc+350,yloc+(gap*index),20,20))
+			.states_([
+				["P", Color.white, Color.black],
+			])
+			.action_({ arg butt;
+				ParamWin.new("~plankchance["++index++"]", ControlSpec(0.001, 1), planksChanceMenus[index]);
+			});
 		});
 
 	}
@@ -110,5 +119,10 @@ TxalaPlankControls {
 	updateTxalaScoreNumPlanks {
 		var numactiveplanks = ~txalaparta.getnumactiveplanks();
 		~txalascore.updateNumPlanks( numactiveplanks );
+	}
+
+
+	updatemenus {
+
 	}
 }
