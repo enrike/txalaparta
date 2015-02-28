@@ -61,10 +61,10 @@ Txalaparta{
 		~autopilotrange = [5, 10]; // for instance
 		~mode = true; // old style hit position calulation?
 
-		MIDIClient.init;
+/*		MIDIClient.init;
 		MIDIClient.destinations;
 		MIDIIn.connectAll;
-		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);
+		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);*/
 
 		~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})]; // [enabledtxakun, enablederrena]
 
@@ -353,7 +353,7 @@ Txalaparta{
 							.add(\plank -> (pos + 1))
 						);*/
 						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos + 1));
-						~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
+						//~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
 
 						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
