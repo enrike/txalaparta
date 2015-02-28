@@ -132,5 +132,6 @@ TxalaTimeControls {
 		sliders[1][0].value = ~swing;
 		sliders[2][0].value = ~gap;
 		sliders[3][0].value = ~gapswing;
+		ampbut.value = ~amp;
 	}
 }
