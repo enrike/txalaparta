@@ -3,7 +3,7 @@
 
 /*
 t = TxalaScoreGUI.new
-to do: improve detected amplitude range and values
+t.doTxalaScore()
 */
 
 TxalaScoreGUI{
@@ -20,6 +20,8 @@ TxalaScoreGUI{
 	}
 
 	reset {
+		txalascoreevents = nil;
+		if (txalascore.isNil.not, {txalascore.events = nil});
 		txalascoreF = Routine({
 			inf.do({
 				if (txalascore.isNil.not, {
@@ -36,7 +38,7 @@ TxalaScoreGUI{
 		var hitdata, plank;
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
-			plank = 1; // TO DO: match freq to a sample
+			plank = freq; // TO DO: match freq to a sample
 			//[hittime, amp, player, plank].postln;
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
@@ -47,11 +49,13 @@ TxalaScoreGUI{
 	}
 
 	updateNumPlanks { arg numplanks;
+		// DO NOT UPDATE IF MODE 0?
+		var mode = 0;
+		if (txalascore.isNil.not, { mode = txalascore.drawmode});
 		txalascore = nil;
-		if (timelinewin.isNil.not, {
+		if ( (timelinewin.isNil.not), {
 			txalascore = TxalaScore.new(timelinewin,
-				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
-				numplanks)
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, mode)
 		})
 	}
 
@@ -59,8 +63,6 @@ TxalaScoreGUI{
 		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
-
-			//numactiveplanks = 1;//txalaparta.getnumactiveplanks();
 
 		    txalascoresttime = Main.elapsedTime;
 
@@ -88,6 +90,21 @@ TxalaScoreGUI{
 			])
 			.action_({ arg butt;
 				"this should save the score to a MIDI file".postln;
+			});
+
+			Button(timelinewin, Rect(280,timelinewin.bounds.height-22,75,20))
+			.states_([
+				["mode", Color.white, Color.black],
+				["mode", Color.white, Color.green]
+			])
+			.action_({ arg butt;
+				//txalascore.drawmode = butt.value.asInt;
+				// here we need to update the num of planks in the case we are back to mode 1
+
+				var numplanks = txalascore.numplanks;
+				txalascore = TxalaScore.new(timelinewin,
+					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, butt.value.asInt)
+				//txalascore.setdrawmode(butt.value.asInt);
 			});
 
 			AppClock.play(txalascoreF);
