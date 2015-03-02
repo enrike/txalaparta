@@ -89,7 +89,25 @@ TxalaScoreGUI{
 				["save score", Color.white, Color.black]
 			])
 			.action_({ arg butt;
-				"this should save the score to a MIDI file".postln;
+				var midifile;
+				try {
+					midifile = SimpleMIDIFile( "~/" ++ Date.getDate.stamp ++ ".mid" ); // create empty file
+					//m.addNote ( noteNumber, velo, startTime, dur, upVelo, channel, track:1, sort )
+					txalascoreevents.do({arg evt;
+						midifile.addNote(
+							noteNumber: evt.plank,
+							velo: evt.amp * 127,
+							startTime: evt.time,
+							dur: 0.2,
+							channel: evt.player
+						)
+					});
+					~mififile=midifile;
+					midifile.plot;
+					midifile.write;
+				} {|error|
+					["no wslib Quarks installed in your system?", error].postln;
+				};
 			});
 
 			Button(timelinewin, Rect(280,timelinewin.bounds.height-22,75,20))
