@@ -39,15 +39,18 @@ TxalaScore {
 			// the events themselves
 			Pen.color = Color.black;
 			events.do({arg event;
-				var posy, labely, liney;
+				var posy, labely, liney, plankpos;
 				var time = (event.time-timeoffset) * (view.bounds.width/timeframe);
 
-				posy = (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs;
+				plankpos = event.plank;
+				if ( drawmode.asBoolean.not, { plankpos = 1 });
+
+				posy = (view.bounds.height-((event.amp*plankheight) + (plankheight*plankpos)-4)).abs;
 				liney = posy+8;
 
 				if ( drawmode.asBoolean.not, {
 					if ((event.player == 2), { //mode 0
-						posy = (view.bounds.height+((event.amp*plankheight) - (plankheight*event.plank)-4)).abs;
+						posy = (view.bounds.height+((event.amp*plankheight) - (plankheight*plankpos)-4)).abs;
 						liney = posy;
 					});
 
@@ -59,7 +62,7 @@ TxalaScore {
 				Pen.fillRect(Rect(time-4, posy, 8, 8));
 				Pen.color = Color.black;
 
-				Pen.line( Point(time, (view.bounds.height-(plankheight*event.plank)).abs),
+				Pen.line( Point(time, (view.bounds.height-(plankheight*plankpos)).abs),
 						Point(time, liney));
 
 				Pen.addRect(Rect(time-4, posy, 8, 8));
