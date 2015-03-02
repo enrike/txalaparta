@@ -89,6 +89,12 @@ TxalaMarkovTempo{
 
 		~txalascore = TxalaScoreGUI.new;
 
+		SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
+			Out.ar(outbus,
+				amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
+			)
+		}).add;
+
 		this.start();
 		this.stop();
 
@@ -129,6 +135,18 @@ TxalaMarkovTempo{
 	}
 
 	start {
+		if (txalasilence.isNil.not, {
+			txalasilence.kill();
+			txalasilence=nil;
+		});
+		if (txalaonset.isNil.not, {
+			txalaonset.kill();
+			txalaonset=nil;
+		});
+/*		if (markov.isNil.not, {
+			markov.kill();
+			markov=nil;
+		});*/
 		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;

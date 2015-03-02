@@ -90,6 +90,7 @@ s.doWhenBooted({
 		window.onClose = {
 			if (txalatempo.isNil.not, {txalatempo.closeGUI()});
 			if (~makilaanims.isNil.not, {~makilaanims.close()});
+			if (~txalascore.isNil.not, {~txalascore.close});
 			AppClock.clear;
 			SystemClock.clear;
 
