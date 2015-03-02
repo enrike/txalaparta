@@ -223,7 +223,7 @@ TxalaMarkovTempo{
 	}
 
 	closeGUI {
-		win.close()
+		win.close();
 	}
 
 
@@ -233,6 +233,7 @@ TxalaMarkovTempo{
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
+			if (~txalascore.isNil.not, {~txalascore.close});
 		};
 
 		label = StaticText(win, Rect(10, 0, 250, 25));

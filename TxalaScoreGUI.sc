@@ -48,6 +48,11 @@ TxalaScoreGUI{
 		});
 	}
 
+
+	close {
+		timelinewin.close()
+	}
+
 	updateNumPlanks { arg numplanks;
 		// DO NOT UPDATE IF MODE 0?
 		var mode = 0;
