@@ -57,14 +57,16 @@ TxalaOnsetDetection{
 		 	SendReply.kr(onset, '/txalaonset', [level, hasFreq, freq]);
 		 }).add;
 
-		synth = Synth(\txalaonsetlistener, [
+		{
+			synth = Synth(\txalaonsetlistener, [
 			\in, ~listenparemeters.in,
 			\amp, ~listenparemeters.amp,
 			\threshold, ~listenparemeters.onset.threshold,
 			\relaxtime, ~listenparemeters.onset.relaxtime,
 			\floor, ~listenparemeters.onset.floor,
 			\mingap, ~listenparemeters.onset.mingap
-		]);
+			]);
+		}.defer(1);
 
 		OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg)}, '/txalaonset', server.addr);
 	}
