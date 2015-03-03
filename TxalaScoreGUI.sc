@@ -50,7 +50,7 @@ TxalaScoreGUI{
 
 
 	close {
-		timelinewin.close()
+		if (timelinewin.isNil.not, {timelinewin.close()});
 	}
 
 	updateNumPlanks { arg numplanks;
