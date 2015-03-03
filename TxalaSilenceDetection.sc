@@ -31,7 +31,7 @@ TxalaSilenceDetection{
 		hutsunetimeout = nil;
 		processflag = false;
 		hitflag = false;
-		resettime = 3; // how many secs to wait before reseting the system
+		resettime = 5; // how many secs to wait before reseting the system
 
 		this.doAudio();
 	}
@@ -55,11 +55,11 @@ TxalaSilenceDetection{
 
 		{
 			synth = Synth(\txalatempo, [
-			\in, ~listenparemeters.in,
-			\amp, ~listenparemeters.amp,
-			\threshold, ~listenparemeters.tempo.threshold,
-			\falltime, ~listenparemeters.tempo.falltime,
-			\checktime, ~listenparemeters.tempo.checkrate,
+				\in, ~listenparemeters.in,
+				\amp, ~listenparemeters.amp,
+				\threshold, ~listenparemeters.tempo.threshold,
+				\falltime, ~listenparemeters.tempo.falltime,
+				\checktime, ~listenparemeters.tempo.checkrate,
 			]);
 		}.defer(1);
 
@@ -83,13 +83,13 @@ TxalaSilenceDetection{
 	}
 
 	groupstart {
+		~bpm = tempocalc.calculate();
 		hitflag = true;
 		compass = compass + 1;
-		~bpm = tempocalc.calculate();
 		if ( (~hutsunelookup > 0), {
 			hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should go before that
 		});
-		if( (~answer && answerposition.not), { parent.answer() }); //schedule here the answer time acording to bpm
+		if( (~answer && answerposition.not), { parent.answer() }); //
 		("--------------------- start"+compass).postln;
 	}
 
@@ -98,13 +98,13 @@ TxalaSilenceDetection{
 	groupend {
 		hitflag = false;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
-		if((~answer && answerposition), { parent.answer() }); // schedule here the answer time acording to bpm
+		if((~answer && answerposition), { parent.answer() }); //
 		("--------------------- end"+compass).postln;
 	}
 
 	// checks for empty phases in the compass
 	checkhutsune {
-		if (Main.elapsedTime > hutsunetimeout, {
+		if (SystemClock.seconds > hutsunetimeout, {
 			"[[[[[[[ hutsune ]]]]]]]]".postln;
 			parent.hutsune(); // need to update it was 0 hits
 			tempocalc.pushlasttime(); // must update otherwise tempo drops
@@ -115,9 +115,9 @@ TxalaSilenceDetection{
 
 	// if too long after the last signal we received reset me
 	checkreset {
-		if ((Main.elapsedTime > (tempocalc.lasttime + resettime)), {
+		if ((SystemClock.seconds > (tempocalc.lasttime + resettime)), {
 			"RESET SYSTEM".postln;
-			this.reset();
+			//this.reset();
 			parent.reset();
 		});
 	}
@@ -134,7 +134,7 @@ TxalaSilenceDetection{
 				});
 				"---------------------".postln;
 			}, { // silence
-				if (hitflag, { // we would need to forcestart here to avoid the silence gap detected after first hit.
+				if (hitflag, { //
 					this.groupend();
 				}, {
 					if ( hutsunetimeout.isNil.not, {

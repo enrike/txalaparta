@@ -6,7 +6,7 @@ License GPL.
 by www.ixi-audio.net
 
 Usage:
-t = TempoCalculator.new(3, 1);
+t = TempoCalculator.new(10);
 t.calculate // returns the BPMs from last time calculate() was called
 t.lasttime // returns the time when a calculate() was called last time
 */
@@ -15,7 +15,7 @@ TempoCalculator{
 
 	var memorylength, bpms, bpm, <lasttime;
 
-	*new {| memorylength = 2 |
+	*new {| memorylength = 3 |
 		^super.new.initTempoCalculator( memorylength );
 	}
 
@@ -29,7 +29,7 @@ TempoCalculator{
 		lasttime = 0;
 	}
 
-	pushlasttime { // push to next compass
+	pushlasttime { // update lastime to next compass
 		lasttime = lasttime + (60/bpm);
 	}
 
@@ -45,8 +45,7 @@ TempoCalculator{
 
 	calculate {
 		var newTempo, nowTime;
-
-		nowTime = Main.elapsedTime;// SystemClock.seconds;
+		nowTime = SystemClock.seconds;
 		newTempo = (60/(nowTime - lasttime)).round(0.1);
 		newTempo = this.sanityCheck(newTempo);
 		bpms = bpms.shift(1, newTempo); // store
