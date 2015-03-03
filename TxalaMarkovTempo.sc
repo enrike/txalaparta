@@ -50,7 +50,7 @@ TxalaMarkovTempo{
 		~amp = 1;
 		~answer = false;
 		~answermode = 0; //0,1,3: imitation, markov1, markov2
-		~answertimecorrection = 6;
+		~answertimecorrection = 0.08; // compensate latency
 		~hutsunelookup = 0.5;
 
 		~gap = 0.5;
@@ -143,11 +143,7 @@ TxalaMarkovTempo{
 			txalaonset.kill();
 			txalaonset=nil;
 		});
-/*		if (markov.isNil.not, {
-			markov.kill();
-			markov=nil;
-		});*/
-		txalasilence = TxalaSilenceDetection.new(this, server, true); // parent, server, mode, answermode
+		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
 		~txalascore.reset();
@@ -165,36 +161,36 @@ TxalaMarkovTempo{
 	}
 
 	// modes: imitation, random (with GUI parameters), markov1, markov2
+	// called from child that detects bpm and group ends
 	answer {
-		var halfcompass, timetogo=0;
+		var halfcompass, defertime=0;
 
 		halfcompass = (60/~bpm/2);
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
-		timetogo = txalasilence.lasthittime + halfcompass - Main.elapsedTime - (halfcompass/~answertimecorrection); // when in the future
-		timetogo.postln;
+		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection;// - (halfcompass/~answertimecorrection); // when in the future
+		["will hit back in", defertime, halfcompass, (txalasilence.lasthittime-SystemClock.seconds)].postln;
 
-		if (timetogo.isNaN.not, {
+		if (defertime.isNaN.not, {
 			switch (~answermode,
-				0, { this.imitation(timetogo) },
-				1, { this.markov(timetogo) },
-				2, { this.markov(timetogo, lastPattern.size) }
+				0, { this.imitation(defertime) },
+				1, { this.markov(defertime) },
+				2, { this.markov(defertime, lastPattern.size) }
 			);
 		});
 	}
 
-	imitation { arg timetogo;
+	imitation { arg defertime;
 		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
-
 		lastPattern.do({arg hit, index;
 			{
 				this.playhit(hit.amp, 0, index, lastPattern.size)
-			}.defer(timetogo + hit.time);
+			}.defer(defertime + hit.time);
 		});
 	}
 
-	markov {arg timetogo, size=nil;
-		var gap, curhits;
+	markov {arg defertime, size=nil;
+		var gap=0, curhits;
 
 		if (size.isNil, {
 			curhits = markov.next();
@@ -202,14 +198,10 @@ TxalaMarkovTempo{
 			curhits = markov.next2nd(size);
 		});
 
-		if (curhits > 0, {
-			gap = ((60/~bpm/2) * ~gap) / curhits;
-		},{
-			gap = 0;
-		});
+		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
 
 		curhits.do({ arg index;
-			var playtime = timetogo + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+			var playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
 			{
@@ -233,11 +225,10 @@ TxalaMarkovTempo{
 		plank = ~buffers[pos];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		if (~txalascore.isNil.not, { ~txalascore.hit(Main.elapsedTime, amp, 0, plank.bufnum) });
+		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank.bufnum) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
-
 	}
 
 	closeGUI {
@@ -359,15 +350,15 @@ TxalaMarkovTempo{
 
 		// answer time correction
 		guielements.add(\answertimecorrection->  EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			"correction",
-			ControlSpec(1, 10, \lin, 0.01, 6, ""),
-			{ arg ez;
-				~answertimecorrection = ez.value.asFloat;
-			},
-			initVal: ~answertimecorrection,
-			labelWidth: 60;
-			));
+		 	Rect(0,yloc+(gap*yindex),350,20),
+		 	"latency",
+		 	ControlSpec(-1, 1, \lin, 0.01, 0, ""),
+		 	{ arg ez;
+		 		~answertimecorrection = ez.value.asFloat;
+		 	},
+		 	initVal: ~answertimecorrection,
+		 	labelWidth: 60;
+		 ));
 
 		yindex = yindex + 1;
 
