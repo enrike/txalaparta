@@ -74,7 +74,7 @@ TxalaOnsetDetection{
 	process { arg msg;
 		var hitdata, hittime, freq=0;
 
-		if (processflag.not, {
+		if (processflag.not, { // if not answering myself
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;

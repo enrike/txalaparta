@@ -30,7 +30,7 @@ TxalaMarkovTempo{
 
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win;
-	var txalasilence, txalaonset, markov, lastPattern;
+	var txalasilence, txalaonset, markov, lastPattern, hitlength;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus;
 
@@ -53,7 +53,7 @@ TxalaMarkovTempo{
 		~answertimecorrection = 0.08; // compensate latency
 		~hutsunelookup = 0.5;
 
-		~gap = 0.5;
+		~gap = 0.65;
 		~gapswing = 0.01;
 
 		if (~buffer.isNil, {
@@ -76,6 +76,7 @@ TxalaMarkovTempo{
 		~listenparemeters.onset = ().add(\threshold->0.6).add(\relaxtime->2.1).add(\floor->0.1).add(\mingap->0.1);
 
 		lastPattern = nil;
+		hitlength = 0.25; // how long to wait when I hit before being actively listening for incomming hits. this is to avoid listening to myself
 
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
@@ -168,7 +169,7 @@ TxalaMarkovTempo{
 		halfcompass = (60/~bpm/2);
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
-		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection;// - (halfcompass/~answertimecorrection); // when in the future
+		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection; // when in the future
 		["will hit back in", defertime, halfcompass, (txalasilence.lasthittime-SystemClock.seconds)].postln;
 
 		if (defertime.isNaN.not, {
@@ -213,15 +214,17 @@ TxalaMarkovTempo{
 	playhit { arg amp, player, index, total;
 		var plank, pos;
 
-		if (index==0, { this.processflag(true) }); // repeated
-		if ((index==(total-1)), { { this.processflag(false) }.defer(0.25) }); // off when the last hit stops
+		if (index==0, { this.processflag(true) }); // stop listening to incomming hits. dont listen to yourself
+		if ((index==(total-1)), { { this.processflag(false) }.defer(hitlength) }); // off when the last hit stops
 
+		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
 		{
 			~buffersenabled[1][pos] == false; // 1 because here we are always errena
 		}.while({
 			pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
 		});
+
 		plank = ~buffers[pos];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
@@ -270,17 +273,6 @@ TxalaMarkovTempo{
 		.action_({ arg but;
 			~answer = but.value.asBoolean;
 		});
-/*
-		Button( win, Rect(280,3,70,25))
-		.states_([
-			["pre answer", Color.white, Color.black],
-			["post answer", Color.black, Color.green],
-		])
-		.action_({ arg but;
-			txalasilence.answerposition = but.value.asBoolean;
-		});*/
-
-
 
 		Button( win, Rect(210,yloc-10,70,25))
 		.states_([
