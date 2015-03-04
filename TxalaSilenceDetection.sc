@@ -87,7 +87,8 @@ TxalaSilenceDetection{
 		hitflag = true;
 		compass = compass + 1;
 		if ( (~hutsunelookup > 0), {
-			hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should go before that
+			//hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
+			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		if( (~answer && answerposition.not), { parent.answer() }); //
 		("--------------------- start"+compass).postln;
@@ -145,7 +146,7 @@ TxalaSilenceDetection{
 					("." + ~bpm).postln;
 				});
 			});
-		}, { // while I am answering
+		}, { // while I am answering dont listen
 			("." + ~bpm).postln;
 		});
 		parent.loop(); // this is just to update some GUI
