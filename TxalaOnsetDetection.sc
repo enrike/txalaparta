@@ -86,7 +86,6 @@ TxalaOnsetDetection{
 
 			if ( msg[4].asBoolean, { freq = this.matchfreq(msg[5]) });
 
-
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> msg[3])
 			            .add(\player -> 1) //always 1 in this case
@@ -98,7 +97,7 @@ TxalaOnsetDetection{
 
 	}
 
-	closegroup { // group ended detected by silence detector. must return info about the pattern played.
+	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
 		var pat = curPattern;
 		curPattern = nil;
 		^pat;
