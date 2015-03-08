@@ -203,7 +203,6 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 
-
 		// BEATS
 		StaticText(window, Rect(beatsxloc, yloc-16, 200, 20)).string = "Hits";
 		StaticText(window, Rect(beatsxloc+40, yloc-16, 200, 20)).string = "% chance";
@@ -289,6 +288,30 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			~mode = butt.value.asBoolean;
 		}).valueAction = 1;
+
+
+
+		// TXAKUN
+		Button(window, Rect(xloc,yloc+160,100,30))
+		.states_([
+			["txakun", Color.white, Color.black],
+			["txakun", Color.black, Color.red],
+		])
+		.action_({ arg butt;
+			~enabled[0] = butt.value.asBoolean;
+		})
+		.valueAction_(1);
+
+		// ERRENA
+		Button(window, Rect(xloc+100,yloc+160,100,30))
+		.states_([
+			["errena", Color.white, Color.black],
+			["errena", Color.black, Color.blue],
+		])
+		.action_({ arg butt;
+			~enabled[1] = butt.value.asBoolean;
+		})
+		.valueAction_(1);
 
 
 		// AUTO PLAY
@@ -471,7 +494,7 @@ s.doWhenBooted({
 		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
 
 	doButtons.value(10, 350);
-	doPresets.value(10, 490);
+	doPresets.value(10, 430);
 
 	if (~verbose>0, {currentEnvironment.postln});
 	if (~verbose>0, {~buffers});

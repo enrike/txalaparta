@@ -32,7 +32,7 @@ TxalaDisplayGraphics {
 		enabledButs = [nil, nil]; // txakun and errena
 		rot = 0;
 
-		if (~enabled.isNil, {~enabled = [true, true]});
+		//if (~enabled.isNil, {~enabled = [true, true]});
 
 		drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with a max 4 hits each part
 
@@ -47,7 +47,7 @@ TxalaDisplayGraphics {
 			thegap = gap;
 		});
 
-		// TXAKUN
+/*		// TXAKUN
 		enabledButs[0] = Button(win, Rect(xloc,yloc+350,120,50))
 		.states_([
 			["txakun", Color.white, Color.black],
@@ -67,7 +67,7 @@ TxalaDisplayGraphics {
 		.action_({ arg butt;
 			~enabled[1] = butt.value.asBoolean;
 		})
-		.valueAction_(1);
+		.valueAction_(1);*/
 
 		output = StaticText(win, Rect(xloc, yloc+400, 200, 20));
 
@@ -107,9 +107,9 @@ TxalaDisplayGraphics {
 					if (data[2], {//txakun
 						offset = 270;
 						Pen.color = Color.red; //.alpha_(0.8).set;
-						},{
-							offset = 90;
-							Pen.color = Color.blue;
+					},{
+						offset = 90;
+						Pen.color = Color.blue;
 					}); // txakun up, errena down
 
 					Pen.use{
@@ -130,6 +130,7 @@ TxalaDisplayGraphics {
 
 	close {
 		win.close();
+		//AppClock.clear; //??
 	}
 
 	makilaF {arg txakunflag, makilaindex, time;
