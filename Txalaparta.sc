@@ -163,58 +163,58 @@ Txalaparta{
 		^[length, intermakilagap]; //emphasis];
 	}
 
-	// this gets called when the other interpreter hits the first of its
-	// group. we then calculate where our answer should go and schedule it
-	finisholdpattern {arg bpm, prevpattern;
-		var txakun=false; //fixed
-		var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
-		var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
-		var patterndata;
-
-		patterndata = this.analisePattern(prevpattern);
-		["PREV pattern size ", prevpattern.size].postln;
-
-		scheduletime = (60.0/bpm)/2;
-		beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
-
-		// everything below should be scheduled for the time we should assume that the prev pattern
-		// must have already finished. at that point we should read the pattern and respond to it.
-
-		//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
-		//	~beatchance.normalizeSum.every(_.isNaN)), {
-		if (this.arebeats(beats), {
-			"WARNING: no beats allowed or no choice to select any".postln;
-		},{
-			// beats
-			if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
-				{
-					if ((~zerolimit && zeroflag), // no two consecutive 0
-						{ beats = beats[1..beats.size]});
-
-					{ numbeats == nil }.while({
-						numbeats = beats.wchoose(~beatchance.normalizeSum)
-					});
-
-					zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
-					localstep = (~gap*2.0)/numbeats;
-					//intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
-					intermakilaswing = rrand(patterndata[1]/(numbeats*8), patterndata[1]/(numbeats*4));
-					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
-
-					this.schedulehits(scheduletime, true, txakun, localamp, localstep, intermakilaswing, numbeats);
-
-					// mute while playing myself to avoid listening to myself
-					//{txalatempo.tooglelisten(false)}.defer(scheduletime);
-					//{txalatempo.tooglelisten(true)}.defer(scheduletime+(localstep*numbeats));
-
-					interstepcounter = interstepcounter + 1;
-
-					outstr = interstepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
-					outarray = outarray.add([1, ["beat", interstepcounter, txakun, numbeats]]);
-					{ this.postoutput(outarray) }.defer;
-			}); //end if beats
-		});
-	}
+	// // this gets called when the other interpreter hits the first of its
+	// // group. we then calculate where our answer should go and schedule it
+	// finisholdpattern {arg bpm, prevpattern;
+	// 	var txakun=false; //fixed
+	// 	var localstep, idealtempo=0, localtemposwing=0, localamp, zeroflag=false;
+	// 	var numbeats, outstr, beats, outarray=Array.new, scheduletime=0, intermakilaswing, deviation;
+	// 	var patterndata;
+	//
+	// 	patterndata = this.analisePattern(prevpattern);
+	// 	["PREV pattern size ", prevpattern.size].postln;
+	//
+	// 	scheduletime = (60.0/bpm)/2;
+	// 	beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
+	//
+	// 	// everything below should be scheduled for the time we should assume that the prev pattern
+	// 	// must have already finished. at that point we should read the pattern and respond to it.
+	//
+	// 	//if ((beats.copyRange(1,beats.size).every(_.isNil) ||
+	// 	//	~beatchance.normalizeSum.every(_.isNaN)), {
+	// 	if (this.arebeats(beats), {
+	// 		"WARNING: no beats allowed or no choice to select any".postln;
+	// 		},{
+	// 			// beats
+	// 			if ( (txakun && ~enabled[0]) || (txakun.not && ~enabled[1]), // enabled?
+	// 				{
+	// 					if ((~zerolimit && zeroflag), // no two consecutive 0
+	// 					{ beats = beats[1..beats.size]});
+	//
+	// 					{ numbeats == nil }.while({
+	// 						numbeats = beats.wchoose(~beatchance.normalizeSum)
+	// 					});
+	//
+	// 					zeroflag = numbeats.asBoolean.not; // true 0, false 1..4 // no two consecutive 0
+	// 					localstep = (~gap*2.0)/numbeats;
+	// 					//intermakilaswing = rand(~gapswing/numbeats); //reduces proportionally
+	// 					intermakilaswing = rrand(patterndata[1]/(numbeats*8), patterndata[1]/(numbeats*4));
+	// 					if (~amp > 0, {localamp = ~amp + 0.3.rand-0.15}, {localamp = 0});
+	//
+	// 					this.schedulehits(scheduletime, true, txakun, localamp, localstep, intermakilaswing, numbeats);
+	//
+	// 					// mute while playing myself to avoid listening to myself
+	// 					//{txalatempo.tooglelisten(false)}.defer(scheduletime);
+	// 					//{txalatempo.tooglelisten(true)}.defer(scheduletime+(localstep*numbeats));
+	//
+	// 					interstepcounter = interstepcounter + 1;
+	//
+	// 					outstr = interstepcounter.asString++":"+if(txakun, {"txakun"},{"errena"})+numbeats;
+	// 					outarray = outarray.add([1, ["beat", interstepcounter, txakun, numbeats]]);
+	// 					{ this.postoutput(outarray) }.defer;
+	// 			}); //end if beats
+	// 	});
+	// }
 
 	autoplay {
 		autoplayRoutine.play(SystemClock);
@@ -364,9 +364,11 @@ Txalaparta{
 					drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
 				}); // END NUMBEATS LOOP
 
-				if (~makilaanims.isNil.not, {
-					{ ~makilaanims.scheduleDraw(drawingSet) }.defer(delaytime); // schedule drawing when first hit fires
-				});
+
+					{
+					    if (~makilaanims.isNil.not, { ~makilaanims.scheduleDraw(drawingSet) });
+					}.defer(delaytime); // schedule drawing when first hit fires
+
 		}, {"WARNING: no sound selected for beat".postln; ~buffers.postln});
 	}
 
