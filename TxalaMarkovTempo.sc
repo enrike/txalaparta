@@ -30,7 +30,7 @@ TxalaMarkovTempo{
 
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win;
-	var txalasilence, txalaonset, markov, lastPattern, hitlength;
+	var txalasilence, txalaonset, markov, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus;
 
@@ -76,7 +76,6 @@ TxalaMarkovTempo{
 		~listenparemeters.onset = ().add(\threshold->0.6).add(\relaxtime->2.1).add(\floor->0.1).add(\mingap->0.1);
 
 		lastPattern = nil;
-		hitlength = 0.25; // how long to wait when I hit before being actively listening for incomming hits. this is to avoid listening to myself
 
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
@@ -170,7 +169,7 @@ TxalaMarkovTempo{
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection; // when in the future
-		["will hit back in", defertime, halfcompass, (txalasilence.lasthittime-SystemClock.seconds)].postln;
+		["will hit back in", defertime, lastPattern.size].postln;
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
@@ -197,6 +196,7 @@ TxalaMarkovTempo{
 			curhits = markov.next();
 		},{
 			curhits = markov.next2nd(size);
+				[curhits, size].postln;
 		});
 
 		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
@@ -215,7 +215,6 @@ TxalaMarkovTempo{
 		var plank, pos;
 
 		if (index==0, { this.processflag(true) }); // stop listening to incomming hits. dont listen to yourself
-		if ((index==(total-1)), { { this.processflag(false) }.defer(hitlength) }); // off when the last hit stops
 
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
@@ -226,6 +225,12 @@ TxalaMarkovTempo{
 		});
 
 		plank = ~buffers[pos];
+
+		if ((index==(total-1)), { // listen again when the last hit stops
+			var hitlength = plank.numFrames/plank.sampleRate;
+			hitlength = hitlength - ((hitlength/3)*2); // remove the tail 2/3
+			{ this.processflag(false) }.defer(hitlength)
+		});
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank.bufnum) });
@@ -659,7 +664,19 @@ yindex = yindex + 1.5;
 
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chance matrix manager";
 
-		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
+		yloc = yloc+20;
+
+		Button(win, Rect(xloc,yloc,170,25))
+		.states_([
+			["update matrix", Color.white, Color.grey],
+			["update matrix", Color.white, Color.green]
+		])
+		.action_({ arg butt;
+			markov.update = butt.value.asBoolean;
+		});
+
+		yloc = yloc+27;
+		PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_(presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
 			presetmatrix = (basepath ++ "/presets_matrix/" ++ "*").pathMatch;
@@ -672,13 +689,15 @@ yindex = yindex + 1.5;
 			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-			markov.new2ndmatrix( data[\beatdata] );
-			markov.beatdata2nd.plot;
+			markov.loaddata( data[\beatdata] );
+			//markov.beatdata2nd.plot;
 
 		});
 
-		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
-		Button(win, Rect(xloc+100,yloc+42,70,25))
+		yloc = yloc+22;
+		newpreset = TextField(win, Rect(xloc, yloc, 95, 25));
+
+		Button(win, Rect(xloc+100,yloc,70,25))
 		.states_([
 			["save", Color.white, Color.grey]
 		])
@@ -690,11 +709,7 @@ yindex = yindex + 1.5;
 			);
 
 			data = Dictionary.new;
-
 			data.put(\beatdata, markov.beatdata2nd);
-
-			markov.beatdata2nd.plot;
-
 			data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
 
 			newpreset.string = ""; //clean field

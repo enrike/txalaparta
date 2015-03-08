@@ -84,7 +84,7 @@ beat 0 1 2 3 4
 
 	loaddata{ arg data;
 		this.reset();
-		beatweights2nd = data;
+		beatdata2nd = data;
 	}
 
 	next2nd{ arg detected;
