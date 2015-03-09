@@ -168,7 +168,8 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			~pulse = butt.value.asBoolean;
-		});
+		})
+		.valueAction_(~pulse.asInt);
 
 		// EMPHASIS
 		emphasisBut = Button(window, Rect(xloc+100,yloc,100,25))
@@ -287,7 +288,7 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			~mode = butt.value.asBoolean;
-		}).valueAction = 1;
+		}).valueAction_(~mode.asInt);
 
 
 
