@@ -71,6 +71,8 @@ TxalaScoreGUI{
 
 		    txalascoresttime = Main.elapsedTime;
 
+			txalascore = nil;
+
 			txalascore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 				numactiveplanks);

@@ -21,6 +21,7 @@ TxalaScore {
 		if (drawmode.asBoolean.not, { numPlanks = 1 }); //*
 
 		view = UserView.new(parent, rect);
+
 		view.background = Color.white;
 
 		plankheight = (view.bounds.height/(numPlanks+1));
@@ -153,15 +154,6 @@ TxalaScore {
 	timeframe_{arg timef;
 		timeframe = timef;
 	}
-
-	// setdrawmode { arg mode;
-	// 	if (mode.asBoolean, {
-	//
-	// 		},{
-	//
-	// 	});
-	// 	drawmode = mode;
-	// }
 
 	sortEvents {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });

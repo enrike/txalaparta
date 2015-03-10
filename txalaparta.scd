@@ -266,6 +266,7 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			var num;
 			num = ~txalaparta.getnumactiveplanks();
+			~txalascore.reset();
 			~txalascore.doTxalaScore(numactiveplanks:num);
 		});
 
