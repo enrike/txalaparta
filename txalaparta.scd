@@ -246,7 +246,7 @@ s.doWhenBooted({
 		beatButtons[1][2].valueAction = 1;
 
 
-		// Allow repeat 0 more than once
+/*		// Allow repeat 0 more than once
 		zerolimitBut = Button(window, Rect(beatsxloc,yloc+140,100,25))
 		.states_([
 			["limit 0", Color.white, Color.black],
@@ -255,7 +255,7 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			~zerolimit = butt.value.asBoolean;
 		})
-		.valueAction_(1);
+		.valueAction_(1);*/
 
 
 		// txakascore timeline
