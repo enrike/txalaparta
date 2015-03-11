@@ -30,7 +30,7 @@ TxalaMarkovTempo{
 
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win;
-	var txalasilence, txalaonset, markov, lastPattern;
+	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus;
 
@@ -146,6 +146,7 @@ TxalaMarkovTempo{
 		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
+		ann = TxalaAnn.new;
 		~txalascore.reset();
 	}
 
@@ -174,8 +175,9 @@ TxalaMarkovTempo{
 		if (defertime.isNaN.not, {
 			switch (~answermode,
 				0, { this.imitation(defertime) },
-				1, { this.markov(defertime) },
-				2, { this.markov(defertime, lastPattern.size) }
+				1, { this.markovnext(defertime) },
+				2, { this.markovnext(defertime, lastPattern.size) },
+				3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
 	}
@@ -189,7 +191,7 @@ TxalaMarkovTempo{
 		});
 	}
 
-	markov {arg defertime, size=nil;
+	markovnext {arg defertime, size=nil;
 		var gap=0, curhits;
 
 		if (size.isNil, {
@@ -209,6 +211,24 @@ TxalaMarkovTempo{
 				this.playhit((~amp+rrand(-0.05, 0.05)), 0, index, curhits)
 			}.defer(playtime);
 		});
+	}
+
+	annnext{arg defertime, size=nil;
+		var gap=0, curhits;
+
+		curhits = ann.next();
+
+		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
+
+		curhits.do({ arg index;
+			var playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+			if ( playtime.isNaN, { playtime = 0 } );
+			if ( playtime == inf, { playtime = 0 } );
+			{
+				this.playhit((~amp+rrand(-0.05, 0.05)), 0, index, curhits)
+			}.defer(playtime);
+		});
+
 	}
 
 	playhit { arg amp, player, index, total;
@@ -335,7 +355,7 @@ TxalaMarkovTempo{
 		StaticText(win, Rect(10, yloc+(gap*yindex), 120, 25)).string = "Answer mode";
 		guielements.add(\answermode->
 				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
-				.items_(["imitation", "fixed chances", "learning chances"])
+				.items_(["imitation", "fixed chances", "learning chances", "learning ANN"])
 				.action_({ arg menu;
 					~answermode = menu.value.asInt;
 					("changing to answer mode:" + menu.item).postln;
