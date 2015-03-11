@@ -30,8 +30,10 @@ TxalaAnn {
 	next { arg detected;
 		var curhits;
 
+		[detected, lasthit].postln;
+
 		ann.train1( [0,0,0,0,0].put(lasthit,1), [0,0,0,0,0].put(detected,1) ); //prev, now
-		ann.calculate( [0,0,0,0,0].put(detected,1) ).maxIndex;
+		curhits = ann.calculate( [0,0,0,0,0].put(detected,1) ).maxIndex;
 
 		^curhits;
 	}

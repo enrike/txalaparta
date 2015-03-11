@@ -216,7 +216,7 @@ TxalaMarkovTempo{
 	annnext{arg defertime, size=nil;
 		var gap=0, curhits;
 
-		curhits = ann.next();
+		curhits = ann.next(size);
 
 		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
 
