@@ -238,7 +238,7 @@ s.doWhenBooted({
 				["P", Color.white, Color.black],
 			])
 			.action_({ arg butt;
-				ParamWin.new("~beatchance["++subindex++"]", ControlSpec(0.001, 1), beatSliders[subindex]);
+				ParamWin.new("~beatchance["++subindex++"]", ControlSpec(0.001, 1), beatSliders[subindex], presetspath:currentpath);
 			});
 		});
 
