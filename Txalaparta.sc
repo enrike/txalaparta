@@ -186,7 +186,11 @@ Txalaparta{
 
 	load {arg filename, index;
 		["loading"+(sndpath ++ filename) ].postln;
-		~buffers[index] = Buffer.read(server, sndpath ++ filename);
+		try {
+			~buffers[index] = Buffer.read(server, sndpath ++ filename);
+		} {|error|
+			error.postln;
+		}
 	}
 
 	/* receives an array of arrays each of them with two items:
