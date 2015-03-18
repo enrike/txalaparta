@@ -112,6 +112,7 @@ ParamWin {
 			//data.asCompileString.postln;
 
 			lmsl.value = data[\array];
+			lfield.value = data[\dur];
 
 		});
 		//.valueAction_(0);
@@ -131,6 +132,7 @@ ParamWin {
 
 			data = Dictionary.new;
 			data.put(\array, lmsl.value);
+			data.put(\dur, lfield.value);
 
 			data.writeArchive(presetspath++filename);
 
