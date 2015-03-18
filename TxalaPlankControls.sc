@@ -50,7 +50,7 @@ TxalaPlankControls {
 
 
 		////////////////
-		~buffers.size.do({ arg index;
+		~buffers.do({ arg buf, index;
 
 			//txakun row buttons
 			planksMenus[index][0] = Button(win, Rect(xloc,yloc+(gap*index),20,20))
