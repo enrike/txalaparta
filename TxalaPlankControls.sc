@@ -37,7 +37,7 @@ TxalaPlankControls {
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		StaticText(win, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
 
-		if (~buffer.isNil, {
+		if (~buffers.isNil, {
 			~buffers = Array.fill(8, {nil});
 		});
 
@@ -84,9 +84,20 @@ TxalaPlankControls {
 			planksMenus[index][2] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),250,20))
 			.items_(samples)
 			.action_({ arg menu;
-				~txalaparta.load(menu.item, index);
-			})
-			.valueAction_(index);
+				try {
+					~txalaparta.load(menu.item, index);
+				} {|error|
+					"could not load that file!".postln;
+					error.postln;
+				}
+			});
+			//.valueAction_(index);
+
+			{
+				~buffers[index].postln;
+				if (~buffers[index].isNil.not, { planksMenus[index][2].valueAction_(index) });
+			}.defer(1);
+			//.valueAction_(index);
 
 			// play buttons row
 			Button(win, Rect(playxloc,yloc+(gap*index),20,20))

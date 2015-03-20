@@ -7,7 +7,7 @@
 );*/
 
 s.boot;
-s.waitForBoot{
+s.waitForBoot {
 	TxalaMarkovTempo.new(s, thisProcess.nowExecutingPath.dirname);
 };
 

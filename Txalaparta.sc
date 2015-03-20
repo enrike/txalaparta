@@ -186,11 +186,7 @@ Txalaparta{
 
 	load {arg filename, index;
 		["loading"+(sndpath ++ filename) ].postln;
-		try {
-			~buffers[index] = Buffer.read(server, sndpath ++ filename);
-		} {|error|
-			error.postln;
-		}
+		~buffers[index] = Buffer.read(server, sndpath ++ filename);
 	}
 
 	/* receives an array of arrays each of them with two items:
@@ -305,6 +301,7 @@ Txalaparta{
 						);*/
 						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos + 1));
 						//~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
+						//{~midiout.noteOff(txakun.not.asInteger, plank.bufnum, hitamp*127) }.defer(0.2);
 
 						outarray = outarray.add([2, "plank" + plank]); // postln which plank this hit
 						outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
