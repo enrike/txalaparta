@@ -10,7 +10,7 @@ ParamWin.new("~whatever", ControlSpec(0.001, 1), l, presetspath:thisProcess.nowE
 
 ParamWin {
 
-	var size, lwin, lmsl, lmslline, lbut, lpbut, lfield, lloopf, ldata, varStr, ctrlSpc, widget, presetspath, presets;
+	var size, lwin, lmsl, lmslline, lbut, lpbut, lfield, lloopf, ldata, varStr, ctrlSpc, widget, presetspath, presets, playing, index;
 
 
 	*new {|globalvarStr, aControlSpec, aWidget, width=600, height=240, presetspath|
@@ -25,6 +25,9 @@ ParamWin {
 		widget = aWidget;
 		presetspath = apath ++ "/presets_params/";
 		presets = (presetspath++"*").pathMatch;
+
+		playing = false;
+		index = 0;
 
 		size = width / 6;
 		lwin = Window("Control" + varStr,  Rect(0, 0, width, height))
@@ -56,13 +59,16 @@ ParamWin {
 		lfield = TextField(lwin, Rect(60, height-55, 40, 20)).string = "10";
 
 		lloopf = Task {
-			inf.do({arg index;
-				var val;
-				val = ctrlSpc.map(lmsl.value.at(lmsl.index)).asStringPrec(3);
-				(varStr+"="+val).interpret; // here set value of the variable I control
-				ldata.string = varStr ++ ": " ++ val;
-				if (widget != nil, {widget.value = val}); // update this widget
-				lmsl.index_(index%lmsl.size); //next step
+			inf.do({//arg index;
+				if (playing, {
+					var val;
+					val = ctrlSpc.map(lmsl.value.at(lmsl.index)).asStringPrec(3);
+					(varStr+"="+val).interpret; // here set value of the variable I control
+					ldata.string = varStr ++ ": " ++ val;
+					if (widget != nil, {widget.value = val}); // update this widget
+					lmsl.index_(index%lmsl.size); //next step
+					index = index + 1;
+				});
 				(lfield.value.asInt/lmsl.size).wait; // each cycle takes as many secs as the lfield says
 			});
 		};
@@ -73,7 +79,7 @@ ParamWin {
 			["play/pause", Color.black, Color.green],
 		])
 		.action_({ arg butt;
-			if (butt.value.asBoolean, {lloopf.play(AppClock)}, {lloopf.stop});
+			playing = butt.value.asBoolean;
 		});
 
 		Button(lwin,  Rect(190,height-60,80,25))
@@ -87,6 +93,8 @@ ParamWin {
 		ldata = StaticText(lwin, Rect(10, height-30, 400, 30)).string = varStr ++ ": 0";
 
 		this.doPresets(375, height-50);
+
+		lloopf.play(AppClock); //START
 
 		lwin.front;
 	}
