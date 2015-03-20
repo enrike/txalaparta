@@ -14,8 +14,8 @@ m.reset
 TxalaMarkov{
 
 	var beatweigths;
-	var beatweights2nd, <>beatdata2nd;
-	var beatweights4th, <>beatdata4th;
+	var <>beatdata2nd;
+	var <>beatdata4th;
 	var lasthits, options, dimension, >update=true;
 
 	*new { | dimension = 5 |
