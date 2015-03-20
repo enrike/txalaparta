@@ -82,6 +82,8 @@ TxalaMarkovTempo{
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
 
+		~buffers = Array.fill(8, {nil});
+
 /*		MIDIClient.init;
 		MIDIClient.destinations;
 		MIDIIn.connectAll;
@@ -255,6 +257,7 @@ TxalaMarkovTempo{
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank.bufnum) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
+		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
 		("+++++++++++++++++++++++++++"+index).postln
 	}
@@ -577,7 +580,21 @@ yindex = yindex + 1.5;
 			planksMenus[index][1] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),200,20))
 			.items_( samples.asArray.collect({arg item; PathName.new(item).fileName}) )
 			.action_({ arg menu;
-				~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
+				var item = nil;
+				try {
+					 item = menu.item.postln;
+				} {|error|
+					"empty slot".postln;
+				};
+
+				if (item.isNil.not, {
+					~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
+				});
+/*				try {
+					~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
+				} {|error|
+					"empty slot".postln;
+				};*/
 			})
 			.valueAction_(index);
 
@@ -587,7 +604,9 @@ yindex = yindex + 1.5;
 				[">", Color.white, Color.black]
 			])
 			.action_({ arg butt;// play a single shot
-				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+				if (~buffers[index].isNil.not, {
+					Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+				})
 			});
 
 			Slider(win,Rect(menuxloc+225,yloc+(gap*index),75,20))
