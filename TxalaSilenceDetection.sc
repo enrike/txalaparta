@@ -52,7 +52,6 @@ TxalaSilenceDetection{
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).add;
 
-
 		{
 			synth = Synth(\txalatempo, [
 				\in, ~listenparemeters.in,
@@ -87,7 +86,6 @@ TxalaSilenceDetection{
 		hitflag = true;
 		compass = compass + 1;
 		if ( (~hutsunelookup > 0), {
-			//hutsunetimeout = tempocalc.lasttime + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		if( (~answer && answerposition.not), { parent.answer() }); //
@@ -105,7 +103,7 @@ TxalaSilenceDetection{
 
 	// checks for empty phases in the compass
 	checkhutsune {
-		if (SystemClock.seconds > hutsunetimeout, {
+		if (SystemClock.seconds >= hutsunetimeout, {
 			"[[[[[[[ hutsune ]]]]]]]]".postln;
 			parent.hutsune(); // need to update it was 0 hits
 			tempocalc.pushlasttime(); // must update otherwise tempo drops
