@@ -79,8 +79,6 @@ s.doWhenBooted({
 	};
 
 
-
-
 	// WINDOW
 	doWindow = {arg width, height, caption;
 		//var rot=0;
@@ -96,64 +94,7 @@ s.doWhenBooted({
 
 		};
 		window.front;
-
-/*		window.drawFunc = { // drawing the visualization of circles
-			var dur, dpt; // duration of the circle and degrees per time unit
-			dur = 60/~tempo; // duration of the cycle in secs
-			dpt = 360/dur; // how many degrees each ms
-
-			Pen.translate(565, 520); // location of the circle
-			Pen.color = Color.black;
-			Pen.addArc(0@0, 80, 0, 360);
-			Pen.line(10@90.neg, 15@87.neg); // > mark
-			Pen.line(15@87.neg, 10@84.neg);
-
-			Pen.perform(\stroke); // static if maintaining pulse
-
-			if (~pulse.not, {
-
-				try {
-					rot = rot + (((~makilaanims.drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
-				} {|error| rot = 0};
-				Pen.rotate( rot )
-			});
-			Pen.line(0@90.neg, 0@90); //vertical line
-			Pen.perform(\stroke); // static if maintaining pulse
-
-			//drawHitSet.value(drawingSetBuffer[0], dur, dpt);
-
-			//Pen.rotate( rot );
-
-			drawHitSet.value(~makilaanims.drawingSetBuffer[1], dur, dpt);
-
-			~makilaanims.drawingSetBuffer = [ ~makilaanims.drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ];
-
-		};*/
 	};
-
-	// drawHitSet = { arg set, dur, dpt;
-	// 	set.do({arg data; // --> [msecs, txakunflag, amp]
-	// 		var offset;
-	//
-	// 		if (data[3] <= 1, { // only the ones with a valid data
-	// 			if (data[2], {//txakun
-	// 				offset = 270;
-	// 				Pen.color = Color.red; //.alpha_(0.8).set;
-	// 				},{
-	// 					offset = 90;
-	// 					Pen.color = Color.blue;
-	// 			}); // txakun up, errena down
-	//
-	// 			Pen.use{
-	// 				Pen.rotate( (((data[1]*dpt)-offset)*(pi/180)) );
-	// 				Pen.addArc((80)@(0), data[3]*12, 0, 360); // circles representing beats
-	// 				Pen.perform(\fill);
-	// 			};
-	// 		});
-	// 	});
-	// };
-
-
 
 
 	// BOTONES
@@ -245,19 +186,6 @@ s.doWhenBooted({
 		beatButtons[0][2].valueAction = 1; // activate by default
 		beatButtons[1][2].valueAction = 1;
 
-
-/*		// Allow repeat 0 more than once
-		zerolimitBut = Button(window, Rect(beatsxloc,yloc+140,100,25))
-		.states_([
-			["limit 0", Color.white, Color.black],
-			["limit 0", Color.black, Color.green],
-		])
-		.action_({ arg butt;
-			~zerolimit = butt.value.asBoolean;
-		})
-		.valueAction_(1);*/
-
-
 		// txakascore timeline
 		Button(window, Rect(beatsxloc,yloc+170,100,25))
 		.states_([
@@ -290,8 +218,6 @@ s.doWhenBooted({
 		.action_({ arg butt;
 			~mode = butt.value.asBoolean;
 		}).valueAction_(~mode.asInt);
-
-
 
 		// TXAKUN
 		Button(window, Rect(xloc,yloc+160,100,30))
@@ -326,15 +252,6 @@ s.doWhenBooted({
 			if ( butt.value.asBoolean, { ~txalaparta.autoplay() },
 				{ ~txalaparta.autostop() });
 		});
-
-		// INTERACTIVE PLAY
-/*		interactiveplayBut = Button(window, Rect(xloc,yloc+225,200,35))
-		.states_([
-			["interactive play", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			txalatempo = TxalaMarkovTempo.new(s, currentpath);
-		});*/
 	};
 
 
@@ -366,15 +283,12 @@ s.doWhenBooted({
 			~gapswing = data[\gapswing];
 			timecontrols.updatesliders();
 
-			//~amp = data[\amp];
-			//ampBut.value = ~amp;
-
 			~allowedbeats = data[\allowedbeats];
 			if(~allowedbeats.size>2, // backwards compatible with old presets
 				{~allowedbeats=[~allowedbeats, [nil,nil,nil,nil,nil]]
 			});
 
-			try { //bckwads compatible again
+			try { //bckwads compatible
 				beatButtons.do({arg playerbuttons, index;
 					playerbuttons.do({arg but, subindex;
 						but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
@@ -443,7 +357,6 @@ s.doWhenBooted({
 			});
 
 		});
-		//.valueAction_(0);
 
 		newpreset = TextField(window, Rect(xloc, yloc+22, 125, 25));
 
@@ -491,9 +404,9 @@ s.doWhenBooted({
 	};
 
 	doWindow.value(430, 580, "Txalaparta. www.ixi-audio.net");
-	timecontrols = TxalaTimeControls.new(window);
+	timecontrols = TxalaTimeControls.new(window, path:currentpath);
 	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20,
-		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}));
+		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath);
 
 	doButtons.value(10, 350);
 	doPresets.value(10, 430);

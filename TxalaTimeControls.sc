@@ -8,18 +8,19 @@
 
 TxalaTimeControls {
 
-	var win, buttonxloc, <sliders, ampbut, xloc, yloc, width, gap;
+	var win, buttonxloc, <sliders, ampbut, xloc, yloc, width, gap, currentpath;
 
-	*new { | awin, ax=5 ay=5, aw=400, agap=25 |
-		^super.new.initTxalaTimeControls(awin, ax, ay, aw, agap);
+	*new { | win, xp=5 yp=5, ws=400, gap=25, path |
+		^super.new.initTxalaTimeControls(win, xp, yp, ws, gap, path);
 	}
 
-	initTxalaTimeControls { |awin, ax, ay, aw, agap|
+	initTxalaTimeControls { |awin, ax, ay, aw, agap, apath|
 		win = awin;
 		xloc = ax;
 		yloc = ay;
 		width = aw;
 		gap = agap;
+		currentpath = apath;
 		buttonxloc = xloc + width + 20;
 		sliders = Array.fill(4, {[nil,nil]}); // slider and its autopilot button associated
 
@@ -40,7 +41,7 @@ TxalaTimeControls {
 			["P", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			ParamWin.new("~tempo", ControlSpec(20, 250), sliders[0][0]);
+			ParamWin.new("~tempo", ControlSpec(20, 250), sliders[0][0], presetspath:currentpath);
 		});
 
 		// tempo swing //
