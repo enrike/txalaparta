@@ -11,13 +11,13 @@ w.front;
 
 TxalaPlankControls {
 
-	var win, buttonxloc, <planksMenus, <planksChanceMenus, samples, xloc, yloc, width, gap;
+	var win, buttonxloc, <planksMenus, <planksChanceMenus, samples, xloc, yloc, width, gap, currentpath;
 
-	*new { | awin, ax=10 ay=160, aw=400, agap=20, somesamples |
-		^super.new.initTxalaPlankControls(awin, ax, ay, aw, agap, somesamples);
+	*new { | awin, ax=10 ay=160, aw=400, agap=20, somesamples, path |
+		^super.new.initTxalaPlankControls(awin, ax, ay, aw, agap, somesamples, path);
 	}
 
-	initTxalaPlankControls { |awin, ax, ay, aw, agap, somesamples|
+	initTxalaPlankControls { |awin, ax, ay, aw, agap, somesamples, apath|
 		var menuxloc = ax + 44;
 		var playxloc = menuxloc+250+2;
 
@@ -30,6 +30,7 @@ TxalaPlankControls {
 		width = aw;
 		gap = agap;
 		samples = somesamples;
+		currentpath = apath;
 
 		// PLANKS - OHOLAK //////////////////////////////////
 		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
@@ -80,21 +81,26 @@ TxalaPlankControls {
 				planksMenus[index][1].valueAction = 1;
 			});// ONLY activate first ones
 
+
 			// menus for each plank
 			planksMenus[index][2] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),250,20))
+			//.items_(samples)
 			.items_(samples)
 			.action_({ arg menu;
-				try {
-					~txalaparta.load(menu.item, index);
+				var item = nil;
+				try { // when there is no sound for this
+					 item = menu.item;
 				} {|error|
-					"could not load that file!".postln;
-					error.postln;
-				}
-			});
-			//.valueAction_(index);
+					"empty slot".postln;
+				};
+
+				if (item.isNil.not, {
+					~txalaparta.load(menu.item, index);
+				})
+			}).valueAction_(index);
 
 			{
-				~buffers[index].postln;
+				//~buffers[index].postln;
 				if (~buffers[index].isNil.not, { planksMenus[index][2].valueAction_(index) });
 			}.defer(1);
 			//.valueAction_(index);
@@ -105,7 +111,9 @@ TxalaPlankControls {
 				[">", Color.white, Color.black]
 			])
 			.action_({ arg butt;// play a single shot
-				Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+				if (~buffers[index].isNil.not, {
+					Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+				})
 			});
 
 			// chance sliders
@@ -121,7 +129,7 @@ TxalaPlankControls {
 				["P", Color.white, Color.black],
 			])
 			.action_({ arg butt;
-				ParamWin.new("~plankchance["++index++"]", ControlSpec(0.001, 1), planksChanceMenus[index]);
+				ParamWin.new("~plankchance["++index++"]", ControlSpec(0.001, 1), planksChanceMenus[index], presetspath:currentpath);
 			});
 		});
 

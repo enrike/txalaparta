@@ -51,7 +51,7 @@ TxalaMarkovTempo{
 		~answer = false;
 		~answermode = 0; //0,1,3: imitation, markov1, markov2
 		~answertimecorrection = 0.08; // compensate latency
-		~hutsunelookup = 0.5;
+		~hutsunelookup = 0.2;
 
 		~gap = 0.65;
 		~gapswing = 0.01;
@@ -172,7 +172,7 @@ TxalaMarkovTempo{
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection; // when in the future
-		["will hit back in", defertime, lastPattern.size].postln;
+		//["will hit back in", defertime, lastPattern.size].postln;
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
@@ -200,7 +200,6 @@ TxalaMarkovTempo{
 			curhits = markov.next();
 		},{
 			curhits = markov.next2nd(size);
-				[curhits, size].postln;
 		});
 
 		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
@@ -581,8 +580,8 @@ yindex = yindex + 1.5;
 			.items_( samples.asArray.collect({arg item; PathName.new(item).fileName}) )
 			.action_({ arg menu;
 				var item = nil;
-				try {
-					 item = menu.item.postln;
+				try { // when there is no sound for this
+					 item = menu.item;
 				} {|error|
 					"empty slot".postln;
 				};
@@ -590,11 +589,6 @@ yindex = yindex + 1.5;
 				if (item.isNil.not, {
 					~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
 				});
-/*				try {
-					~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
-				} {|error|
-					"empty slot".postln;
-				};*/
 			})
 			.valueAction_(index);
 
