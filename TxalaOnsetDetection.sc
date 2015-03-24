@@ -53,8 +53,8 @@ TxalaOnsetDetection{
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
 		 	/* *kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
 		 	level = Amplitude.kr(signal);
-		 	# freq, hasFreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
-		 	SendReply.kr(onset, '/txalaonset', [level, hasFreq, freq]);
+		 	//# freq, hasFreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
+			SendReply.kr(onset, '/txalaonset', [level]);// hasFreq, freq]);
 		 }).add;
 
 		{
@@ -84,7 +84,8 @@ TxalaOnsetDetection{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
 
-			if ( msg[4].asBoolean, { freq = this.matchfreq(msg[5]) });
+			//if ( msg[4].asBoolean, { freq = this.matchfreq(msg[5]) });
+			freq = 1; // not yet working the pitch detection
 
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> msg[3])

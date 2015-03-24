@@ -23,7 +23,11 @@ TxalaAnn {
 
 	reset {
 		lasthit = 2;
-		ann = NeuralNet(dimension, 2, dimension);
+		try {
+			ann = NeuralNet(dimension, 2, dimension);
+		}{|error|
+			"no NeuralNet class?".postln;
+		};
 	}
 
 
