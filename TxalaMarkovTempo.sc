@@ -249,7 +249,7 @@ TxalaMarkovTempo{
 
 		if ((index==(total-1)), { // listen again when the last hit stops
 			var hitlength = plank.numFrames/plank.sampleRate;
-			hitlength = hitlength - ((hitlength/3)*2); // remove the tail 2/3
+			hitlength = hitlength - ((hitlength/3)*1); // remove the tail 1/3
 			{ this.processflag(false) }.defer(hitlength)
 		});
 
