@@ -79,7 +79,7 @@ TxalaOnsetDetection{
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
 				if (parent.isNil.not, { parent.newgroup() });
-				~outputwin.post( ("~~~~~~~~~~~~~~~~~ new group" + (patternsttime-sttime)), Color.black);
+				~outputwin.post( ("** new group" + (patternsttime-sttime)), Color.black);
 			},{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});

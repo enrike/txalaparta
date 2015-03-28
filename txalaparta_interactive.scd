@@ -8,7 +8,7 @@
 
 s.boot;
 s.waitForBoot {
-	TxalaMarkovTempo.new(s, thisProcess.nowExecutingPath.dirname);
+	TxalaInteractive.new(s, thisProcess.nowExecutingPath.dirname);
 };
 
 )

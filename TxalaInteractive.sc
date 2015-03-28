@@ -7,7 +7,7 @@
 s.boot;
 s.waitForBoot{
 	p = thisProcess.nowExecutingPath.dirname;
-	t = TxalaMarkovTempo.new(s, p)
+	t = TxalaInteractive.new(s, p)
 }
 )
 */
@@ -26,7 +26,7 @@ grup of hits end point
 - pitch of each hit (to do)
 */
 
-TxalaMarkovTempo{
+TxalaInteractive{
 
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win;
@@ -35,10 +35,10 @@ TxalaMarkovTempo{
 	var planksMenus;
 
 	*new {| aserver, apath="" |
-		^super.new.initTxalaMarkovTempo(aserver, apath);
+		^super.new.initTxalaInteractive(aserver, apath);
 	}
 
-	initTxalaMarkovTempo { arg aserver, apath;
+	initTxalaInteractive { arg aserver, apath;
 		server = aserver;
 		basepath = apath;
 		this.init();
