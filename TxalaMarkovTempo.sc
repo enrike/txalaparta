@@ -19,7 +19,7 @@ grup of hits end point
 - calculate the bpm when a group starts by measuring the distance from the previous group
 - trigger the answer when the group finish
 - check for hutsunes and answer to those
-
+~ou
 + number of hits per group: OnSets
 - distance between hits
 - amplitude of each hit
@@ -109,7 +109,7 @@ TxalaMarkovTempo{
 	}
 
 	loop {
-		{ label.string = "BPM" + ~bpm + "     Compass" + txalasilence.compass}.defer
+		{ label.string = "BPM" + ~bpm + "  Compass" + txalasilence.compass}.defer
 	}
 
 	broadcastgroupended { // silence detection calls this.
@@ -268,15 +268,35 @@ TxalaMarkovTempo{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 570));
+		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 550));
 		win.onClose = {
 			txalasilence.kill();
 			txalaonset.kill();
 			if (~txalascore.isNil.not, {~txalascore.close});
+			if (~outputwin.isNil.not, {~outputwin.close});
 		};
 
 		label = StaticText(win, Rect(10, 0, 250, 25));
 		label.string = "BPM: ---";
+
+		Button( win, Rect(210,0,70,25))
+		.states_([
+			["reset", Color.white, Color.black]
+		])
+		.action_({ arg but;
+			this.reset();
+		});
+
+		Button( win, Rect(280,0,70,25))
+		.states_([
+			["calibration", Color.white, Color.black]
+		])
+		.action_({ arg but;
+			if (~outputwin.isNil, {
+				~outputwin = OutputWin.new;
+			})
+		});
+
 
 		// row of buttons on top side
 
@@ -541,6 +561,12 @@ yindex = yindex + 1.5;
 
 		this.doPlanks(350,yloc, 20, 220, 20);
 
+		//
+		// ~outputfield = TextView(win, Rect(370, 10, 320, 700));
+		// ~outputfield.font = Font("Courier",11);
+		// ~outputfield.editable = false;
+		// ~outputfield.backColor = Color.black;
+
 		win.front;
 	}
 
@@ -706,7 +732,8 @@ yindex = yindex + 1.5;
 		])
 		.action_({ arg butt;
 			markov.update = butt.value.asBoolean;
-		});
+		})
+		.valueAction_(1);
 
 		yloc = yloc+27;
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
@@ -724,7 +751,6 @@ yindex = yindex + 1.5;
 
 			markov.loaddata( data[\beatdata] );
 			//markov.beatdata2nd.plot;
-
 		});
 
 		yloc = yloc+22;

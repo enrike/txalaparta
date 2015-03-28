@@ -88,8 +88,8 @@ TxalaSilenceDetection{
 		if ( (~hutsunelookup > 0), {
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
-		if( (~answer && answerposition.not), { parent.answer() }); //
-		("--------------------- start"+compass).postln;
+		if( (~answer && answerposition.not), { parent.answer() });
+		~outputwin.post( ("----------------- start"+compass), Color.black);
 	}
 
 	// scheduling answers at this moment does not work with fast tempos as the tile of the signal steps
@@ -97,14 +97,14 @@ TxalaSilenceDetection{
 	groupend {
 		hitflag = false;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
-		if((~answer && answerposition), { parent.answer() }); //
-		("--------------------- end"+compass).postln;
+		if((~answer && answerposition), { parent.answer() });
+		~outputwin.post( ("----------------- end"+compass), Color.black );
 	}
 
 	// checks for empty phases in the compass
 	checkhutsune {
 		if (SystemClock.seconds >= hutsunetimeout, {
-			"[[[[[[[ hutsune ]]]]]]]]".postln;
+			~outputwin.post("[[[[[[[ hutsune ]]]]]]]]");
 			parent.hutsune(); // need to update it was 0 hits
 			tempocalc.pushlasttime(); // must update otherwise tempo drops
 			hutsunetimeout = nil;
@@ -115,8 +115,7 @@ TxalaSilenceDetection{
 	// if too long after the last signal we received reset me
 	checkreset {
 		if ((SystemClock.seconds > (tempocalc.lasttime + resettime)), {
-			"RESET SYSTEM".postln;
-			//this.reset();
+			~outputwin.post("RESET SYSTEM");
 			parent.reset();
 		});
 	}
@@ -131,7 +130,8 @@ TxalaSilenceDetection{
 				if (hitflag.not, {
 					this.groupstart();
 				});
-				"---------------------".postln;
+				~outputwin.post("---------------", Color.black);
+
 			}, { // silence
 				if (hitflag, { //
 					this.groupend();
@@ -141,11 +141,11 @@ TxalaSilenceDetection{
 					}, {
 						this.checkreset();
 					});
-					("." + ~bpm).postln;
+					~outputwin.post("." + ~bpm);
 				});
-			});
+			})
 		}, { // while I am answering dont listen
-			("." + ~bpm).postln;
+			~outputwin.post("." + ~bpm);
 		});
 		parent.loop(); // this is just to update some GUI
 	}
