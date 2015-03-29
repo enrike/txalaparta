@@ -293,12 +293,6 @@ Txalaparta{
 							~makilaanims.makilaF(txakun.not.asInteger, makilaindex, 0.2);//slider animation
 						});
 
-/*						scoreArray = scoreArray.add( // just add an empty event
-							().add(\time -> (Main.elapsedTime - startTime))
-							.add(\amp -> hitamp)
-							.add(\player -> (flagindex + 1)) //1 or 2
-							.add(\plank -> (pos + 1))
-						);*/
 						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos + 1));
 						//~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
 						//{~midiout.noteOff(txakun.not.asInteger, plank.bufnum, hitamp*127) }.defer(0.2);

@@ -9,9 +9,9 @@ TxalaDisplayGraphics.new(10, 10, 270, 660, 10);
 
 TxalaDisplayGraphics {
 
-	var win, xloc, yloc, width, gap, makilasliders, output, enabledButs, <>drawingSetBuffer, rot, drawFunc;
+	var win, xloc, yloc, width, gap, makilasliders, enabledButs, <>drawingSetBuffer, rot, drawFunc;
 
-	*new { | ax=300 ay=190, aw=400, ah=500, agap=35 |
+	*new { | ax=300 ay=120, aw=400, ah=500, agap=35 |
 		^super.new.initTxalaDisplayGraphics(ax, ay, aw, ah, agap);
 	}
 
@@ -47,14 +47,12 @@ TxalaDisplayGraphics {
 			thegap = gap;
 		});
 
-		output = StaticText(win, Rect(xloc, yloc+400, 200, 20));
-
 		drawFunc = { // drawing the visualization of circles
 			var dur, dpt; // duration of the circle and degrees per time unit
 			dur = 60/~tempo; // duration of the cycle in secs
 			dpt = 360/dur; // how many degrees each ms
 
-			Pen.translate(135, 520); // location of the circle
+			Pen.translate(135, 460); //** location of the circle **//
 			Pen.color = Color.black;
 			Pen.addArc(0@0, 80, 0, 360);
 			Pen.line(10@90.neg, 15@87.neg); // > mark
