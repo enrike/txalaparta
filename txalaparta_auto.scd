@@ -1,5 +1,5 @@
 /*
-txalaparta. by ixi-audio.net
+automatic txalaparta. by ixi-audio.net
 info@ixi-audio.net
 license: GNU GPL
 
@@ -26,8 +26,10 @@ s.unmute
 	\linux,     { Server.default = Server.internal },
 	\windows,   { Server.default = Server.internal }
 );*/
-(
 
+
+
+(
 s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
