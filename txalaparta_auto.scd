@@ -126,7 +126,7 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 
-		// ZAHARRA MODE
+/*		// ZAHARRA MODE
 		Button(window, Rect(xloc+100,yloc+25,100,25))
 		.states_([
 			["go zaharra", Color.white, Color.black],
@@ -144,7 +144,7 @@ s.doWhenBooted({
 
 			});
 		})
-		.valueAction_(1);
+		.valueAction_(1);*/
 
 
 		// BEATS
@@ -189,7 +189,7 @@ s.doWhenBooted({
 		beatButtons[1][2].valueAction = 1;
 
 		// txakascore timeline
-		Button(window, Rect(beatsxloc,yloc+170,100,25))
+		Button(window, Rect(beatsxloc,yloc+130,100,30))
 		.states_([
 			["show score", Color.white, Color.black],
 		])
@@ -201,7 +201,7 @@ s.doWhenBooted({
 		});
 
 		// txakascore timeline
-		Button(window, Rect(beatsxloc,yloc+200,100,25))
+		Button(window, Rect(beatsxloc,yloc+160,100,30))
 		.states_([
 			["show animation", Color.white, Color.black],
 		])
@@ -222,7 +222,7 @@ s.doWhenBooted({
 		}).valueAction_(~mode.asInt);
 
 		// TXAKUN
-		Button(window, Rect(xloc,yloc+160,100,30))
+		Button(window, Rect(xloc,yloc+130,100,30))
 		.states_([
 			["txakun", Color.white, Color.black],
 			["txakun", Color.black, Color.red],
@@ -233,7 +233,7 @@ s.doWhenBooted({
 		.valueAction_(1);
 
 		// ERRENA
-		Button(window, Rect(xloc+100,yloc+160,100,30))
+		Button(window, Rect(xloc+100,yloc+130,100,30))
 		.states_([
 			["errena", Color.white, Color.black],
 			["errena", Color.black, Color.blue],
@@ -245,7 +245,7 @@ s.doWhenBooted({
 
 
 		// AUTO PLAY
-		autoplayBut = Button(window, Rect(xloc,yloc+190,200,35))
+		autoplayBut = Button(window, Rect(xloc,yloc+160,200,35))
 		.states_([
 			["auto play", Color.white, Color.black],
 			["auto play", Color.black, Color.green],
@@ -405,7 +405,7 @@ s.doWhenBooted({
 
 	};
 
-	doWindow.value(430, 580, "Txalaparta. www.ixi-audio.net");
+	doWindow.value(430, 550, "Txalaparta. www.ixi-audio.net");
 	timecontrols = TxalaTimeControls.new(window, path:currentpath);
 	plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20,
 		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath);
