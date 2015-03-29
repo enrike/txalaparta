@@ -37,7 +37,7 @@ s.doWhenBooted({
 	var presetspath, makilaF, drawingSetBuffer, midioutdev, txalatempo, currentpath; //
 
 	// GUI vars
-	var window, timelinewin, clock, nextautopilot, sndpath, samples, istheresomething, findIndex, presets, tscore;
+	var window, timelinewin, clock, nextautopilot, samples, istheresomething, findIndex, presets, tscore;
 	// GUI widgets
 	var beatButtons, beatSliders, oldpulseBut, emphasisBut, zerolimitBut, pulseBut, ampBut, autoplayBut, interactiveplayBut,timecontrols, plankcontrols;
 	// GUI functions vars
@@ -75,7 +75,7 @@ s.doWhenBooted({
 	findIndex = {arg plankmenu, path;
 		var returnval=0;
 		plankmenu.items.do({arg file, i;
-			if (sndpath++file==path,{returnval = i});
+			if (file==path.fileName,{returnval = i});
 		});
 		returnval;
 	};
@@ -349,12 +349,12 @@ s.doWhenBooted({
 					["catch plank1 error", error, i].postln;
 				};
 
-				try {
-					plank[2].valueAction = findIndex.value(plank[2], data[\buffers][i][0]);
-				} {|error|
-					plank[2].valueAction = 0;
-					["catch plank2 error", error, i].postln;
-				};
+				if (data[\buffers][i][0].isNil.not, {
+					plank[2].valueAction = findIndex.value(plank[2], PathName.new(data[\buffers][i][0]) );
+				//}, {
+					//plank[2].valueAction = 0;
+					//["catch plank2 error", error, i].postln;
+				});
 
 			});
 
@@ -388,14 +388,14 @@ s.doWhenBooted({
 			data.put(\plankchance, ~plankchance);
 
 			data.put(\buffers, [ //path to file, tx flag, err flag
-			 	[ ~buffers[0].path, ~buffersenabled[0][0], ~buffersenabled[1][0] ],
-			 	[ ~buffers[1].path, ~buffersenabled[0][1], ~buffersenabled[1][1] ],
-			 	[ ~buffers[2].path, ~buffersenabled[0][2], ~buffersenabled[1][2] ],
-			 	[ ~buffers[3].path, ~buffersenabled[0][3], ~buffersenabled[1][3] ],
-			 	[ ~buffers[4].path, ~buffersenabled[0][4], ~buffersenabled[1][4] ],
-			 	[ ~buffers[5].path, ~buffersenabled[0][5], ~buffersenabled[1][5] ],
-			 	[ ~buffers[6].path, ~buffersenabled[0][6], ~buffersenabled[1][6] ],
-				[ ~buffers[7].path, ~buffersenabled[0][7], ~buffersenabled[1][7] ],
+				[ if (~buffers[0].isNil, {nil},{~buffers[0].path}), ~buffersenabled[0][0], ~buffersenabled[1][0] ],
+			 	[ if (~buffers[1].isNil, {nil},{~buffers[1].path}), ~buffersenabled[0][1], ~buffersenabled[1][1] ],
+			 	[ if (~buffers[2].isNil, {nil},{~buffers[2].path}), ~buffersenabled[0][2], ~buffersenabled[1][2] ],
+			 	[ if (~buffers[3].isNil, {nil},{~buffers[3].path}), ~buffersenabled[0][3], ~buffersenabled[1][3] ],
+			 	[ if (~buffers[4].isNil, {nil},{~buffers[4].path}), ~buffersenabled[0][4], ~buffersenabled[1][4] ],
+			 	[ if (~buffers[5].isNil, {nil},{~buffers[5].path}), ~buffersenabled[0][5], ~buffersenabled[1][5] ],
+			 	[ if (~buffers[6].isNil, {nil},{~buffers[6].path}), ~buffersenabled[0][6], ~buffersenabled[1][6] ],
+				[ if (~buffers[7].isNil, {nil},{~buffers[7].path}), ~buffersenabled[0][7], ~buffersenabled[1][7] ],
 			 ]);
 
 			data.writeArchive(presetspath++filename);
