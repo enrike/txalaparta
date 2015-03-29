@@ -250,7 +250,7 @@ Txalaparta{
 				});
 
 				numbeats.do({ arg index; // for each makila one hit
-					var hittime, hitfreq, hitamp, hitswing, makilaindex, plank=nil, pos;
+					var hittime, hitfreq, hitamp=localamp, hitswing, makilaindex, plank=nil, pos;
 
 					// emphasis
 					if (~amp > 0, { // place emphasis

@@ -47,30 +47,7 @@ TxalaDisplayGraphics {
 			thegap = gap;
 		});
 
-/*		// TXAKUN
-		enabledButs[0] = Button(win, Rect(xloc,yloc+350,120,50))
-		.states_([
-			["txakun", Color.white, Color.black],
-			["txakun", Color.black, Color.red],
-		])
-		.action_({ arg butt;
-			~enabled[0] = butt.value.asBoolean;
-		})
-		.valueAction_(1);
-
-		// ERRENA
-		enabledButs[1] = Button(win, Rect(xloc+130,yloc+350,120,50))
-		.states_([
-			["errena", Color.white, Color.black],
-			["errena", Color.black, Color.blue],
-		])
-		.action_({ arg butt;
-			~enabled[1] = butt.value.asBoolean;
-		})
-		.valueAction_(1);*/
-
 		output = StaticText(win, Rect(xloc, yloc+400, 200, 20));
-
 
 		drawFunc = { // drawing the visualization of circles
 			var dur, dpt; // duration of the circle and degrees per time unit
@@ -103,7 +80,7 @@ TxalaDisplayGraphics {
 			this.drawingSetBuffer[1].do({arg data; // --> [msecs, txakunflag, amp]
 				var offset;
 
-				if (data[3] <= 1, { // only the ones with a valid data
+				if (data[3] <= 2, { // only the ones with a valid data
 					if (data[2], {//txakun
 						offset = 270;
 						Pen.color = Color.red; //.alpha_(0.8).set;
