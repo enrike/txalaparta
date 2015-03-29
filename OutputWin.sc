@@ -18,7 +18,7 @@ AppClock.play(p);
 
 OutputWin {
 
-	var win, outfield;
+	var win, outfield, buffersize=1000;
 
 	*new {
 		^super.new.initOutputWin();
@@ -43,9 +43,10 @@ OutputWin {
 
 	post { arg st, col=Color.black;
 		{
-			outfield.setString( (st+"\n"), outfield.string.size);
+			if ( (outfield.string.size > buffersize), {outfield.string = outfield.string[(st.size+2)..]}); // do not grow too long
+			outfield.setString( (st+"\n"), outfield.string.size); // append
 			outfield.setStringColor(col, 0, st.size);
-			outfield.select(outfield.string.size, 1);
+			outfield.select(outfield.string.size, 1); // autoscroll
 	    }.defer
 	}
 
