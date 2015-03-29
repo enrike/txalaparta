@@ -97,9 +97,8 @@ TxalaInteractive{
 			)
 		}).add;
 
-		this.start();
-		this.stop();
-
+		//this.start(); // this is just to initialise everything
+		//this.stop(); // but we want to wait till the button is pressed to start listening
 	}
 
 
@@ -137,6 +136,7 @@ TxalaInteractive{
 	}
 
 	start {
+
 		if (txalasilence.isNil.not, {
 			txalasilence.kill();
 			txalasilence=nil;
@@ -148,12 +148,12 @@ TxalaInteractive{
 		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		markov = TxalaMarkov.new;
-		ann = TxalaAnn.new;
+		//ann = TxalaAnn.new;
 		~txalascore.reset();
 	}
 
 	reset  {
-		"+++++++++ RESET ++++++++++++++++++++++++++++++++++++++++++++++++++++++++".postln;
+		~outputwin.post("+++++++++ RESET +++++++++++++++++++++++", Color.black);
 		this.stop();
 		this.start();
 	}
@@ -178,8 +178,8 @@ TxalaInteractive{
 			switch (~answermode,
 				0, { this.imitation(defertime) },
 				1, { this.markovnext(defertime) },
-				2, { this.markovnext(defertime, lastPattern.size) },
-				3, { this.annnext(defertime, lastPattern.size) }
+				2, { this.markovnext(defertime, lastPattern.size) }//,
+				//3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
 	}
@@ -214,7 +214,7 @@ TxalaInteractive{
 		});
 	}
 
-	annnext{arg defertime, size=nil;
+/*	annnext{arg defertime, size=nil;
 		var gap=0, curhits;
 
 		curhits = ann.next(size);
@@ -230,7 +230,7 @@ TxalaInteractive{
 			}.defer(playtime);
 		});
 
-	}
+	}*/
 
 	playhit { arg amp, player, index, total;
 		var plank, pos;
@@ -258,7 +258,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		("+++++++++++++++++++++++++++"+index).postln
+		~outputwin.post( ("+++++++++++++++++++++++++++"+index), Color.black );
 	}
 
 	closeGUI {
@@ -377,7 +377,7 @@ TxalaInteractive{
 		StaticText(win, Rect(10, yloc+(gap*yindex), 120, 25)).string = "Answer mode";
 		guielements.add(\answermode->
 				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
-				.items_(["imitation", "fixed chances", "learning chances", "learning ANN"])
+			.items_(["imitation", "fixed chances", "learning chances"])//, "learning ANN"])
 				.action_({ arg menu;
 					~answermode = menu.value.asInt;
 					("changing to answer mode:" + menu.item).postln;
@@ -721,17 +721,17 @@ yindex = yindex + 1.5;
 	doMatrixGUI { arg win, xloc, yloc, guielements;
 		var newpreset;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chance matrix manager";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Memory manager";
 
 		yloc = yloc+20;
 
 		Button(win, Rect(xloc,yloc,170,25))
 		.states_([
-			["update matrix", Color.white, Color.grey],
-			["update matrix", Color.white, Color.green]
+			["learn", Color.white, Color.grey],
+			["learn", Color.white, Color.green]
 		])
 		.action_({ arg butt;
-			markov.update = butt.value.asBoolean;
+			if (markov.isNil.not, {markov.update = butt.value.asBoolean});
 		})
 		.valueAction_(1);
 

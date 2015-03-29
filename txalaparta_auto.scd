@@ -411,7 +411,7 @@ s.doWhenBooted({
 		~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath);
 
 	doButtons.value(10, 350);
-	doPresets.value(10, 430);
+	doPresets.value(10, 420);
 
 	if (~verbose>0, {currentEnvironment.postln});
 	if (~verbose>0, {~buffers});
