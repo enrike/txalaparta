@@ -34,7 +34,7 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var presetspath, makilaF, drawingSetBuffer, txalatempo, currentpath; //
+	var presetspath, drawingSetBuffer, txalatempo, currentpath; //
 
 	// GUI vars
 	var window, timelinewin, clock, nextautopilot, samples, istheresomething, findIndex, presets, tscore;
@@ -207,7 +207,7 @@ s.doWhenBooted({
 		])
 		.action_({ arg butt;
 			if (~makilaanims.isNil, {
-				~makilaanims = TxalaDisplayGraphics.new( 10 , 10, 270, 560, 10)
+				~makilaanims = TxalaDisplayGraphics.new( 450 , 10)
 			});
 		});
 

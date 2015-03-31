@@ -13,7 +13,7 @@ t.scheduleDraw= {"".postln};
 */
 Txalaparta{
 	var <samples, sndpath, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
-	var <scoreArray, <startTime, interstepcounter; // >makilaF, >scheduleDraw,
+	var <scoreArray, <startTime, interstepcounter;
 
 	*new {| server, path = "." |
 		^super.new.initTxalaparta( server, path );
