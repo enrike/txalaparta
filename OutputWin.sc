@@ -25,7 +25,7 @@ OutputWin {
 	}
 
 	initOutputWin {
-		win = Window("Output View",  Rect(10, 50, 400, 730));
+		win = Window("Output View",  Rect(800, 30, 400, 730));
 
 		win.onClose = {
 			if (~outputwin.isNil.not, {~outputwin = nil});
@@ -51,7 +51,7 @@ OutputWin {
 	}
 
 	close {
-		"closing down".postln;
+		//"closing down".postln;
 		win.close;
 		~outputwin = nil;
 	}
