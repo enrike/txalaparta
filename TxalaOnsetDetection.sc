@@ -8,7 +8,7 @@ to do: improve detected amplitude range and values, plank detection
 
 TxalaOnsetDetection{
 
-	var server, parent, curPattern, <synth, synthOSCcb, >processflag, <patternsttime, sttime, freqtable;
+	var server, parent, <curPattern, <synth, synthOSCcb, >processflag, <patternsttime, sttime, freqtable;
 
 	*new {| aparent=nil, aserver, afreqtable |
 		^super.new.initTxalaOnsetDetection(aparent, aserver, afreqtable);
@@ -78,8 +78,8 @@ TxalaOnsetDetection{
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
-				if (parent.isNil.not, { parent.newgroup() });
-				~outputwin.post( ("** new group" + (patternsttime-sttime)), Color.black);
+				//if (parent.isNil.not, { parent.newgroup() });
+				if (~outputwin.isNil.not, { ~outputwin.post( ("** new group" + (patternsttime-sttime)), Color.black) });
 			},{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
