@@ -2,17 +2,17 @@
 // by www.ixi-audio.net
 
 /*
-TxalaDisplayGraphics.new(10, 10, 270, 660, 10);
+TxalaDisplayGraphics.new( 10 , 10)
 */
 
 
 
 TxalaDisplayGraphics {
 
-	var win, xloc, yloc, width, gap, makilasliders, enabledButs, <>drawingSetBuffer, rot, drawFunc;
+	var win, xloc, yloc, width, gap, makilasliders, anim;//, <>drawingSetBuffer, rot, drawFunc;
 
-	*new { | ax=300 ay=120, aw=400, ah=500, agap=35 |
-		^super.new.initTxalaDisplayGraphics(ax, ay, aw, ah, agap);
+	*new { | x=10 y=10, w=270, h=550, gap=10 |
+		^super.new.initTxalaDisplayGraphics(x, y, w, h, gap);
 	}
 
 	initTxalaDisplayGraphics { |ax, ay, aw, ah, agap|
@@ -29,16 +29,10 @@ TxalaDisplayGraphics {
 		gap = agap;
 
 		makilasliders = [[nil, nil], [nil, nil]]; // two for each player
-		enabledButs = [nil, nil]; // txakun and errena
-		rot = 0;
-
-		//if (~enabled.isNil, {~enabled = [true, true]});
-
-		drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with a max 4 hits each part
 
 		makilasliders.do({arg list;
 			list.do({arg item, i;
-				list[i] = Slider(win, Rect(xloc+thegap+(61*ind), yloc, 60, 350));
+				list[i] = Slider(win, Rect(10+thegap+(61*ind), yloc, 60, 350));
 				list[i].orientation = \vertical;
 				list[i].thumbSize = 240;
 				list[i].value = 1;
@@ -47,65 +41,17 @@ TxalaDisplayGraphics {
 			thegap = gap;
 		});
 
-		drawFunc = { // drawing the visualization of circles
-			var dur, dpt; // duration of the circle and degrees per time unit
-			dur = 60/~tempo; // duration of the cycle in secs
-			dpt = 360/dur; // how many degrees each ms
+		anim = TxalaCircleAnim.new(win, 135, 460);
 
-			Pen.translate(135, 460); //** location of the circle **//
-			Pen.color = Color.black;
-			Pen.addArc(0@0, 80, 0, 360);
-			Pen.line(10@90.neg, 15@87.neg); // > mark
-			Pen.line(15@87.neg, 10@84.neg);
-
-			Pen.perform(\stroke); // static if maintaining pulse
-
-			if (~pulse.not, {
-
-				try {
-					rot = rot + (((this.drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
-				} {|error| rot = 0};
-				Pen.rotate( rot )
-			});
-			Pen.line(0@90.neg, 0@90); //vertical line
-			Pen.perform(\stroke); // static if maintaining pulse
-
-			//drawHitSet.value(drawingSetBuffer[0], dur, dpt);
-
-			//Pen.rotate( rot );
-
-			//this.drawHitSet(this.drawingSetBuffer[1], dur, dpt);
-			this.drawingSetBuffer[1].do({arg data; // --> [msecs, txakunflag, amp]
-				var offset;
-
-				if (data[3] <= 2, { // only the ones with a valid data
-					if (data[2], {//txakun
-						offset = 270;
-						Pen.color = Color.red; //.alpha_(0.8).set;
-					},{
-						offset = 90;
-						Pen.color = Color.blue;
-					}); // txakun up, errena down
-
-					Pen.use{
-						Pen.rotate( (((data[1]*dpt)-offset)*(pi/180)) );
-						Pen.addArc((80)@(0), data[3]*12, 0, 360); // circles representing beats
-						Pen.perform(\fill);
-					};
-				});
-			});
-
-			this.drawingSetBuffer = [ this.drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ];
-
-		};
-
-		win.drawFunc = drawFunc;
 		win.front;
 	}
 
 	close {
 		win.close();
-		//AppClock.clear; //??
+	}
+
+	scheduleDraw {arg data;
+		anim.scheduleDraw(data)
 	}
 
 	makilaF {arg txakunflag, makilaindex, time;
@@ -125,15 +71,8 @@ TxalaDisplayGraphics {
 				gap.wait;
 			});
 			sl.knobColor = Color.black;
-			//win.refresh;
 		});
 
 		AppClock.play(loopF);
 	}
-
-	scheduleDraw {arg data;
-		drawingSetBuffer[1] = data; // store in second slot
-		win.refresh;
-	}
-
 }
