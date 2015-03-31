@@ -32,7 +32,7 @@ TxalaInteractive{
 	var doGUI, label, reset, answer, hutsune, win;
 	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
-	var planksMenus;
+	var planksMenus, hitbutton, compassbutton;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -96,9 +96,6 @@ TxalaInteractive{
 				amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
 			)
 		}).add;
-
-		//this.start(); // this is just to initialise everything
-		//this.stop(); // but we want to wait till the button is pressed to start listening
 	}
 
 
@@ -111,19 +108,25 @@ TxalaInteractive{
 		{ label.string = "BPM" + ~bpm + "  Compass" + txalasilence.compass}.defer
 	}
 
-	broadcastgroupended { // silence detection calls this.
-		lastPattern = txalaonset.closegroup(); // to close onset detector
+
+	broadcastgroupstarted { // silence detection calls this.
+		{compassbutton.value = 1}.defer;
 	}
 
-	newgroup {
-		//txalasilence.groupstart();
+	broadcastgroupended { // silence detection calls this.
+		lastPattern = txalaonset.closegroup(); // to close onset detector
+		{compassbutton.value = 0}.defer; // display now
 	}
 
 	newonset { arg hittime, amp, player, plank;
 		if (~txalascore.isNil.not, {
 			~txalascore.hit(hittime, amp, player, plank);
 		});
+		{hitbutton.value = 1}.defer;
+		{hitbutton.value = 0}.defer(0.1);
 	}
+
+	//newgroup {}
 	/////////////////////////////////////////////////////////////////////////////
 
 	stop {
@@ -153,7 +156,7 @@ TxalaInteractive{
 	}
 
 	reset  {
-		~outputwin.post("+++++++++ RESET +++++++++++++++++++++++", Color.black);
+		if (~outputwin.isNil.not, { ~outputwin.post("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
 		this.stop();
 		this.start();
 	}
@@ -172,7 +175,6 @@ TxalaInteractive{
 
 		// we have to make some fine tuning here removing a short time like halfcompass/10
 		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection; // when in the future
-		//["will hit back in", defertime, lastPattern.size].postln;
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
@@ -258,7 +260,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		~outputwin.post( ("+++++++++++++++++++++++++++"+index), Color.black );
+		if (~outputwin.isNil.not, { ~outputwin.post( ("+++++++++++++++++++++++++++"+index), Color.black ) });
 	}
 
 	closeGUI {
@@ -270,21 +272,34 @@ TxalaInteractive{
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
 		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 550));
 		win.onClose = {
-			txalasilence.kill();
-			txalaonset.kill();
+			if (txalasilence.isNil.not, {txalasilence.kill()});
+			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
 			if (~outputwin.isNil.not, {~outputwin.close});
+			if (~txalascore.isNil.not, {~txalascore.close});
 		};
 
-		label = StaticText(win, Rect(10, 0, 250, 25));
+		label = StaticText(win, Rect(380, 200, 250, 25));
 		label.string = "BPM: ---";
 
-		Button( win, Rect(210,0,70,25))
+		Button( win, Rect(140,0,70,25))
 		.states_([
 			["reset", Color.white, Color.black]
 		])
 		.action_({ arg but;
 			this.reset();
+		});
+
+		// txakascore timeline
+		Button(win,  Rect(210,0,70,25))
+		.states_([
+			["show score", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			var num;
+			//num = ~txalaparta.getnumactiveplanks();
+			~txalascore.reset();
+			~txalascore.doTxalaScore(numactiveplanks:1);
 		});
 
 		Button( win, Rect(280,0,70,25))
@@ -348,8 +363,10 @@ TxalaInteractive{
 			"in amp",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
-				txalaonset.synth.set(\amp, ez.value.asFloat);
-				txalasilence.synth.set(\amp, ez.value.asFloat);
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\amp, ez.value.asFloat);
+					txalasilence.synth.set(\amp, ez.value.asFloat);
+				});
 				~listenparemeters.amp = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.amp,
@@ -439,7 +456,9 @@ yindex = yindex + 1.5;
 			"threshold",
 			ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
-				txalasilence.updatethreshold(ez.value.asFloat); // this is different because a bug? in supercollider
+				if (txalasilence.isNil.not, {
+					txalasilence.updatethreshold(ez.value.asFloat); // this is different because a bug? in supercollider
+				});
 				~listenparemeters.tempo.threshold = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.tempo.threshold,
@@ -454,7 +473,9 @@ yindex = yindex + 1.5;
 			"falltime",
 			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
-				txalasilence.synth.set(\falltime, ez.value.asFloat);
+				if (txalasilence.isNil.not, {
+					txalasilence.synth.set(\falltime, ez.value.asFloat);
+				});
 				~listenparemeters.tempo.falltime = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.tempo.falltime,
@@ -468,7 +489,9 @@ yindex = yindex + 1.5;
 			"rate",
 			ControlSpec(5, 60, \lin, 1, 30, ""),
 			{ arg ez;
-				txalasilence.synth.set(\checkrate, ez.value.asFloat);
+				if (txalasilence.isNil.not, {
+					txalasilence.synth.set(\checkrate, ez.value.asFloat);
+				});
 				~listenparemeters.tempo.checkrate = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.tempo.checkrate,
@@ -478,7 +501,7 @@ yindex = yindex + 1.5;
 yindex = yindex + 1.5;
 
 		// hutsune timeout control
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hutsune detection";
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hutsune detection timeout";
 
 		yindex = yindex + 1;
 
@@ -505,7 +528,9 @@ yindex = yindex + 1.5;
 			"threshold",
 			ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
 			{ arg ez;
-				txalaonset.synth.set(\threshold, ez.value.asFloat);
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\threshold, ez.value.asFloat);
+				});
 				~listenparemeters.onset.threshold = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.onset.threshold,
@@ -519,7 +544,9 @@ yindex = yindex + 1.5;
 			"relaxtime",
 			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
 			{ arg ez;
-				txalaonset.synth.set(\relaxtime, ez.value.asFloat);
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\relaxtime, ez.value.asFloat);
+				});
 				~listenparemeters.onset.relaxtime = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.onset.relaxtime,
@@ -533,7 +560,9 @@ yindex = yindex + 1.5;
 			"floor",
 			ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
-				txalaonset.synth.set(\floor, ez.value.asFloat);
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\floor, ez.value.asFloat);
+				});
 				~listenparemeters.onset.floor = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.onset.floor,
@@ -547,7 +576,9 @@ yindex = yindex + 1.5;
 			"mingap",
 			ControlSpec(0.1, 20, \lin, 0.1, 0.1, "Ms"),
 			{ arg ez;
-				txalaonset.synth.set(\mingap, ez.value.asFloat);
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\mingap, ez.value.asFloat);
+				});
 				~listenparemeters.onset.mingap = ez.value.asFloat;
 			},
 			initVal: ~listenparemeters.onset.mingap,
@@ -561,11 +592,17 @@ yindex = yindex + 1.5;
 
 		this.doPlanks(350,yloc, 20, 220, 20);
 
-		//
-		// ~outputfield = TextView(win, Rect(370, 10, 320, 700));
-		// ~outputfield.font = Font("Courier",11);
-		// ~outputfield.editable = false;
-		// ~outputfield.backColor = Color.black;
+		hitbutton = Button( win, Rect(370,240,60,25))
+		.states_([
+			["HIT", Color.white, Color.black],
+			["HIT", Color.white, Color.red]
+		]);
+		compassbutton = Button( win, Rect(430,240,60,25))
+		.states_([
+			["PHRASE", Color.white, Color.black],
+			["PHRASE", Color.white, Color.red]
+		]);
+
 
 		win.front;
 	}

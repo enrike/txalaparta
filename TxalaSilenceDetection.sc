@@ -83,6 +83,7 @@ TxalaSilenceDetection{
 
 	groupstart {
 		~bpm = tempocalc.calculate();
+		parent.broadcastgroupstarted(); // just to display fedback
 		hitflag = true;
 		compass = compass + 1;
 		if ( (~hutsunelookup > 0), {
