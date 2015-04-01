@@ -19,11 +19,11 @@ grup of hits end point
 - calculate the bpm when a group starts by measuring the distance from the previous group
 - trigger the answer when the group finish
 - check for hutsunes and answer to those
-~ou
-+ number of hits per group: OnSets
+
++ number of hits per group or phrase: OnSets
 - distance between hits
 - amplitude of each hit
-- pitch of each hit (to do)
+- pitch of each hit (to do...)
 */
 
 TxalaInteractive{
@@ -601,18 +601,18 @@ yindex = yindex + 1.5;
 
 		hitbutton = Button( win, Rect(370,250,60,25))
 		.states_([
-			["HIT", Color.white, Color.black],
+			["HIT", Color.white, Color.grey],
 			["HIT", Color.white, Color.red]
 		]);
 		compassbutton = Button( win, Rect(430,250,60,25))
 		.states_([
-			["PHRASE", Color.white, Color.black],
+			["PHRASE", Color.white, Color.grey],
 			["PHRASE", Color.white, Color.red]
 		]);
 
 		hutsunebutton = Button( win, Rect(490,250,60,25))
 		.states_([
-			["HUTSUN", Color.white, Color.black],
+			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.red]
 		]);
 
