@@ -32,7 +32,7 @@ TxalaInteractive{
 	var doGUI, label, reset, answer, hutsune, win;
 	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
-	var planksMenus, hitbutton, compassbutton;
+	var planksMenus, hitbutton, compassbutton, hutsunebutton, numbeatslabel;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -102,10 +102,12 @@ TxalaInteractive{
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
 		lastPattern = nil;
+		{hutsunebutton.value = 1}.defer;
+		{hutsunebutton.value = 0}.defer(0.2);
 	}
 
 	loop {
-		{ label.string = "BPM" + ~bpm + "  Compass" + txalasilence.compass}.defer
+		{ label.string = "BPM:" + ~bpm + "\nCompass:" + txalasilence.compass}.defer
 	}
 
 
@@ -115,6 +117,7 @@ TxalaInteractive{
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close onset detector
+		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
 		{compassbutton.value = 0}.defer; // display now
 	}
 
@@ -156,7 +159,7 @@ TxalaInteractive{
 	}
 
 	reset  {
-		if (~outputwin.isNil.not, { ~outputwin.post("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
+		if (~outputwin.isNil.not, { ~outputwin.msg("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
 		this.stop();
 		this.start();
 	}
@@ -260,7 +263,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		if (~outputwin.isNil.not, { ~outputwin.post( ("+++++++++++++++++++++++++++"+index), Color.black ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( ("+++++++++++++++++++++++++++"+index), Color.black ) });
 	}
 
 	closeGUI {
@@ -270,7 +273,7 @@ TxalaInteractive{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Listening module for txalaparta",  Rect(10, 50, 700, 550));
+		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 550));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
@@ -278,9 +281,6 @@ TxalaInteractive{
 			if (~outputwin.isNil.not, {~outputwin.close});
 			if (~txalascore.isNil.not, {~txalascore.close});
 		};
-
-		label = StaticText(win, Rect(380, 200, 250, 25));
-		label.string = "BPM: ---";
 
 		Button( win, Rect(140,0,70,25))
 		.states_([
@@ -304,7 +304,7 @@ TxalaInteractive{
 
 		Button( win, Rect(280,0,70,25))
 		.states_([
-			["calibration", Color.white, Color.black]
+			["view output", Color.white, Color.black]
 		])
 		.action_({ arg but;
 			if (~outputwin.isNil, {
@@ -315,7 +315,7 @@ TxalaInteractive{
 
 		// row of buttons on top side
 
-		Button( win, Rect(70,yloc-10,70,25))
+		Button( win, Rect(0,0,140,25))
 		.states_([
 			["listen", Color.white, Color.black],
 			["listen", Color.black, Color.green],
@@ -327,7 +327,7 @@ TxalaInteractive{
 				this.stop();
 			})
 		});
-		Button( win, Rect(140,yloc-10,70,25))
+		Button( win, Rect(0,yloc-10,140,25))
 		.states_([
 			["answer", Color.white, Color.black],
 			["answer", Color.black, Color.green],
@@ -587,20 +587,33 @@ yindex = yindex + 1.5;
 
 		yindex = yindex + 1.5;
 
+
+		label = StaticText(win, Rect(370, 200, 250, 25));
+		label.string = "BPM: --- \nCompass: ---";
+
+		numbeatslabel = StaticText(win, Rect(370, 225, 250, 25));
+		numbeatslabel.string = "Beats: ---";
+
 		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 
-		this.doPlanks(350,yloc, 20, 220, 20);
+		this.doPlanks(350,yloc-10, 20, 220, 20);
 
-		hitbutton = Button( win, Rect(370,240,60,25))
+		hitbutton = Button( win, Rect(370,250,60,25))
 		.states_([
 			["HIT", Color.white, Color.black],
 			["HIT", Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(430,240,60,25))
+		compassbutton = Button( win, Rect(430,250,60,25))
 		.states_([
 			["PHRASE", Color.white, Color.black],
 			["PHRASE", Color.white, Color.red]
+		]);
+
+		hutsunebutton = Button( win, Rect(490,250,60,25))
+		.states_([
+			["HUTSUN", Color.white, Color.black],
+			["HUTSUN", Color.white, Color.red]
 		]);
 
 
