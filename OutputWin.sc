@@ -3,11 +3,11 @@
 
 /*
 ~outputwin = OutputWin.new();
-~outputwin.post( "whatever", Color.green);
+~outputwin.msg( "whatever", Color.green);
 
 p = Routine({
 	inf.do({arg counter;
-		~outputwin.post( "helloooo..." + counter);
+		~outputwin.msg( "helloooo..." + counter);
 		0.1.wait;
 	});
 });
@@ -41,7 +41,7 @@ OutputWin {
 		win.front;
 	}
 
-	post { arg st, col=Color.black;
+	msg { arg st, col=Color.black;
 		{
 			if ( (outfield.string.size > buffersize), {outfield.string = outfield.string[(st.size+2)..]}); // do not grow too long
 			outfield.setString( (st+"\n"), outfield.string.size); // append

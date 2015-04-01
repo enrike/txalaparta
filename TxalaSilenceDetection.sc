@@ -90,7 +90,7 @@ TxalaSilenceDetection{
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		if( (~answer && answerposition.not), { parent.answer() });
-		if (~outputwin.isNil.not, {~outputwin.post( ("----------------- start"+compass), Color.black) });
+		if (~outputwin.isNil.not, {~outputwin.msg( ("----------------- start"+compass), Color.black) });
 	}
 
 	// scheduling answers at this moment does not work with fast tempos as the tile of the signal steps
@@ -99,13 +99,13 @@ TxalaSilenceDetection{
 		hitflag = false;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
 		if((~answer && answerposition), { parent.answer() });
-		if (~outputwin.isNil.not, { ~outputwin.post( ("----------------- end"+compass), Color.black ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( ("----------------- end"+compass), Color.black ) });
 	}
 
 	// checks for empty phases in the compass
 	checkhutsune {
 		if (SystemClock.seconds >= hutsunetimeout, {
-			if (~outputwin.isNil.not, { ~outputwin.post("[[[[[[[ hutsune ]]]]]]]]") });
+			if (~outputwin.isNil.not, { ~outputwin.msg("[[[[[[[ hutsune ]]]]]]]]") });
 			parent.hutsune(); // need to update it was 0 hits
 			tempocalc.pushlasttime(); // must update otherwise tempo drops
 			hutsunetimeout = nil;
@@ -116,7 +116,7 @@ TxalaSilenceDetection{
 	// if too long after the last signal we received reset me
 	checkreset {
 		if ((SystemClock.seconds > (tempocalc.lasttime + resettime)), {
-			if (~outputwin.isNil.not, { ~outputwin.post("RESET SYSTEM") });
+			if (~outputwin.isNil.not, { ~outputwin.msg("RESET SYSTEM") });
 			parent.reset();
 		});
 	}
@@ -131,7 +131,7 @@ TxalaSilenceDetection{
 				if (hitflag.not, {
 					this.groupstart();
 				});
-				if (~outputwin.isNil.not, { ~outputwin.post("---------------", Color.black) });
+				if (~outputwin.isNil.not, { ~outputwin.msg("---------------", Color.black) });
 
 			}, { // silence
 				if (hitflag, { //
@@ -142,11 +142,11 @@ TxalaSilenceDetection{
 					}, {
 						this.checkreset();
 					});
-							if (~outputwin.isNil.not, { ~outputwin.post("." + ~bpm) });
+							if (~outputwin.isNil.not, { ~outputwin.msg("." + ~bpm) });
 				});
 			})
 		}, { // while I am answering dont listen
-				if (~outputwin.isNil.not, { ~outputwin.post("." + ~bpm) });
+				if (~outputwin.isNil.not, { ~outputwin.msg("." + ~bpm) });
 		});
 		parent.loop(); // this is just to update some GUI
 	}

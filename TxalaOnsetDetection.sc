@@ -79,7 +79,7 @@ TxalaOnsetDetection{
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
 				//if (parent.isNil.not, { parent.newgroup() });
-				if (~outputwin.isNil.not, { ~outputwin.post( ("** new group" + (patternsttime-sttime)), Color.black) });
+				if (~outputwin.isNil.not, { ~outputwin.msg( ("** new group" + (patternsttime-sttime)), Color.black) });
 			},{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
@@ -92,7 +92,7 @@ TxalaOnsetDetection{
 			            .add(\player -> 1) //always 1 in this case
 			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
-			~outputwin.post( ("++++++++++++++++++++++" + curPattern.size + msg[3]), Color.black);
+			if (~outputwin.isNil.not, { ~outputwin.msg( ("++++++++++++++++++++++" + curPattern.size + msg[3]), Color.black)});
 			if (parent.isNil.not, { parent.newonset(SystemClock.seconds, msg[3], 1, freq) });
 		});
 
