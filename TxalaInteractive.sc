@@ -50,8 +50,8 @@ TxalaInteractive{
 		~amp = 1;
 		~answer = false;
 		~answermode = 0; //0,1,3: imitation, markov1, markov2
-		~answertimecorrection = 0.08; // compensate latency
-		~hutsunelookup = 0.2;
+		~answertimecorrection = 0.09; // compensate latency
+		~hutsunelookup = 0.3;
 
 		~gap = 0.65;
 		~gapswing = 0.01;
@@ -73,7 +73,7 @@ TxalaInteractive{
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
 		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
-		~listenparemeters.onset = ().add(\threshold->0.6).add(\relaxtime->2.1).add(\floor->0.1).add(\mingap->0.1);
+		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.1).add(\floor->0.1).add(\mingap->0.05);
 
 		lastPattern = nil;
 
@@ -133,16 +133,17 @@ TxalaInteractive{
 	/////////////////////////////////////////////////////////////////////////////
 
 	stop {
-		try {
+		if (txalasilence.isNil.not, {
 			txalasilence.kill();
+			txalasilence=nil;
+		});
+		if (txalaonset.isNil.not, {
 			txalaonset.kill();
-		} {|error|
-
-		};
+			txalaonset=nil;
+		});
 	}
 
 	start {
-
 		if (txalasilence.isNil.not, {
 			txalasilence.kill();
 			txalasilence=nil;
@@ -254,7 +255,7 @@ TxalaInteractive{
 
 		if ((index==(total-1)), { // listen again when the last hit stops
 			var hitlength = plank.numFrames/plank.sampleRate;
-			hitlength = hitlength - ((hitlength/3)*1); // remove the tail 1/3
+			hitlength = hitlength - (hitlength * 0.6); // but remove the sound tail. expose this in the GUI?
 			{ this.processflag(false) }.defer(hitlength)
 		});
 
@@ -263,7 +264,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		if (~outputwin.isNil.not, { ~outputwin.msg( ("+++++++++++++++++++++++++++"+index), Color.black ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( ("***********************"+(index+1)), Color.blue ) });
 	}
 
 	closeGUI {
@@ -599,21 +600,21 @@ yindex = yindex + 1.5;
 
 		this.doPlanks(350,yloc-10, 20, 220, 20);
 
-		hitbutton = Button( win, Rect(370,250,60,25))
+		hitbutton = Button( win, Rect(370,250,110,45))
 		.states_([
 			["HIT", Color.white, Color.grey],
 			["HIT", Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(430,250,60,25))
+		compassbutton = Button( win, Rect(480,250,110,45))
 		.states_([
 			["PHRASE", Color.white, Color.grey],
 			["PHRASE", Color.white, Color.red]
 		]);
 
-		hutsunebutton = Button( win, Rect(490,250,60,25))
+		hutsunebutton = Button( win, Rect(590,250,100,45))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
-			["HUTSUN", Color.white, Color.red]
+			["HUTSUN", Color.white, Color.blue]
 		]);
 
 
@@ -691,23 +692,22 @@ yindex = yindex + 1.5;
 
 
 	doPresets { arg win, xloc, yloc, guielements;
-		var newpreset;
+		var newpreset, popup;
 
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
 
-		PopUpMenu(win,Rect(xloc,yloc+20,170,20))
+		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
 		.items_(presetslisten.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
 			presetslisten = (basepath++"/presets_listen/*").pathMatch;
 			presetslisten.insert(0, "---");
-			menu.items = presetslisten.asArray.collect({arg item;
-				PathName.new(item).fileName});
+			menu.items = presetslisten.asArray.collect({arg item; PathName.new(item).fileName});
 		})
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
-			data.asCompileString.postln;
+			//data.asCompileString.postln;
 
 			~answertimecorrection = data[\answertimecorrection];
 			~amp = data[\amp];
@@ -736,6 +736,13 @@ yindex = yindex + 1.5;
 			guielements.floor.valueAction = ~listenparemeters.onset.floor;
 			guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
 		});
+
+		popup.mouseDown;// force creating the menu list
+		try{ // AUTO load first preset
+			popup.valueAction_(1);
+		}{ |error|
+			"no predefined preset to be loaded".postln;
+		}
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
 		Button(win, Rect(xloc+100,yloc+42,70,25))
