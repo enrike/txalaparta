@@ -92,7 +92,7 @@ TxalaOnsetDetection{
 			            .add(\player -> 1) //always 1 in this case
 			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
-			if (~outputwin.isNil.not, { ~outputwin.msg( ("++++++++++++++++++++++" + curPattern.size + msg[3]), Color.black)});
+			if (~outputwin.isNil.not, { ~outputwin.msg( ("++++++++++++++++++++++" + curPattern.size + msg[3]), Color.red)});
 			if (parent.isNil.not, { parent.newonset(SystemClock.seconds, msg[3], 1, freq) });
 		});
 
