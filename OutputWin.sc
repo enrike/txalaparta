@@ -7,7 +7,7 @@
 
 p = Routine({
 	inf.do({arg counter;
-		~outputwin.msg( "helloooo..." + counter);
+		~outputwin.msg( "helloooo..." + counter, Color.rand);
 		0.1.wait;
 	});
 });
@@ -15,24 +15,23 @@ p = Routine({
 AppClock.play(p);
 */
 
-
 OutputWin {
 
-	var win, outfield, buffersize=1000;
+	var win, outfield, buffersize=5000;
 
 	*new {
 		^super.new.initOutputWin();
 	}
 
 	initOutputWin {
-		win = Window("Output View",  Rect(800, 30, 400, 730));
+		win = Window("Output View",  Rect(960, 22, 400, 745));
 
 		win.onClose = {
 			if (~outputwin.isNil.not, {~outputwin = nil});
 		};
 
-		outfield = TextView(win, Rect(0, 0, 400, 730));
-		outfield.font = Font("Verdana", 12);
+		outfield = TextView(win, Rect(0, 0, 400, 745));
+		outfield.font = Font("Verdana", 11);
 		outfield.editable = false;
 		outfield.backColor = Color.white;
 
@@ -43,9 +42,9 @@ OutputWin {
 
 	msg { arg st, col=Color.black;
 		{
-			if ( (outfield.string.size > buffersize), {outfield.string = outfield.string[(st.size+2)..]}); // do not grow too long
+			if ( (outfield.string.size > buffersize), {outfield.string = outfield.string[(outfield.string.size-buffersize)..]}); // do not grow too long
 			outfield.setString( (st+"\n"), outfield.string.size); // append
-			outfield.setStringColor(col, 0, st.size);
+			//outfield.setStringColor(col, outfield.string.size-st.size-2, outfield.string.size); // NOT WORKING RIGHT when buffer grows too big and we need to start chopping
 			outfield.select(outfield.string.size, 1); // autoscroll
 	    }.defer
 	}
