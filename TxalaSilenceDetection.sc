@@ -46,7 +46,7 @@ TxalaSilenceDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalatempo, {| in=0, amp=1, threshold=0.5, falltime=0.1, checkrate=30 | //thres=0,1
+		SynthDef(\txalatempo, {| in=0, amp=1, threshold=0.5, falltime=0.1, checkrate=20 | //thres=0,1
 			var detected;
 			detected = DetectSilence.ar( SoundIn.ar(in)*amp, threshold, falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
@@ -89,7 +89,7 @@ TxalaSilenceDetection{
 		if ( (~hutsunelookup > 0), {
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
-		if( (~answer && answerposition.not), { parent.answer() });
+		//if( (~answer && answerposition.not), { parent.answer() });
 		if (~outputwin.isNil.not, {~outputwin.msg( ("----------------- start"+compass), Color.black) });
 	}
 
@@ -98,7 +98,8 @@ TxalaSilenceDetection{
 	groupend {
 		hitflag = false;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
-		if((~answer && answerposition), { parent.answer() });
+		//if((~answer && answerposition), { parent.answer() });
+		if(~answer, {parent.answer()});
 		if (~outputwin.isNil.not, { ~outputwin.msg( ("----------------- end"+compass), Color.black ) });
 	}
 
