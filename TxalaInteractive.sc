@@ -202,7 +202,7 @@ TxalaInteractive{
 
 	// analysing of lastPattern
 	averageamp { // returns average amp from hits in curhits phrase
-		var val;
+		var val=0;
 		lastPattern.do({ arg hit;
 			val = val + hit.amp;
 		});
@@ -210,13 +210,14 @@ TxalaInteractive{
 	}
 
 	averagegap { // returns average gap from hits in curhits phrase
-		var val;
+		var val=0;
 		lastPattern.do({ arg hit, index;
 			if ( (index>0), {
-				val = val + (hit.hittime-lastPattern[index-1].hittime);
+				val = val + (hit.time-lastPattern[index-1].time);
 			},{
-				val = val + hit.hittime; // first one
+				val = val + hit.time; // first one
 			});
+			val.postln;
 		});
 		^val/lastPattern.size;
 	}
@@ -620,10 +621,10 @@ yindex = yindex + 1.5;
 		yindex = yindex + 1.5;
 
 
-		label = StaticText(win, Rect(370, 200, 250, 25));
+		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
 		label.string = "BPM: --- \nCompass: ---";
 
-		numbeatslabel = StaticText(win, Rect(370, 225, 250, 25));
+		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
 		numbeatslabel.string = "Beats: ---";
 
 		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
@@ -631,18 +632,18 @@ yindex = yindex + 1.5;
 
 		this.doPlanks(350,yloc-10, 20, 220, 20);
 
-		hitbutton = Button( win, Rect(370,250,110,45))
+		hitbutton = Button( win, Rect(370,300,110,55))
 		.states_([
 			["HIT", Color.white, Color.grey],
 			["HIT", Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(480,250,110,45))
+		compassbutton = Button( win, Rect(480,300,110,55))
 		.states_([
 			["PHRASE", Color.white, Color.grey],
 			["PHRASE", Color.white, Color.red]
 		]);
 
-		hutsunebutton = Button( win, Rect(590,250,100,45))
+		hutsunebutton = Button( win, Rect(590,300,100,55))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.blue]
