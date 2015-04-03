@@ -50,7 +50,7 @@ TxalaOnsetDetection{
 		 	var fft, onset, signal, level=0, freq=0, hasFreq=false;
 		 	signal = SoundIn.ar(in) * amp;
 		 	fft = FFT(LocalBuf(2048), signal);
-		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, 11, 1, 0);// beat detection
+		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);// beat detection
 		 	/* *kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
 		 	level = Amplitude.kr(signal);
 		 	//# freq, hasFreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
@@ -79,7 +79,7 @@ TxalaOnsetDetection{
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
 				//if (parent.isNil.not, { parent.newgroup() });
-				if (~outputwin.isNil.not, { ~outputwin.msg( ("** new group" + (patternsttime-sttime)), Color.black) });
+				if (~outputwin.isNil.not, { ~outputwin.msg( "*** new phrase" + (patternsttime-sttime)) });
 			},{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
@@ -92,7 +92,7 @@ TxalaOnsetDetection{
 			            .add(\player -> 1) //always 1 in this case
 			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
-			if (~outputwin.isNil.not, { ~outputwin.msg( ("++++++++++++++++++++++" + curPattern.size + msg[3]), Color.red)});
+			if (~outputwin.isNil.not, { ~outputwin.msg( "++++++++++++++++++++++" + curPattern.size + msg[3], Color.red)});
 			if (parent.isNil.not, { parent.newonset(SystemClock.seconds, msg[3], 1, freq) });
 		});
 
