@@ -46,7 +46,7 @@ TxalaOnsetDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=0.1|
+		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1|
 		 	var fft, onset, signal, level=0, freq=0, hasFreq=false;
 		 	signal = SoundIn.ar(in) * amp;
 		 	fft = FFT(LocalBuf(2048), signal);
