@@ -29,9 +29,9 @@ p = [
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	5, [ 'threshold',  0.300000,  'relaxtime',  0.010000,  
+	5, [ 'threshold',  0.300000,  'relaxtime',  0.047000,  
 		nil,  nil,  nil,  nil,  
-		'floor',  0.010000,  'mingap',  1.000000,  
+		'floor',  0.240000,  'mingap',  1.000000,  
 		nil,  nil,  nil,  nil ],  
 	// Event
 	6, [ array: o[7],  size: 3,  
