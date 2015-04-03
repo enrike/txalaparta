@@ -73,7 +73,7 @@ TxalaInteractive{
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
 		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
-		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.1).add(\floor->0.1).add(\mingap->0.05);
+		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
 
 		lastPattern = nil;
 
@@ -177,8 +177,8 @@ TxalaInteractive{
 
 		halfcompass = (60/~bpm/2);
 
-		// we have to make some fine tuning here removing a short time like halfcompass/10
-		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection; // when in the future
+		// calc when in future should answer be. start from last detected hit and use tempo to calculate
+		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection;
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
@@ -188,6 +188,7 @@ TxalaInteractive{
 				//3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
+		if (~outputwin.isNil.not, { ~outputwin.msg("answer scheduled for"+defertime) });
 	}
 
 	imitation { arg defertime;
@@ -199,8 +200,30 @@ TxalaInteractive{
 		});
 	}
 
+	// analysing of lastPattern
+	averageamp { // returns average amp from hits in curhits phrase
+		var val;
+		lastPattern.do({ arg hit;
+			val = val + hit.amp;
+		});
+		^val/lastPattern.size;
+	}
+
+	averagegap { // returns average gap from hits in curhits phrase
+		var val;
+		lastPattern.do({ arg hit, index;
+			if ( (index>0), {
+				val = val + (hit.hittime-lastPattern[index-1].hittime);
+			},{
+				val = val + hit.hittime; // first one
+			});
+		});
+		^val/lastPattern.size;
+	}
+	/////////////////////////
+
 	markovnext {arg defertime, size=nil;
-		var gap=0, curhits;
+		var gap=0, curhits, lastaverageamp = this.averageamp(), lastaveragegap = this.averagegap();
 
 		if (size.isNil, {
 			curhits = markov.next();
@@ -211,11 +234,14 @@ TxalaInteractive{
 		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
 
 		curhits.do({ arg index;
-			var playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+			var playtime, amp;
+			playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to what is detected
+
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
 			{
-				this.playhit((~amp+rrand(-0.05, 0.05)), 0, index, curhits)
+				this.playhit( amp, 0, index, curhits)
 			}.defer(playtime);
 		});
 	}
@@ -241,7 +267,10 @@ TxalaInteractive{
 	playhit { arg amp, player, index, total;
 		var plank, pos;
 
-		if (index==0, { this.processflag(true) }); // stop listening to incomming hits. dont listen to yourself
+		if (index==0, {
+			this.processflag(true);
+			if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
+		}); // stop listening to incomming hits. dont listen to yourself
 
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
@@ -255,8 +284,11 @@ TxalaInteractive{
 
 		if ((index==(total-1)), { // listen again when the last hit stops
 			var hitlength = plank.numFrames/plank.sampleRate;
-			hitlength = hitlength - (hitlength * 0.6); // but remove the sound tail. expose this in the GUI?
-			{ this.processflag(false) }.defer(hitlength)
+			hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
+			{
+				this.processflag(false);
+				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
+			}.defer(hitlength)
 		});
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
@@ -271,7 +303,6 @@ TxalaInteractive{
 		win.close();
 	}
 
-
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
 		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 550));
@@ -279,11 +310,11 @@ TxalaInteractive{
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
-			if (~outputwin.isNil.not, {~outputwin.close});
+			//if (~outputwin.isNil.not, {~outputwin.close});
 			if (~txalascore.isNil.not, {~txalascore.close});
 		};
 
-		Button( win, Rect(140,0,70,25))
+		Button( win, Rect(140,0,70,50))
 		.states_([
 			["reset", Color.white, Color.black]
 		])
@@ -380,7 +411,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"out amp",
-			ControlSpec(0, 1, \lin, 0.01, 1, ""),
+			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
@@ -409,7 +440,7 @@ TxalaInteractive{
 		guielements.add(\answertimecorrection->  EZSlider( win,
 		 	Rect(0,yloc+(gap*yindex),350,20),
 		 	"latency",
-		 	ControlSpec(-1, 1, \lin, 0.01, 0, ""),
+		 	ControlSpec(-0.5, 0.5, \lin, 0.01, 0, ""),
 		 	{ arg ez;
 		 		~answertimecorrection = ez.value.asFloat;
 		 	},
@@ -434,7 +465,7 @@ TxalaInteractive{
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"swing",
+			"gap swing",
 			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
 				~gapswing = ez.value.asFloat;
@@ -472,7 +503,7 @@ yindex = yindex + 1.5;
 		EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"falltime",
-			ControlSpec(0.01, 20, \lin, 0.01, 0.1, "Ms"),
+			ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
 			{ arg ez;
 				if (txalasilence.isNil.not, {
 					txalasilence.synth.set(\falltime, ez.value.asFloat);
@@ -543,7 +574,7 @@ yindex = yindex + 1.5;
 		guielements.add(\relaxtime->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"relaxtime",
-			ControlSpec(0.01, 4, \lin, 0.01, 2.1, "ms"),
+			ControlSpec(0.001, 0.5, \lin, 0.001, 0.05, "ms"),
 			{ arg ez;
 				if (txalaonset.isNil.not, {
 					txalaonset.synth.set(\relaxtime, ez.value.asFloat);
@@ -575,7 +606,7 @@ yindex = yindex + 1.5;
 		guielements.add(\mingap->  EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"mingap",
-			ControlSpec(0.1, 20, \lin, 0.1, 0.1, "Ms"),
+			ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
 			{ arg ez;
 				if (txalaonset.isNil.not, {
 					txalaonset.synth.set(\mingap, ez.value.asFloat);
@@ -690,6 +721,15 @@ yindex = yindex + 1.5;
 
 	}
 
+	updatepresetlistenfiles{
+		var temp;
+		presetslisten = (basepath++"/presets_listen/*").pathMatch; // update
+		temp = presetslisten.asArray.collect({arg item; PathName.new(item).fileName});
+		temp = temp.insert(0, "---");
+		^temp;
+		//presetslisten.asArray.collect({arg item; PathName.new(item).fileName}).insert(0, "---")
+	}
+
 
 	doPresets { arg win, xloc, yloc, guielements;
 		var newpreset, popup;
@@ -697,17 +737,13 @@ yindex = yindex + 1.5;
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
 
 		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
-		.items_(presetslisten.asArray.collect({arg item; PathName.new(item).fileName}))
-		.mouseDownAction_({arg menu;
-			presetslisten = (basepath++"/presets_listen/*").pathMatch;
-			presetslisten.insert(0, "---");
-			menu.items = presetslisten.asArray.collect({arg item; PathName.new(item).fileName});
-		})
+		.items_(this.updatepresetlistenfiles)
+		.mouseDownAction_( { this.updatepresetlistenfiles } )
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
-			//data.asCompileString.postln;
+			data.asCompileString.postln;
 
 			~answertimecorrection = data[\answertimecorrection];
 			~amp = data[\amp];
@@ -716,8 +752,6 @@ yindex = yindex + 1.5;
 			~answermode = data[\answermode];
 			~hutsunelookup = data[\hutsunelookup];
 			~listenparemeters = data[\listenparemeters];
-
-			[guielements].postln;
 
 			// is the saved data correct?
 			guielements.gap.valueAction = ~gap;
@@ -738,11 +772,11 @@ yindex = yindex + 1.5;
 		});
 
 		popup.mouseDown;// force creating the menu list
-		try{ // AUTO load first preset
+		try{ // AUTO load first preset **
 			popup.valueAction_(1);
 		}{ |error|
 			"no predefined preset to be loaded".postln;
-		}
+		};
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
 		Button(win, Rect(xloc+100,yloc+42,70,25))
