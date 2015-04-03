@@ -90,7 +90,7 @@ TxalaSilenceDetection{
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		//if( (~answer && answerposition.not), { parent.answer() });
-		if (~outputwin.isNil.not, {~outputwin.msg( ("----------------- start"+compass), Color.black) });
+		if (~outputwin.isNil.not, {~outputwin.msg( "----------------- start"+compass, Color.black) });
 	}
 
 	// scheduling answers at this moment does not work with fast tempos as the tile of the signal steps
@@ -100,7 +100,7 @@ TxalaSilenceDetection{
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
 		//if((~answer && answerposition), { parent.answer() });
 		if(~answer, {parent.answer()});
-		if (~outputwin.isNil.not, { ~outputwin.msg( ("----------------- end"+compass), Color.black ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( "----------------- end"+compass, Color.black ) });
 	}
 
 	// checks for empty phases in the compass
@@ -108,7 +108,7 @@ TxalaSilenceDetection{
 		if (SystemClock.seconds >= hutsunetimeout, {
 			if (~outputwin.isNil.not, { ~outputwin.msg("[[[[[[[ hutsune ]]]]]]]]") });
 			parent.hutsune(); // need to update it was 0 hits
-			tempocalc.pushlasttime(); // must update otherwise tempo drops
+			tempocalc.pushlasttime(); // must update otherwise tempo drops /2
 			hutsunetimeout = nil;
 			if(~answer, { parent.answer() }); // broadcast
 		});
@@ -143,11 +143,11 @@ TxalaSilenceDetection{
 					}, {
 						this.checkreset();
 					});
-							if (~outputwin.isNil.not, { ~outputwin.msg("." + ~bpm) });
+					if (~outputwin.isNil.not, { ~outputwin.msg(".") });
 				});
 			})
 		}, { // while I am answering dont listen
-				if (~outputwin.isNil.not, { ~outputwin.msg("." + ~bpm) });
+				if (~outputwin.isNil.not, { ~outputwin.msg(".") });
 		});
 		parent.loop(); // this is just to update some GUI
 	}
