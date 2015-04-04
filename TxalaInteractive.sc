@@ -301,7 +301,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		if (~outputwin.isNil.not, { ~outputwin.msg( ("***********************"+(index+1)), Color.blue ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*30, {"*"}) ))+(index+1)), Color.blue ) });
 	}
 
 	closeGUI {
