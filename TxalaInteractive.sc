@@ -238,13 +238,11 @@ TxalaInteractive{
 		curhits.do({ arg index;
 			var playtime, amp;
 			playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
-			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to what is detected
+			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
 
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
-			{
-				this.playhit( amp, 0, index, curhits)
-			}.defer(playtime);
+			{ this.playhit( amp, 0, index, curhits) }.defer(playtime);
 		});
 	}
 
