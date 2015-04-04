@@ -275,6 +275,7 @@ TxalaInteractive{
 			}); // stop listening to incomming hits. dont listen to yourself
 		});
 
+		// plank choice here
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
 		{
@@ -285,10 +286,10 @@ TxalaInteractive{
 
 		plank = ~buffers[pos];
 
-		if ((index==(total-1)), { // listen again when the last hit stops
-			var hitlength = plank.numFrames/plank.sampleRate;
-			hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
-			if (selfcancelation, {
+		if (selfcancelation, { //
+			if ((index==(total-1)), { // listen again when the last hit stops
+				var hitlength = plank.numFrames/plank.sampleRate;
+				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
 				{
 					this.processflag(false);
 					if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
