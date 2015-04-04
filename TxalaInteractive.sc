@@ -268,13 +268,6 @@ TxalaInteractive{
 
 	playhit { arg amp, player, index, total;
 		var plank, pos;
-		if (selfcancelation, {
-			if (index==0, {
-				this.processflag(true);
-				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
-			}); // stop listening to incomming hits. dont listen to yourself
-		});
-
 		// plank choice here
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
@@ -286,7 +279,12 @@ TxalaInteractive{
 
 		plank = ~buffers[pos];
 
-		if (selfcancelation, { //
+		if (selfcancelation, { // dont listen while I am playing myself
+			if (index==0, {
+				this.processflag(true);
+				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
+			});
+
 			if ((index==(total-1)), { // listen again when the last hit stops
 				var hitlength = plank.numFrames/plank.sampleRate;
 				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
