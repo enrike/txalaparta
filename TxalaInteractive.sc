@@ -29,10 +29,10 @@ grup of hits end point
 TxalaInteractive{
 
 	var loopF, intermakilagap, server;
-	var doGUI, label, reset, answer, hutsune, win;
+	var doGUI, label, reset, answer, hutsune, win, scope;
 	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
-	var planksMenus, hitbutton, compassbutton, hutsunebutton, numbeatslabel;
+	var planksMenus, hitbutton, compassbutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -83,6 +83,9 @@ TxalaInteractive{
 		("available samples are" + samples).postln;
 
 		~buffers = Array.fill(8, {nil});
+
+		markov = TxalaMarkov.new;
+		//ann = TxalaAnn.new;
 
 /*		MIDIClient.init;
 		MIDIClient.destinations;
@@ -154,8 +157,6 @@ TxalaInteractive{
 		});
 		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
-		markov = TxalaMarkov.new;
-		//ann = TxalaAnn.new;
 		~txalascore.reset();
 	}
 
@@ -217,14 +218,13 @@ TxalaInteractive{
 			},{
 				val = val + hit.time; // first one
 			});
-			val.postln;
 		});
 		^val/lastPattern.size;
 	}
 	/////////////////////////
 
 	markovnext {arg defertime, size=nil;
-		var gap=0, curhits, lastaverageamp = this.averageamp(), lastaveragegap = this.averagegap();
+		var gap=0, curhits, lastaverageamp = this.averageamp();
 
 		if (size.isNil, {
 			curhits = markov.next();
@@ -232,7 +232,8 @@ TxalaInteractive{
 			curhits = markov.next2nd(size);
 		});
 
-		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
+		//if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
+		if (curhits > 0, { gap = this.averagegap() });
 
 		curhits.do({ arg index;
 			var playtime, amp;
@@ -267,11 +268,12 @@ TxalaInteractive{
 
 	playhit { arg amp, player, index, total;
 		var plank, pos;
-
-		if (index==0, {
-			this.processflag(true);
-			if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
-		}); // stop listening to incomming hits. dont listen to yourself
+		if (selfcancelation, {
+			if (index==0, {
+				this.processflag(true);
+				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
+			}); // stop listening to incomming hits. dont listen to yourself
+		});
 
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
@@ -286,10 +288,12 @@ TxalaInteractive{
 		if ((index==(total-1)), { // listen again when the last hit stops
 			var hitlength = plank.numFrames/plank.sampleRate;
 			hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
-			{
-				this.processflag(false);
-				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
-			}.defer(hitlength)
+			if (selfcancelation, {
+				{
+					this.processflag(false);
+					if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
+				}.defer(hitlength)
+			});
 		});
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
@@ -313,42 +317,12 @@ TxalaInteractive{
 			if (~txalascore.isNil.not, {~txalascore.close});
 			//if (~outputwin.isNil.not, {~outputwin.close});
 			if (~txalascore.isNil.not, {~txalascore.close});
+			scope.free;
 		};
-
-		Button( win, Rect(140,0,70,50))
-		.states_([
-			["reset", Color.white, Color.black]
-		])
-		.action_({ arg but;
-			this.reset();
-		});
-
-		// txakascore timeline
-		Button(win,  Rect(210,0,70,25))
-		.states_([
-			["show score", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			var num;
-			//num = ~txalaparta.getnumactiveplanks();
-			~txalascore.reset();
-			~txalascore.doTxalaScore(numactiveplanks:1);
-		});
-
-		Button( win, Rect(280,0,70,25))
-		.states_([
-			["view output", Color.white, Color.black]
-		])
-		.action_({ arg but;
-			if (~outputwin.isNil, {
-				~outputwin = OutputWin.new;
-			})
-		});
-
 
 		// row of buttons on top side
 
-		Button( win, Rect(0,0,140,25))
+		Button( win, Rect(0,0,140,35))
 		.states_([
 			["listen", Color.white, Color.black],
 			["listen", Color.black, Color.green],
@@ -360,7 +334,7 @@ TxalaInteractive{
 				this.stop();
 			})
 		});
-		Button( win, Rect(0,yloc-10,140,25))
+		Button( win, Rect(0,yloc,140,35))
 		.states_([
 			["answer", Color.white, Color.black],
 			["answer", Color.black, Color.green],
@@ -369,17 +343,49 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-		Button( win, Rect(210,yloc-10,70,25))
+/*		Button( win, Rect(140,0,70,50))
 		.states_([
-			["score", Color.white, Color.black],
+			["reset", Color.white, Color.black]
 		])
 		.action_({ arg but;
+			this.reset();
+		});*/
+
+		// txakascore timeline
+		Button(win,  Rect(180,0,80,25))
+		.states_([
+			["show score", Color.white, Color.black],
+		])
+		.action_({ arg butt;
 			var num;
-			num = this.getnumactiveplanks();
-			~txalascore.doTxalaScore(numactiveplanks:num);
+			//num = ~txalaparta.getnumactiveplanks();
+			~txalascore.reset();
+			~txalascore.doTxalaScore(numactiveplanks:1);
 		});
 
-		Button( win, Rect(280,yloc-10,70,25)) //Rect(140,30,70,25))
+		Button( win, Rect(260,0,80,25))
+		.states_([
+			["view output", Color.white, Color.black]
+		])
+		.action_({ arg but;
+			if (~outputwin.isNil, {
+				~outputwin = OutputWin.new;
+			})
+		});
+
+
+
+
+		Button( win, Rect(180,yloc-10,80,25))
+		.states_([
+			["xxx", Color.white, Color.black],
+			["xxx", Color.black, Color.red]
+		])
+		.action_({ arg but;
+			selfcancelation = but.value.asBoolean;
+		});
+
+		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
 		.states_([
 			["scope in", Color.white, Color.black],
 		])
@@ -391,7 +397,7 @@ TxalaInteractive{
 
 		// amplitudes
 		// incomming amp correction
-		guielements.add(\inamp-> EZSlider( win,
+/*		guielements.add(\inamp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"in amp",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
@@ -404,7 +410,7 @@ TxalaInteractive{
 			},
 			initVal: ~listenparemeters.amp,
 			labelWidth: 60;
-		));
+		));*/
 
 		yindex = yindex + 1;
 
@@ -449,24 +455,24 @@ TxalaInteractive{
 		 	labelWidth: 60;
 		 ));
 
-		yindex = yindex + 1;
-
-		guielements.add(\gap->  EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			"spread",
-			ControlSpec(0, 1, \lin, 0.01, 1, ""),
-			{ arg ez;
-				~gap = ez.value.asFloat;
-			},
-			initVal: ~gap,
-			labelWidth: 60;
-			));
+		// yindex = yindex + 1;
+		//
+		// guielements.add(\gap->  EZSlider( win,
+		// 	Rect(0,yloc+(gap*yindex),350,20),
+		// 	"spread",
+		// 	ControlSpec(0, 1, \lin, 0.01, 1, ""),
+		// 	{ arg ez;
+		// 		~gap = ez.value.asFloat;
+		// 	},
+		// 	initVal: ~gap,
+		// 	labelWidth: 60;
+		// ));
 
 		yindex = yindex + 1;
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"gap swing",
+			"gapswing",
 			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
 				~gapswing = ez.value.asFloat;
@@ -650,6 +656,9 @@ yindex = yindex + 1.5;
 		]);
 
 
+/*		win.view.decorator = FlowLayout(win.view.bounds, 390@360);
+		scope = Stethoscope.new(server, 1, index:8, view:win.view);*/
+
 		win.front;
 	}
 
@@ -722,10 +731,10 @@ yindex = yindex + 1.5;
 
 	}
 
-	updatepresetlistenfiles{
+	updatepresetfiles{arg folder;
 		var temp;
-		presetslisten = (basepath++"/presets_listen/*").pathMatch; // update
-		temp = presetslisten.asArray.collect({arg item; PathName.new(item).fileName});
+		temp = (basepath++"/"++folder++"/*").pathMatch; // update
+		temp = temp.asArray.collect({arg item; PathName.new(item).fileName});
 		temp = temp.insert(0, "---");
 		^temp;
 		//presetslisten.asArray.collect({arg item; PathName.new(item).fileName}).insert(0, "---")
@@ -738,38 +747,40 @@ yindex = yindex + 1.5;
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
 
 		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
-		.items_(this.updatepresetlistenfiles)
-		.mouseDownAction_( { this.updatepresetlistenfiles } )
+		.items_( presetslisten = this.updatepresetfiles("presets_listen") )
+		.mouseDownAction_( { presetslisten = this.updatepresetfiles("presets_listen") } )
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
-			data.asCompileString.postln;
+			//data.asCompileString.postln;
 
-			~answertimecorrection = data[\answertimecorrection];
-			~amp = data[\amp];
-			~gap = data[\gap];
-			~gapswing = data[\gapswing];
-			~answermode = data[\answermode];
-			~hutsunelookup = data[\hutsunelookup];
-			~listenparemeters = data[\listenparemeters];
+			if (data.isNil.not, {
+				~answertimecorrection = data[\answertimecorrection];
+				~amp = data[\amp];
+				~gap = data[\gap];
+				~gapswing = data[\gapswing];
+				~answermode = data[\answermode];
+				~hutsunelookup = data[\hutsunelookup];
+				~listenparemeters = data[\listenparemeters];
 
-			// is the saved data correct?
-			guielements.gap.valueAction = ~gap;
-			guielements.gapswing.valueAction = ~gapswing;
-			guielements.answermode.valueAction = ~answermode; //menu
-			guielements.hutsunelookup.valueAction = ~hutsunelookup;
-			guielements.answertimecorrection.valueAction = ~answertimecorrection;
-			guielements.amp.valueAction = ~amp;
+				// is the saved data correct?
+				//guielements.gap.valueAction = ~gap;
+				guielements.gapswing.valueAction = ~gapswing;
+				guielements.answermode.valueAction = ~answermode; //menu
+				guielements.hutsunelookup.valueAction = ~hutsunelookup;
+				//guielements.answertimecorrection.valueAction = ~answertimecorrection;
+				guielements.amp.valueAction = ~amp;
 
-			guielements.inamp.valueAction = ~listenparemeters.amp;
-			guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-			guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-			guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
-			guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
-			guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-			guielements.floor.valueAction = ~listenparemeters.onset.floor;
-			guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+				//			guielements.inamp.valueAction = ~listenparemeters.amp;
+				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+				guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+				guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+				guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
+				guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+				guielements.floor.valueAction = ~listenparemeters.onset.floor;
+				guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+			});
 		});
 
 		popup.mouseDown;// force creating the menu list
@@ -777,6 +788,7 @@ yindex = yindex + 1.5;
 			popup.valueAction_(1);
 		}{ |error|
 			"no predefined preset to be loaded".postln;
+			error.postln;
 		};
 
 		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
@@ -800,8 +812,6 @@ yindex = yindex + 1.5;
 			data.put(\gap, ~gap);
 			data.put(\gapswing, ~gapswing);
 			data.put(\answermode, ~answermode);
-
-			(basepath ++ "/presets_listen/" ++ filename).postln;
 
 			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
 
@@ -829,19 +839,26 @@ yindex = yindex + 1.5;
 
 		yloc = yloc+27;
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
-		.items_(presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
+		.items_( presetmatrix = this.updatepresetfiles("presets_matrix") )
+		.mouseDownAction_( { presetmatrix = this.updatepresetfiles("presets_matrix") } )
+/*		.items_(this.updatepresetfiles("presets_matrix")) //presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
 			presetmatrix = (basepath ++ "/presets_matrix/" ++ "*").pathMatch;
 			presetmatrix.insert(0, "---");
 			menu.items = presetmatrix.asArray.collect({arg item;
 				PathName.new(item).fileName});
-		})
+		})*/
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-			markov.loaddata( data[\beatdata] );
+
+			try {
+				markov.loaddata( data[\beatdata] );
+			}{|error|
+				("memory is empty?"+error).postln;
+			};
 			//markov.beatdata2nd.plot;
 		});
 
@@ -860,8 +877,12 @@ yindex = yindex + 1.5;
 			);
 
 			data = Dictionary.new;
-			data.put(\beatdata, markov.beatdata2nd);
-			data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
+			try {
+				data.put(\beatdata, markov.beatdata2nd);
+				data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
+			}{|error|
+				("memory is empty?"+error).postln;
+			};
 
 			newpreset.string = ""; //clean field
 		});

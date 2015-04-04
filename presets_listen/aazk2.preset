@@ -10,8 +10,8 @@ p = [
 	1, [ nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		'listenparemeters',  o[2],  nil,  nil,  
-		'answertimecorrection',  0.000000,  'amp',  1.380000,  
-		'answermode',  0,  nil,  nil,  
+		'answertimecorrection',  0.000000,  'amp',  2.000000,  
+		'answermode',  2,  nil,  nil,  
 		'gap',  0.650000,  'gapswing',  0.010000,  
 		'hutsunelookup',  0.000000,  nil,  nil,  
 		nil,  nil,  nil,  nil ],  
@@ -29,7 +29,7 @@ p = [
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	5, [ 'threshold',  0.300000,  'relaxtime',  0.047000,  
+	5, [ 'threshold',  0.520000,  'relaxtime',  0.047000,  
 		nil,  nil,  nil,  nil,  
 		'floor',  0.240000,  'mingap',  1.000000,  
 		nil,  nil,  nil,  nil ],  
@@ -38,7 +38,7 @@ p = [
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	7, [ 'threshold',  0.200000,  'checkrate',  20.000000,  
+	7, [ 'threshold',  0.530000,  'checkrate',  20.000000,  
 		'falltime',  0.200000,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ]
