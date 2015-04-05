@@ -129,7 +129,7 @@ TxalaInteractive{
 			~txalascore.hit(hittime, amp, player, plank);
 		});
 		{hitbutton.value = 1}.defer;
-		{hitbutton.value = 0}.defer(0.1);
+		{hitbutton.value = 0}.defer(0.055);
 	}
 
 	//newgroup {}
@@ -213,13 +213,17 @@ TxalaInteractive{
 	averagegap { // returns average gap from hits in curhits phrase
 		var val=0;
 		lastPattern.do({ arg hit, index;
-			if ( (index>0), {
+			if ( (index > 0), { //sum all gaps
 				val = val + (hit.time-lastPattern[index-1].time);
 			},{
-				val = val + hit.time; // first one
+				val = hit.time; // first one
 			});
 		});
 		^val/lastPattern.size;
+	}
+
+	getaccent{
+		^lastPattern.first.amp >= lastPattern.last.amp
 	}
 	/////////////////////////
 
@@ -239,6 +243,12 @@ TxalaInteractive{
 			var playtime, amp;
 			playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
 			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
+
+			if (this.getaccent, {
+				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
+			}, {
+				if ((index==curhits-1), { amp = amp + rand(0.02, 0.05) }) // accent last;
+			});
 
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
@@ -440,7 +450,7 @@ TxalaInteractive{
 
 		yindex = yindex + 1;
 
-		// answer time correction
+/*		// answer time correction
 		guielements.add(\answertimecorrection->  EZSlider( win,
 		 	Rect(0,yloc+(gap*yindex),350,20),
 		 	"latency",
@@ -450,7 +460,7 @@ TxalaInteractive{
 		 	},
 		 	initVal: ~answertimecorrection,
 		 	labelWidth: 60;
-		 ));
+		 ));*/
 
 		// yindex = yindex + 1;
 		//
@@ -489,17 +499,18 @@ yindex = yindex + 1.5;
 		guielements.add(\tempothreshold->
 		EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"threshold",
+			"threshold",// we use mouseUpAction in this case because bug in DetectSilence class. cannot RT update the parameter
 			ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
-			{ arg ez;
-				if (txalasilence.isNil.not, {
-					txalasilence.updatethreshold(ez.value.asFloat); // this is different because a bug? in supercollider
-				});
-				~listenparemeters.tempo.threshold = ez.value.asFloat;
-			},
+			nil,
 			initVal: ~listenparemeters.tempo.threshold,
 			labelWidth: 60;
-			));//.valueAction_(~listenparemeters.tempo.threshold);
+		).sliderView.mouseUpAction_({arg ez;
+				if (txalasilence.isNil.not, {
+					txalasilence.updatethreshold(ez.value.asFloat);
+				});
+				~listenparemeters.tempo.threshold = ez.value.asFloat;
+			});
+		);
 
 		yindex = yindex + 1;
 
@@ -744,8 +755,11 @@ yindex = yindex + 1.5;
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
 
 		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
-		.items_( presetslisten = this.updatepresetfiles("presets_listen") )
-		.mouseDownAction_( { presetslisten = this.updatepresetfiles("presets_listen") } )
+		.items_( this.updatepresetfiles("presets_listen") )
+		.mouseDownAction_( {
+			presetslisten = this.updatepresetfiles("presets_listen");
+			popup.items = presetslisten;
+		} )
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;

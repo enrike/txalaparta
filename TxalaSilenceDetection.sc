@@ -48,7 +48,7 @@ TxalaSilenceDetection{
 
 		SynthDef(\txalatempo, {| in=0, amp=1, threshold=0.5, falltime=0.1, checkrate=20 | //thres=0,1
 			var detected;
-			detected = DetectSilence.ar( SoundIn.ar(in)*amp, threshold, falltime );
+			detected = DetectSilence.ar( SoundIn.ar(in)*amp, amp:threshold, time:falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).add;
 
@@ -60,13 +60,16 @@ TxalaSilenceDetection{
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
 			]);
-		}.defer(1);
+		}.defer(0.5);// to make sure the SynthDef is ready to instantiate
 
 		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
 
 	updatethreshold { arg value;
-		synth.free; // supercollider does not allow to update the amp parameter on the fly
+		// supercollider does not allow to update the DetectSilence's amp parameter on the fly
+		// so we need to kill and instantiate the synth again and again. Only on slider mouseUP, otherwise we get into troubble
+		// because sometimes too many instances stay in the server memory causing mess
+		synth.free;
 		synth = nil;
 		synth = Synth(\txalatempo, [
 			\in, ~listenparemeters.in,
