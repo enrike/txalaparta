@@ -756,9 +756,9 @@ yindex = yindex + 1.5;
 
 		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
 		.items_( this.updatepresetfiles("presets_listen") )
-		.mouseDownAction_( {
+		.mouseDownAction_( {arg menu;
 			presetslisten = this.updatepresetfiles("presets_listen");
-			popup.items = presetslisten;
+			menu.items = presetslisten;
 		} )
 		.action_({ arg menu;
 			var data;
@@ -850,8 +850,11 @@ yindex = yindex + 1.5;
 
 		yloc = yloc+27;
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
-		.items_( presetmatrix = this.updatepresetfiles("presets_matrix") )
-		.mouseDownAction_( { presetmatrix = this.updatepresetfiles("presets_matrix") } )
+		.items_( this.updatepresetfiles("presets_matrix") )
+		.mouseDownAction_( { arg menu;
+			presetmatrix = this.updatepresetfiles("presets_matrix");
+			menu.items = presetmatrix;
+		} )
 /*		.items_(this.updatepresetfiles("presets_matrix")) //presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
 		.mouseDownAction_({arg menu;
 			presetmatrix = (basepath ++ "/presets_matrix/" ++ "*").pathMatch;
