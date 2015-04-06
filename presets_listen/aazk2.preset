@@ -29,16 +29,16 @@ p = [
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	5, [ 'threshold',  0.390000,  'relaxtime',  0.015000,  
+	5, [ 'threshold',  0.390000,  'relaxtime',  0.008000,  
 		nil,  nil,  nil,  nil,  
-		'floor',  0.010000,  'mingap',  1.000000,  
+		'floor',  0.240000,  'mingap',  1.000000,  
 		nil,  nil,  nil,  nil ],  
 	// Event
 	6, [ array: o[7],  size: 3,  
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	7, [ 'threshold',  0.310000,  'checkrate',  20.000000,  
+	7, [ 'threshold',  0.542714,  'checkrate',  20.000000,  
 		'falltime',  0.240000,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ]
