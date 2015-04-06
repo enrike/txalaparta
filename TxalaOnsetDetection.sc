@@ -50,8 +50,7 @@ TxalaOnsetDetection{
 		 	var fft, onset, signal, level=0, freq=0, hasFreq=false;
 		 	signal = SoundIn.ar(in) * amp;
 		 	fft = FFT(LocalBuf(2048), signal);
-		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);// beat detection
-		 	/* *kr (chain, threshold: 0.5, odftype: 'rcomplex', relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11, whtype: 1, rawodf: 0)*/
+		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
 		 	level = Amplitude.kr(signal);
 		 	//# freq, hasFreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
 			SendReply.kr(onset, '/txalaonset', [level]);// hasFreq, freq]);
@@ -66,7 +65,7 @@ TxalaOnsetDetection{
 				\floor, ~listenparemeters.onset.floor,
 				\mingap, ~listenparemeters.onset.mingap
 			]);
-		}.defer(1);
+		}.defer(0.5);
 
 		OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg)}, '/txalaonset', server.addr);
 	}
@@ -92,10 +91,10 @@ TxalaOnsetDetection{
 			            .add(\player -> 1) //always 1 in this case
 			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
-			if (~outputwin.isNil.not, { ~outputwin.msg( ("".catList( Array.fill(msg[3]*30, {"+"}) )) + curPattern.size + msg[3], Color.red)});
-			if (parent.isNil.not, { parent.newonset(SystemClock.seconds, msg[3], 1, freq) });
-		});
 
+			if (~outputwin.isNil.not, { ~outputwin.msg( ("".catList( Array.fill(msg[3]*40, {"+"}) )) + curPattern.size + msg[3], Color.red)});
+			if (parent.isNil.not, { parent.newonset( (patternsttime + hittime), msg[3], 1, freq) });
+		});
 	}
 
 	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
