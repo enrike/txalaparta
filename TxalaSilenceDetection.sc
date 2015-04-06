@@ -71,13 +71,20 @@ TxalaSilenceDetection{
 		// because sometimes too many instances stay in the server memory causing mess
 		synth.free;
 		synth = nil;
-		synth = Synth(\txalatempo, [
-			\in, ~listenparemeters.in,
-			\amp, ~listenparemeters.amp,
-			\threshold, value,
-			\falltime, ~listenparemeters.tempo.falltime,
-			\checktime, ~listenparemeters.tempo.checkrate,
-		])
+		//OSCdef(\txalasilenceOSCdef).clear;
+		//OSCdef(\txalasilenceOSCdef).free;
+
+		{
+			synth = Synth(\txalatempo, [
+				\in, ~listenparemeters.in,
+				\amp, ~listenparemeters.amp,
+				\threshold, value,
+				\falltime, ~listenparemeters.tempo.falltime,
+				\checktime, ~listenparemeters.tempo.checkrate,
+			])
+		}.defer(0.2);// to make sure the SynthDef is ready to instantiate
+
+		//OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr)
 	}
 
 	lasthittime {
