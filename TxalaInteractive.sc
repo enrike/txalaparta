@@ -116,10 +116,12 @@ TxalaInteractive{
 
 	broadcastgroupstarted { // silence detection calls this.
 		{compassbutton.value = 1}.defer;
+		if (~txalascore.isNil.not, {~txalascore.mark(SystemClock.seconds)});
 	}
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close onset detector
+		if (~txalascore.isNil.not, {~txalascore.mark(SystemClock.seconds)});
 		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
 		{compassbutton.value = 0}.defer; // display now
 	}
@@ -227,7 +229,7 @@ TxalaInteractive{
 	}
 	/////////////////////////
 
-	markovnext {arg defertime, size=nil;
+	markovnext {arg defertime=0, size=nil;
 		var gap=0, curhits, lastaverageamp = this.averageamp();
 
 		if (size.isNil, {
@@ -247,7 +249,7 @@ TxalaInteractive{
 			if (this.getaccent, {
 				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
 			}, {
-				if ((index==curhits-1), { amp = amp + rand(0.02, 0.05) }) // accent last;
+					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
 			});
 
 			if ( playtime.isNaN, { playtime = 0 } );
@@ -274,7 +276,7 @@ TxalaInteractive{
 
 	}*/
 
-	playhit { arg amp, player, index, total;
+	playhit { arg amp=0, player=0, index=0, total=0;
 		var plank, pos;
 		// plank choice here
 		// in the future we should use a complex system that takes into consideration the users input
@@ -308,7 +310,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*30, {"*"}) ))+(index+1)), Color.blue ) });
+		if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*40, {"*"}) ))+(index+1)), Color.blue ) });
 	}
 
 	closeGUI {

@@ -2,7 +2,7 @@
 
 TxalaScore {
 
-	var win, view, >events, selected, timeoffset, image, record, recordtask, <numplanks;
+	var win, view, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
 	var <>drawmode;
 	var timeframe = 12;
 	var imageArray;
@@ -37,6 +37,18 @@ TxalaScore {
 				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height));
 			});
 			Pen.stroke;
+			//////////////
+			Pen.color = Color.blue;
+			//Pen.alpha = 0.5;
+			//Pen.lineDash = [1,1];
+			marks.do({arg mark;
+				var time = (mark.time-timeoffset) * (view.bounds.width/timeframe);
+				Pen.line( Point(time, view.bounds.height),	Point(time, 0));
+				//Pen.addRect( Rect(time, view.bounds.top, mark.end, view.bounds.bottom) );
+			});
+			Pen.stroke;
+			//Pen.alpha = 1;
+
 			// the events themselves
 			Pen.color = Color.black;
 			events.do({arg event;
@@ -84,7 +96,7 @@ TxalaScore {
 			};
 			if(mod == 262401, {
 				events = events.add(().add(\time -> (x/view.bounds.width)).add(\amp -> (y/view.bounds.height)));
-				this.update(events);
+				this.update(events, marks);
 				view.update;
 			});
 		});
@@ -92,7 +104,7 @@ TxalaScore {
 			if(selected.isNil.not, {
 				events[selected].time = x/view.bounds.width;
 				events[selected].amp = ((view.bounds.height-y).abs).linlin( events[selected].plank*plankheight , (events[selected].plank+1)*plankheight, 0, 1).postln;
-				this.update(events);
+				this.update(events, marks);
 				view.update;
 			});
 
@@ -102,7 +114,7 @@ TxalaScore {
 			[view, key, sm, wh].postln;
 			if(wh == 127, {
 				events.removeAt(selected);
-				this.update(events);
+				this.update(events, marks);
 				view.update;
 			});
 		});
@@ -116,7 +128,7 @@ TxalaScore {
 		task = fork{
 			inf.do({arg i;
 				var now = Main.elapsedTime - offsettime;
-				{this.update(events, now)}.defer;
+				{this.update(events, marks, now)}.defer;
 				0.05.wait;
 			});
 		};
@@ -159,9 +171,10 @@ TxalaScore {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });
 	}
 
-	update { |arr, timeoff=0|
+	update { |arr, arr2, timeoff=0|
 		timeoffset = timeoff-timeframe;
 		events = arr;
+		marks = arr2;
 		view.refresh;
 	}
 
@@ -345,6 +358,7 @@ x = TxalaScore.new(w, Rect(10, 10, 1400, 400), 3);
 t = Main.elapsedTime;
 
 e = [];
+m = [];
 
 fork{
 	inf.do({arg i;
@@ -354,11 +368,19 @@ fork{
 	});
 };
 
+fork{
+	inf.do({arg i;
+		var newtime = Main.elapsedTime - t;
+m = m.add(().add(\time -> newtime));
+		0.3.wait;
+	});
+};
+
 
 fork{
 	inf.do({arg i;
 		var now = Main.elapsedTime - t;
-		{x.update(e, now)}.defer;
+		{x.update(e, m, now)}.defer;
 		0.05.wait;
 		})
 	};

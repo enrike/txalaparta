@@ -9,7 +9,7 @@ t.doTxalaScore()
 TxalaScoreGUI{
 
 	var parent;
-	var txalascoreevents, txalascore, timelinewin, txalascoreF, txalascoresttime;
+	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime;
 
 	*new {
 		^super.new.initTxalaScoreGUI();
@@ -21,12 +21,13 @@ TxalaScoreGUI{
 
 	reset {
 		txalascoreevents = nil;
-		if (txalascore.isNil.not, {txalascore.events = nil});
+		txalascoremarks = nil;
+		if (txalascore.isNil.not, {txalascore.events = nil; txalascore.marks = nil});
 		txalascoreF = Routine({
 			inf.do({
 				if (txalascore.isNil.not, {
 					var now = Main.elapsedTime - txalascoresttime;
-					txalascore.update(txalascoreevents, now);
+					txalascore.update(txalascoreevents, txalascoremarks, now);
 				});
 				0.05.wait;
 			});
@@ -39,12 +40,20 @@ TxalaScoreGUI{
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
 			plank = freq; // TO DO: match freq to a sample
-			//[hittime, amp, player, plank].postln;
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
 					    .add(\player -> player) //always 1 in this case
 					    .add(\plank -> plank);// here needs to match mgs[5] against existing samples freq
 			txalascoreevents = txalascoreevents.add(hitdata)
+		});
+	}
+
+	mark { arg time;
+		var data;
+		if (txalascore.isNil.not, {
+			time = time - txalascoresttime;
+			data = ().add(\time -> time);
+			txalascoremarks = txalascoremarks.add(data)
 		});
 	}
 
@@ -56,7 +65,7 @@ TxalaScoreGUI{
 	updateNumPlanks { arg numplanks;
 		// DO NOT UPDATE IF MODE 0?
 		var mode = 0;
-		if (txalascore.isNil.not, { mode = txalascore.drawmode});
+		if (txalascore.isNil.not, { mode = txalascore.drawmode} );
 		txalascore = nil;
 		if ( (timelinewin.isNil.not), {
 			txalascore = TxalaScore.new(timelinewin,
