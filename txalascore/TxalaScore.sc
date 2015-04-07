@@ -3,7 +3,7 @@
 TxalaScore {
 
 	var win, view, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
-	var <>drawmode;
+	var <>drawmode, <>drawgroup=false;
 	var timeframe = 12;
 	var imageArray;
 
@@ -26,6 +26,7 @@ TxalaScore {
 
 		plankheight = (view.bounds.height/(numPlanks+1));
 		view.drawFunc_({
+			var factor = view.bounds.width/timeframe;
 			// the planks
 			(numPlanks).do({arg i;
 				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
@@ -38,22 +39,34 @@ TxalaScore {
 			});
 			Pen.stroke;
 			//////////////
-			Pen.color = Color.blue;
-			//Pen.alpha = 0.5;
-			//Pen.lineDash = [1,1];
-			marks.do({arg mark;
-				var time = (mark.time-timeoffset) * (view.bounds.width/timeframe);
-				Pen.line( Point(time, view.bounds.height),	Point(time, 0));
-				//Pen.addRect( Rect(time, view.bounds.top, mark.end, view.bounds.bottom) );
+			if (drawgroup, {
+				marks.do({arg mark;
+					var startp, endp;
+					startp = (mark.start-timeoffset) * factor;
+					endp = ((mark.end-timeoffset) * factor ) - startp; // this is the width of the rectangle
+					Pen.color = Color.green;
+					Pen.alpha = 0.3;
+					Pen.addRect( Rect(startp, view.bounds.top, endp, view.bounds.bottom) );
+				});
+				Pen.fill;
+
+				Pen.color = Color.black;
+				Pen.alpha = 1;
+				marks.do({arg mark;
+					var startp;
+					startp = (mark.start-timeoffset) * factor;
+					//Pen.use {
+						//Pen.font = Font( "Helvetica", 10 );
+						Pen.stringAtPoint (mark.num.asString, Point(startp, view.bounds.height-20), Font( "Helvetica", 10 ));//
+					//}
+				});
 			});
-			Pen.stroke;
-			//Pen.alpha = 1;
 
 			// the events themselves
 			Pen.color = Color.black;
 			events.do({arg event;
 				var posy, labely, liney, plankpos;
-				var time = (event.time-timeoffset) * (view.bounds.width/timeframe);
+				var time = (event.time-timeoffset) * factor;
 
 				plankpos = event.plank;
 				if ( drawmode.asBoolean.not, { plankpos = 1 });

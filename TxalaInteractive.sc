@@ -116,25 +116,21 @@ TxalaInteractive{
 
 	broadcastgroupstarted { // silence detection calls this.
 		{compassbutton.value = 1}.defer;
-		if (~txalascore.isNil.not, {~txalascore.mark(SystemClock.seconds)});
 	}
 
-	broadcastgroupended { // silence detection calls this.
-		lastPattern = txalaonset.closegroup(); // to close onset detector
-		if (~txalascore.isNil.not, {~txalascore.mark(SystemClock.seconds)});
+	broadcastgroupended { arg sttime;// silence detection calls this.
+		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
+		if (~txalascore.isNil.not, {~txalascore.mark(sttime, SystemClock.seconds, txalasilence.compass)}); // abs start / end time
 		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
 		{compassbutton.value = 0}.defer; // display now
 	}
 
 	newonset { arg hittime, amp, player, plank;
-		if (~txalascore.isNil.not, {
-			~txalascore.hit(hittime, amp, player, plank);
-		});
+		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
 		{hitbutton.value = 1}.defer;
 		{hitbutton.value = 0}.defer(0.055);
 	}
 
-	//newgroup {}
 	/////////////////////////////////////////////////////////////////////////////
 
 	stop {
@@ -372,7 +368,7 @@ TxalaInteractive{
 			~txalascore.doTxalaScore(numactiveplanks:1);
 		});
 
-		Button( win, Rect(260,0,80,25))
+/*		Button( win, Rect(260,0,80,25))
 		.states_([
 			["view output", Color.white, Color.black]
 		])
@@ -380,7 +376,7 @@ TxalaInteractive{
 			if (~outputwin.isNil, {
 				~outputwin = OutputWin.new;
 			})
-		});
+		});*/
 
 
 

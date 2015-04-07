@@ -48,14 +48,25 @@ TxalaScoreGUI{
 		});
 	}
 
-	mark { arg time;
+	mark {arg sttime, endtime, compassnum; // patterns time is relative to first hit. starts with 0
+		var data;
+		if (txalascore.isNil.not, {
+			data = ()
+			.add(\start -> (sttime - txalascoresttime))
+			.add(\end-> (endtime - txalascoresttime))
+			.add(\num-> compassnum);
+			txalascoremarks = txalascoremarks.add(data);
+		});
+	}
+
+/*	mark { arg time;
 		var data;
 		if (txalascore.isNil.not, {
 			time = time - txalascoresttime;
 			data = ().add(\time -> time);
 			txalascoremarks = txalascoremarks.add(data)
 		});
-	}
+	}*/
 
 
 	close {
@@ -132,13 +143,23 @@ TxalaScoreGUI{
 				["mode", Color.white, Color.green]
 			])
 			.action_({ arg butt;
+				var group = txalascore.drawgroup;
 				//txalascore.drawmode = butt.value.asInt;
 				// here we need to update the num of planks in the case we are back to mode 1
 
 				var numplanks = txalascore.numplanks;
 				txalascore = TxalaScore.new(timelinewin,
-					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, butt.value.asInt)
-				//txalascore.setdrawmode(butt.value.asInt);
+					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, butt.value.asInt);
+				txalascore.drawgroup = true;
+			});
+
+			Button(timelinewin, Rect(360,timelinewin.bounds.height-22,75,20))
+			.states_([
+				["draw group", Color.white, Color.black],
+				["draw group", Color.white, Color.green]
+			])
+			.action_({ arg butt;
+				txalascore.drawgroup = butt.value.asBoolean;
 			});
 
 			AppClock.play(txalascoreF);
