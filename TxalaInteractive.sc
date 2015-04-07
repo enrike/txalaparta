@@ -30,7 +30,7 @@ TxalaInteractive{
 
 	var loopF, intermakilagap, server;
 	var doGUI, label, reset, answer, hutsune, win, scope;
-	var txalasilence, txalaonset, markov, ann, lastPattern;
+	var txalasilence, txalaonset, markov, ann, lastPattern, groupstartedtime;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 
@@ -105,6 +105,8 @@ TxalaInteractive{
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
 		lastPattern = nil;
+		if (~txalascore.isNil.not, {~txalascore.hit(SystemClock.seconds, -1)}); // -1 for hutsune
+
 		{hutsunebutton.value = 1}.defer;
 		{hutsunebutton.value = 0}.defer(0.2);
 	}
@@ -115,12 +117,13 @@ TxalaInteractive{
 
 
 	broadcastgroupstarted { // silence detection calls this.
+		groupstartedtime = SystemClock.seconds;
 		{compassbutton.value = 1}.defer;
 	}
 
-	broadcastgroupended { arg sttime;// silence detection calls this.
+	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
-		if (~txalascore.isNil.not, {~txalascore.mark(sttime, SystemClock.seconds, txalasilence.compass)}); // abs start / end time
+		if (~txalascore.isNil.not, {~txalascore.mark(groupstartedtime, SystemClock.seconds, txalasilence.compass)});
 		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
 		{compassbutton.value = 0}.defer; // display now
 	}
@@ -159,7 +162,7 @@ TxalaInteractive{
 	}
 
 	reset  {
-		if (~outputwin.isNil.not, { ~outputwin.msg("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
+		//if (~outputwin.isNil.not, { ~outputwin.msg("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
 		this.stop();
 		this.start();
 	}
@@ -187,7 +190,7 @@ TxalaInteractive{
 				//3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
-		if (~outputwin.isNil.not, { ~outputwin.msg("answer scheduled for"+defertime) });
+		//if (~outputwin.isNil.not, { ~outputwin.msg("answer scheduled for"+defertime) });
 	}
 
 	imitation { arg defertime;
@@ -288,7 +291,7 @@ TxalaInteractive{
 		if (selfcancelation, { // dont listen while I am playing myself
 			if (index==0, {
 				this.processflag(true);
-				if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
+				//if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
 			});
 
 			if ((index==(total-1)), { // listen again when the last hit stops
@@ -296,7 +299,7 @@ TxalaInteractive{
 				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
 				{
 					this.processflag(false);
-					if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
+					//if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
 				}.defer(hitlength)
 			});
 		});
@@ -306,7 +309,7 @@ TxalaInteractive{
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*40, {"*"}) ))+(index+1)), Color.blue ) });
+		//if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*40, {"*"}) ))+(index+1)), Color.blue ) });
 	}
 
 	closeGUI {
@@ -320,7 +323,7 @@ TxalaInteractive{
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
-			//if (~outputwin.isNil.not, {~outputwin.close});
+			////if (~outputwin.isNil.not, {~outputwin.close});
 			if (~txalascore.isNil.not, {~txalascore.close});
 			scope.free;
 		};
@@ -383,8 +386,8 @@ TxalaInteractive{
 
 		Button( win, Rect(180,yloc-10,80,25))
 		.states_([
-			["xxx", Color.white, Color.black],
-			["xxx", Color.black, Color.red]
+			["cancel me", Color.white, Color.black],
+			["cancel me", Color.black, Color.red]
 		])
 		.action_({ arg but;
 			selfcancelation = but.value.asBoolean;

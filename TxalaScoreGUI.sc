@@ -59,16 +59,6 @@ TxalaScoreGUI{
 		});
 	}
 
-/*	mark { arg time;
-		var data;
-		if (txalascore.isNil.not, {
-			time = time - txalascoresttime;
-			data = ().add(\time -> time);
-			txalascoremarks = txalascoremarks.add(data)
-		});
-	}*/
-
-
 	close {
 		if (timelinewin.isNil.not, {timelinewin.close()});
 	}
@@ -143,14 +133,12 @@ TxalaScoreGUI{
 				["mode", Color.white, Color.green]
 			])
 			.action_({ arg butt;
-				var group = txalascore.drawgroup;
-				//txalascore.drawmode = butt.value.asInt;
-				// here we need to update the num of planks in the case we are back to mode 1
-
-				var numplanks = txalascore.numplanks;
+				var group, tframe;
+				group = txalascore.drawgroup;
+				tframe = txalascore.timeframe;
 				txalascore = TxalaScore.new(timelinewin,
-					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, butt.value.asInt);
-				txalascore.drawgroup = true;
+					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
+					txalascore.numplanks, tframe, butt.value.asInt, group);
 			});
 
 			Button(timelinewin, Rect(360,timelinewin.bounds.height-22,75,20))

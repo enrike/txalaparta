@@ -3,35 +3,32 @@
 TxalaScore {
 
 	var win, view, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
-	var <>drawmode, <>drawgroup=false;
-	var timeframe = 12;
+	var <>drawmode, <>drawgroup=false, eventcutindex=0, markcutindex=0;
+	var <timeframe = 12;
 	var imageArray;
 
-	*new {|parent, rect, numPlanks=3, drawmode = 0|
-		^super.new.initTxalaScore( parent, rect, numPlanks, drawmode );
+	*new {|parent, rect, numplanks=3, timeframe=12, drawmode = 0, drawgroup = false|
+		^super.new.initTxalaScore( parent, rect, numplanks, timeframe, drawmode, drawgroup );
 	}
 
-	initTxalaScore {|parent, rect, numPlanks, dmode|
+	initTxalaScore {|parent, rect, nplanks, tframe, dmode, dgroup|
 		var plankheight;
 		selected = nil;
 		win = parent;
 		imageArray = [];
-		numplanks = numPlanks; // store but dont use it now
+		timeframe = tframe;
+		numplanks = nplanks; // store but dont use it now
 		drawmode = dmode;
-		if (drawmode.asBoolean.not, { numPlanks = 1 }); //*
+		drawgroup = dgroup;
+		if (drawmode.asBoolean.not, { numplanks = 1 }); //*
 
 		view = UserView.new(parent, rect);
 
 		view.background = Color.white;
 
-		plankheight = (view.bounds.height/(numPlanks+1));
+		plankheight = (view.bounds.height/(numplanks+1));
 		view.drawFunc_({
 			var factor = view.bounds.width/timeframe;
-			// the planks
-			(numPlanks).do({arg i;
-				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
-			});
-			Pen.stroke;
 			// the time grid (vertical lines)
 			Pen.color = Color.black.alpha_(0.2);
 			20.do({arg i;
@@ -40,31 +37,34 @@ TxalaScore {
 			Pen.stroke;
 			//////////////
 			if (drawgroup, {
+				Pen.color = Color.green.lighten(0.5);
+				//Pen.alpha = 0.3;
 				marks.do({arg mark;
 					var startp, endp;
 					startp = (mark.start-timeoffset) * factor;
 					endp = ((mark.end-timeoffset) * factor ) - startp; // this is the width of the rectangle
-					Pen.color = Color.green;
-					Pen.alpha = 0.3;
 					Pen.addRect( Rect(startp, view.bounds.top, endp, view.bounds.bottom) );
 				});
 				Pen.fill;
 
 				Pen.color = Color.black;
-				Pen.alpha = 1;
+				//Pen.alpha = 1;
 				marks.do({arg mark;
-					var startp;
-					startp = (mark.start-timeoffset) * factor;
-					//Pen.use {
-						//Pen.font = Font( "Helvetica", 10 );
-						Pen.stringAtPoint (mark.num.asString, Point(startp, view.bounds.height-20), Font( "Helvetica", 10 ));//
-					//}
+					var startp = (mark.start-timeoffset) * factor;
+					Pen.stringAtPoint (mark.num.asString, Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
 				});
 			});
 
+			// the planks
+			Pen.color = Color.black.alpha_(0.2);
+			(numplanks).do({arg i;
+				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
+			});
+			Pen.stroke;
+
 			// the events themselves
 			Pen.color = Color.black;
-			events.do({arg event;
+			events.do({arg event;// ** MUST just loop the ones that would fit in the window at current zoom ** [cutindex..]
 				var posy, labely, liney, plankpos;
 				var time = (event.time-timeoffset) * factor;
 
@@ -79,23 +79,27 @@ TxalaScore {
 						posy = (view.bounds.height+((event.amp*plankheight) - (plankheight*plankpos)-4)).abs;
 						liney = posy;
 					});
-
 					labely = if(event.player == 1, {posy-15}, {posy+10});
 					Pen.stringAtPoint (event.plank.asString, Point(time-4, labely));//, font, color)
 				});
 
-				Pen.color = if(event.player == 1, {Color.red.alpha_(0.5)}, {Color.blue.alpha_(0.5)});
+				Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
 				Pen.fillRect(Rect(time-4, posy, 8, 8));
 				Pen.color = Color.black;
 
-				Pen.line( Point(time, (view.bounds.height-(plankheight*plankpos)).abs),
-						Point(time, liney));
+				if ( (event.amp==1.neg), {// hutsune
+					Pen.line( Point(time, view.bounds.height, Point(time, 0)));
+				},{
+					Pen.line( Point(time, (view.bounds.height-(plankheight*plankpos)).abs),
+							Point(time, liney));
+				});
+
 
 				Pen.addRect(Rect(time-4, posy, 8, 8));
 				Pen.stroke;
 			});
 		});
-		view.mouseDownAction_({|view, x, y, mod|
+/*		view.mouseDownAction_({|view, x, y, mod|
 			selected = nil;
 			block{arg break;
 				events.do({ arg event, i;
@@ -130,7 +134,7 @@ TxalaScore {
 				this.update(events, marks);
 				view.update;
 			});
-		});
+		});*/
 
 	}
 

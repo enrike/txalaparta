@@ -72,9 +72,6 @@ TxalaSilenceDetection{
 		// because sometimes too many instances stay in the server memory causing mess
 		synth.free;
 		synth = nil;
-		//OSCdef(\txalasilenceOSCdef).clear;
-		//OSCdef(\txalasilenceOSCdef).free;
-
 		{
 			synth = Synth(\txalatempo, [
 				\in, ~listenparemeters.in,
@@ -83,9 +80,7 @@ TxalaSilenceDetection{
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
 			])
-		}.defer(0.2);// to make sure the SynthDef is ready to instantiate
-
-		//OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr)
+		}.defer(0.2);// to make sure the SynthDef is ready to instantiate?
 	}
 
 	lasthittime {
@@ -96,29 +91,28 @@ TxalaSilenceDetection{
 		~bpm = tempocalc.calculate();
 		parent.broadcastgroupstarted(); // just to display fedback
 		hitflag = true;
-		groupstartedtime = SystemClock.seconds;
 		compass = compass + 1;
 		if ( (~hutsunelookup > 0), {
 			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		//if( (~answer && answerposition.not), { parent.answer() });
-		if (~outputwin.isNil.not, {~outputwin.msg( "----------------- start"+compass, Color.black) });
+		//if (~outputwin.isNil.not, {~outputwin.msg( "----------------- start"+compass, Color.black) });
 	}
 
 	// scheduling answers at this moment does not work with fast tempos as the tile of the signal steps
 	// on the answer time. there is no silence between groups or that silence is too short.
 	groupend {
 		hitflag = false;
-		parent.broadcastgroupended( groupstartedtime ); // needed by onset detector to close pattern groups
+		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
 		//if((~answer && answerposition), { parent.answer() });
 		if(~answer, {parent.answer()});
-		if (~outputwin.isNil.not, { ~outputwin.msg( "----------------- end"+compass, Color.black ) });
+		//if (~outputwin.isNil.not, { ~outputwin.msg( "----------------- end"+compass, Color.black ) });
 	}
 
 	// checks for empty phases in the compass
 	checkhutsune {
 		if (SystemClock.seconds >= hutsunetimeout, {
-			if (~outputwin.isNil.not, { ~outputwin.msg("[[[[[[[ hutsune ]]]]]]]]") });
+			//if (~outputwin.isNil.not, { ~outputwin.msg("[[[[[[[ hutsune ]]]]]]]]") });
 			parent.hutsune(); // need to update it was 0 hits
 			tempocalc.pushlasttime(); // must update otherwise tempo drops /2
 			hutsunetimeout = nil;
@@ -129,7 +123,7 @@ TxalaSilenceDetection{
 	// if too long after the last signal we received reset me
 	checkreset {
 		if ((SystemClock.seconds > (tempocalc.lasttime + resettime)), {
-			if (~outputwin.isNil.not, { ~outputwin.msg("RESET SYSTEM") });
+			//if (~outputwin.isNil.not, { ~outputwin.msg("RESET SYSTEM") });
 			parent.reset();
 		});
 	}
@@ -144,7 +138,7 @@ TxalaSilenceDetection{
 				if (hitflag.not, {
 					this.groupstart();
 				});
-				if (~outputwin.isNil.not, { ~outputwin.msg("---------------", Color.black) });
+				//if (~outputwin.isNil.not, { ~outputwin.msg("---------------", Color.black) });
 
 			}, { // silence
 				if (hitflag, { //
@@ -155,11 +149,11 @@ TxalaSilenceDetection{
 					}, {
 						this.checkreset();
 					});
-					if (~outputwin.isNil.not, { ~outputwin.msg(".") });
+					//if (~outputwin.isNil.not, { ~outputwin.msg(".") });
 				});
 			})
 		}, { // while I am answering dont listen
-				if (~outputwin.isNil.not, { ~outputwin.msg(".") });
+				//if (~outputwin.isNil.not, { ~outputwin.msg(".") });
 		});
 		parent.loop(); // this is just to update some GUI
 	}
