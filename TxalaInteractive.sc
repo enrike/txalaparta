@@ -28,11 +28,11 @@ grup of hits end point
 
 TxalaInteractive{
 
-	var loopF, intermakilagap, server;
+	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, reset, answer, hutsune, win, scope;
-	var txalasilence, txalaonset, markov, ann, lastPattern, groupstartedtime;
+	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
-	var planksMenus, hitbutton, compassbutton, hutsunebutton, numbeatslabel, selfcancelation=false;
+	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -49,11 +49,11 @@ TxalaInteractive{
 		~bpm = 60;
 		~amp = 1;
 		~answer = false;
+		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
+		~autoanswerpriority = true;
 		~answermode = 0; //0,1,3: imitation, markov1, markov2
-		~answertimecorrection = 0.09; // compensate latency
 		~hutsunelookup = 0.3;
 
-		~gap = 0.65;
 		~gapswing = 0.01;
 
 		if (~buffer.isNil, {
@@ -67,8 +67,6 @@ TxalaInteractive{
 		if (~buffersenabled.isNil, {
 			~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})];
 		});
-
-		//planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\amp->1);
@@ -85,14 +83,14 @@ TxalaInteractive{
 		~buffers = Array.fill(8, {nil});
 
 		markov = TxalaMarkov.new;
+		tempocalc = TempoCalculator.new(2);
+		~txalascore = TxalaScoreGUI.new;
 		//ann = TxalaAnn.new;
 
 /*		MIDIClient.init;
 		MIDIClient.destinations;
 		MIDIIn.connectAll;
 		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);*/
-
-		~txalascore = TxalaScoreGUI.new;
 
 		SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
 			Out.ar(outbus,
@@ -104,9 +102,10 @@ TxalaInteractive{
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
-		lastPattern = nil;
-		if (~txalascore.isNil.not, {~txalascore.hit(SystemClock.seconds, -1)}); // -1 for hutsune
-
+		lastPattern = ();
+		if(~answer, { this.answer() }); //asap
+		tempocalc.pushlasttime(); // must update otherwise tempo drops /2
+		//if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, -1) }); // -1 for hutsune
 		{hutsunebutton.value = 1}.defer;
 		{hutsunebutton.value = 0}.defer(0.2);
 	}
@@ -117,13 +116,18 @@ TxalaInteractive{
 
 
 	broadcastgroupstarted { // silence detection calls this.
-		groupstartedtime = SystemClock.seconds;
+		~bpm = tempocalc.calculate();
+		if( (~answer && ~answerpriority.not), { this.answer() }); // later
 		{compassbutton.value = 1}.defer;
 	}
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
-		if (~txalascore.isNil.not, {~txalascore.mark(groupstartedtime, SystemClock.seconds, txalasilence.compass)});
+		if( (~answer && ~answerpriority), {this.answer()}); // asap
+		if (~autoanswerpriority, { this.doautoanswerpriority() });
+		if (~txalascore.isNil.not, {
+			~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
+		});
 		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
 		{compassbutton.value = 0}.defer; // display now
 	}
@@ -135,6 +139,14 @@ TxalaInteractive{
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
+
+	// activates/deactivates answerpriority if to tight to answer with priority
+	doautoanswerpriority {
+		var defertime;
+		defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+		~answerpriority = defertime > 0;
+		{ prioritybutton.value = ~answerpriority.asInt }.defer;
+	}
 
 	stop {
 		if (txalasilence.isNil.not, {
@@ -159,10 +171,10 @@ TxalaInteractive{
 		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		~txalascore.reset();
+		tempocalc.reset();
 	}
 
 	reset  {
-		//if (~outputwin.isNil.not, { ~outputwin.msg("+++++++++ RESET +++++++++++++++++++++++", Color.black) });
 		this.stop();
 		this.start();
 	}
@@ -175,12 +187,9 @@ TxalaInteractive{
 	// modes: imitation, random (with GUI parameters), markov1, markov2
 	// called from child that detects bpm and group ends
 	answer {
-		var halfcompass, defertime=0;
-
-		halfcompass = (60/~bpm/2);
-
+		var defertime=0;
 		// calc when in future should answer be. start from last detected hit and use tempo to calculate
-		defertime = txalasilence.lasthittime + halfcompass - SystemClock.seconds - ~answertimecorrection;
+		defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
@@ -190,7 +199,6 @@ TxalaInteractive{
 				//3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
-		//if (~outputwin.isNil.not, { ~outputwin.msg("answer scheduled for"+defertime) });
 	}
 
 	imitation { arg defertime;
@@ -237,7 +245,6 @@ TxalaInteractive{
 			curhits = markov.next2nd(size);
 		});
 
-		//if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
 		if (curhits > 0, { gap = this.averagegap() });
 
 		curhits.do({ arg index;
@@ -248,7 +255,7 @@ TxalaInteractive{
 			if (this.getaccent, {
 				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
 			}, {
-					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
 			});
 
 			if ( playtime.isNaN, { playtime = 0 } );
@@ -257,27 +264,21 @@ TxalaInteractive{
 		});
 	}
 
-/*	annnext{arg defertime, size=nil;
-		var gap=0, curhits;
+	selfcancel { arg plank, index, total;
+		if (selfcancelation, { // dont listen while I am playing myself
+			if (index==0, { this.processflag(true) });
 
-		curhits = ann.next(size);
-
-		if (curhits > 0, { gap = ((60/~bpm/2) * ~gap) / curhits });
-
-		curhits.do({ arg index;
-			var playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
-			if ( playtime.isNaN, { playtime = 0 } );
-			if ( playtime == inf, { playtime = 0 } );
-			{
-				this.playhit((~amp+rrand(-0.05, 0.05)), 0, index, curhits)
-			}.defer(playtime);
+			if ((index==(total-1)), { // listen again when the last hit stops
+				var hitlength = plank.numFrames/plank.sampleRate;
+				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
+				{ this.processflag(false) }.defer(hitlength)
+			});
 		});
-
-	}*/
+	}
 
 	playhit { arg amp=0, player=0, index=0, total=0;
 		var plank, pos;
-		// plank choice here
+		// plank choice here ///////////
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
 		{
@@ -285,31 +286,16 @@ TxalaInteractive{
 		}.while({
 			pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
 		});
-
 		plank = ~buffers[pos];
+		///////////////////////////////
 
-		if (selfcancelation, { // dont listen while I am playing myself
-			if (index==0, {
-				this.processflag(true);
-				//if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< stop listening", Color.blue ) });
-			});
-
-			if ((index==(total-1)), { // listen again when the last hit stops
-				var hitlength = plank.numFrames/plank.sampleRate;
-				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
-				{
-					this.processflag(false);
-					//if (~outputwin.isNil.not, { ~outputwin.msg( "<<<< listen again", Color.blue ) });
-				}.defer(hitlength)
-			});
-		});
+		this.selfcancel(plank, index, total); // only if enabled by user
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank.bufnum) });
+		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, pos) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
-		//if (~outputwin.isNil.not, { ~outputwin.msg( ( ("".catList( Array.fill(amp*40, {"*"}) ))+(index+1)), Color.blue ) });
 	}
 
 	closeGUI {
@@ -318,12 +304,10 @@ TxalaInteractive{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 550));
+		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 500));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
-			if (~txalascore.isNil.not, {~txalascore.close});
-			////if (~outputwin.isNil.not, {~outputwin.close});
 			if (~txalascore.isNil.not, {~txalascore.close});
 			scope.free;
 		};
@@ -351,40 +335,25 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-/*		Button( win, Rect(140,0,70,50))
+		Button( win, Rect(180,0,80,25))
 		.states_([
-			["reset", Color.white, Color.black]
+			["auto priority", Color.white, Color.black],
+			["auto priority", Color.black, Color.green]
 		])
 		.action_({ arg but;
-			this.reset();
-		});*/
+			~autoanswerpriority = but.value.asBoolean;
+		}).valueAction_(~autoanswerpriority);
 
-		// txakascore timeline
-		Button(win,  Rect(180,0,80,25))
+		prioritybutton = Button( win, Rect(180,yloc-10,80,25))
 		.states_([
-			["show score", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			var num;
-			//num = ~txalaparta.getnumactiveplanks();
-			~txalascore.reset();
-			~txalascore.doTxalaScore(numactiveplanks:1);
-		});
-
-/*		Button( win, Rect(260,0,80,25))
-		.states_([
-			["view output", Color.white, Color.black]
+			["priority", Color.white, Color.black],
+			["priority", Color.black, Color.green]
 		])
 		.action_({ arg but;
-			if (~outputwin.isNil, {
-				~outputwin = OutputWin.new;
-			})
-		});*/
+			~answerpriority = but.value.asBoolean;
+		}).valueAction_(~answerpriority);
 
-
-
-
-		Button( win, Rect(180,yloc-10,80,25))
+		Button( win, Rect(180,yloc+15,80,25))
 		.states_([
 			["cancel me", Color.white, Color.black],
 			["cancel me", Color.black, Color.red]
@@ -392,6 +361,19 @@ TxalaInteractive{
 		.action_({ arg but;
 			selfcancelation = but.value.asBoolean;
 		});
+
+		Button(win,  Rect(260,0,80,25))
+		.states_([
+			["show score", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			var num;
+			num = this.getnumactiveplanks();
+			~txalascore.reset();
+			~txalascore.doTxalaScore(numactiveplanks:num);
+		});
+
+
 
 		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
 		.states_([
@@ -401,31 +383,21 @@ TxalaInteractive{
 			server.scope(1,8);
 		});
 
-		yindex = yindex + 1;
 
-		// amplitudes
-		// incomming amp correction
-/*		guielements.add(\inamp-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			"in amp",
-			ControlSpec(0, 2, \lin, 0.01, 1, ""),
-			{ arg ez;
-				if (txalaonset.isNil.not, {
-					txalaonset.synth.set(\amp, ez.value.asFloat);
-					txalasilence.synth.set(\amp, ez.value.asFloat);
-				});
-				~listenparemeters.amp = ez.value.asFloat;
-			},
-			initVal: ~listenparemeters.amp,
-			labelWidth: 60;
-		));*/
+		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
+		.states_([
+			["scope in", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			server.scope(1,8);
+		});
 
-		yindex = yindex + 1;
+		yindex = yindex + 2;
 
 		// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"out amp",
+			"volume",
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
@@ -448,33 +420,6 @@ TxalaInteractive{
 				})
 				.valueAction_(~answermode)
 			);
-
-		yindex = yindex + 1;
-
-/*		// answer time correction
-		guielements.add(\answertimecorrection->  EZSlider( win,
-		 	Rect(0,yloc+(gap*yindex),350,20),
-		 	"latency",
-		 	ControlSpec(-0.5, 0.5, \lin, 0.01, 0, ""),
-		 	{ arg ez;
-		 		~answertimecorrection = ez.value.asFloat;
-		 	},
-		 	initVal: ~answertimecorrection,
-		 	labelWidth: 60;
-		 ));*/
-
-		// yindex = yindex + 1;
-		//
-		// guielements.add(\gap->  EZSlider( win,
-		// 	Rect(0,yloc+(gap*yindex),350,20),
-		// 	"spread",
-		// 	ControlSpec(0, 1, \lin, 0.01, 1, ""),
-		// 	{ arg ez;
-		// 		~gap = ez.value.asFloat;
-		// 	},
-		// 	initVal: ~gap,
-		// 	labelWidth: 60;
-		// ));
 
 		yindex = yindex + 1;
 
@@ -664,10 +609,6 @@ yindex = yindex + 1.5;
 			["HUTSUN", Color.white, Color.blue]
 		]);
 
-
-/*		win.view.decorator = FlowLayout(win.view.bounds, 390@360);
-		scope = Stethoscope.new(server, 1, index:8, view:win.view);*/
-
 		win.front;
 	}
 
@@ -768,7 +709,7 @@ yindex = yindex + 1.5;
 			//data.asCompileString.postln;
 
 			if (data.isNil.not, {
-				~answertimecorrection = data[\answertimecorrection];
+				//~answertimecorrection = data[\answertimecorrection];
 				~amp = data[\amp];
 				~gap = data[\gap];
 				~gapswing = data[\gapswing];
@@ -784,7 +725,7 @@ yindex = yindex + 1.5;
 				//guielements.answertimecorrection.valueAction = ~answertimecorrection;
 				guielements.amp.valueAction = ~amp;
 
-				//			guielements.inamp.valueAction = ~listenparemeters.amp;
+				// guielements.inamp.valueAction = ~listenparemeters.amp;
 				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 				guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
 				guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
@@ -817,7 +758,7 @@ yindex = yindex + 1.5;
 
 			data = Dictionary.new;
 
-			data.put(\answertimecorrection, ~answertimecorrection);
+			//data.put(\answertimecorrection, ~answertimecorrection);
 			data.put(\amp, ~amp);
 			data.put(\listenparemeters, ~listenparemeters);
 			data.put(\hutsunelookup, ~hutsunelookup);
