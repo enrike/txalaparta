@@ -102,10 +102,10 @@ TxalaInteractive{
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
-		lastPattern = ();
-		if(~answer, { this.answer() }); //asap
+		//lastPattern = ();
+		if(~answer, { this.answer(true) }); //asap
+		if (~txalascore.isNil.not, { ~txalascore.hit( (SystemClock.seconds-((60/~bpm)/2)), -1, 1, 0) }); // -1 for hutsune
 		tempocalc.pushlasttime(); // must update otherwise tempo drops /2
-		//if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, -1) }); // -1 for hutsune
 		{hutsunebutton.value = 1}.defer;
 		{hutsunebutton.value = 0}.defer(0.2);
 	}
@@ -186,16 +186,18 @@ TxalaInteractive{
 
 	// modes: imitation, random (with GUI parameters), markov1, markov2
 	// called from child that detects bpm and group ends
-	answer {
+	answer {arg asap = false;
 		var defertime=0;
 		// calc when in future should answer be. start from last detected hit and use tempo to calculate
-		defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+		if (asap.not, {
+			defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+		});
 
 		if (defertime.isNaN.not, {
 			switch (~answermode,
 				0, { this.imitation(defertime) },
 				1, { this.markovnext(defertime) },
-				2, { this.markovnext(defertime, lastPattern.size) }//,
+				2, { this.markovnext(defertime, lastPattern.size) }
 				//3, { this.annnext(defertime, lastPattern.size) }
 			);
 		});
@@ -213,28 +215,44 @@ TxalaInteractive{
 	// analysing of lastPattern
 	averageamp { // returns average amp from hits in curhits phrase
 		var val=0;
-		lastPattern.do({ arg hit;
-			val = val + hit.amp;
+		if (lastPattern.size>0, {
+			lastPattern.do({ arg hit;
+				val = val + hit.amp;
+			});
+			val = val/lastPattern.size;
+		}, {
+			val = 0.5;
 		});
-		^val/lastPattern.size;
+		^val;
 	}
 
 	averagegap { // returns average gap from hits in curhits phrase
 		var val=0;
-		lastPattern.do({ arg hit, index;
-			if ( (index > 0), { //sum all gaps
-				val = val + (hit.time-lastPattern[index-1].time);
-			},{
-				val = hit.time; // first one
+		if (lastPattern.size>0, {
+			lastPattern.do({ arg hit, index;
+				if ( (index > 0), { //sum all gaps
+					val = val + (hit.time-lastPattern[index-1].time);
+					},{
+						val = hit.time; // first one
+				});
 			});
+			val = val/lastPattern.size;
+		}, {
+			val = 0.1; // ??
 		});
-		^val/lastPattern.size;
+		if (val < 0.07, {val = 0.07}); //lower limit
+		^val;
 	}
 
 	getaccent{
-		^lastPattern.first.amp >= lastPattern.last.amp
+		var res;
+		if (lastPattern.size>0, {
+			res = (lastPattern.first.amp >= lastPattern.last.amp);
+		},{
+			res = true;
+		});
+		^res
 	}
-	/////////////////////////
 
 	markovnext {arg defertime=0, size=nil;
 		var gap=0, curhits, lastaverageamp = this.averageamp();
@@ -246,6 +264,9 @@ TxalaInteractive{
 		});
 
 		if (curhits > 0, { gap = this.averagegap() });
+
+		//if ( ((defertime < 0) || (gap < 0.07)), {curhits = 1}); // if we are late or gaps it too shot they pile up
+		if ( defertime < 0, {curhits = 1});
 
 		curhits.do({ arg index;
 			var playtime, amp;

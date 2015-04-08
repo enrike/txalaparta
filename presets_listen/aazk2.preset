@@ -5,15 +5,15 @@ o = [
 ];
 p = [
 	// Dictionary
-	0, [ array: o[1],  size: 7 ],  
+	0, [ array: o[1],  size: 6 ],  
 	// Array
 	1, [ nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		'listenparemeters',  o[2],  nil,  nil,  
-		'answertimecorrection',  0.000000,  'amp',  2.000000,  
-		'answermode',  2,  nil,  nil,  
-		'gap',  0.650000,  'gapswing',  0.000000,  
-		'hutsunelookup',  0.000000,  nil,  nil,  
+		'amp',  2.000000,  'answermode',  2,  
+		nil,  nil,  nil,  nil,  
+		'gap',  0.650000,  'gapswing',  0.050000,  
+		'hutsunelookup',  0.390000,  nil,  nil,  
 		nil,  nil,  nil,  nil ],  
 	// Event
 	2, [ array: o[3],  size: 4,  

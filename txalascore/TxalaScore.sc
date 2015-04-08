@@ -53,8 +53,10 @@ TxalaScore {
 				//Pen.alpha = 1;
 				marks.do({arg mark;
 					var startp = (mark.start-timeoffset) * factor;
-					Pen.stringAtPoint (mark.num.asString, Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
-					Pen.stringAtPoint (mark.hits.asString, Point(((mark.end-timeoffset) * factor ), view.bounds.height-10), Font( "Helvetica", 10 ));
+					Pen.stringAtPoint (mark.num.asString,
+						Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
+					Pen.stringAtPoint (mark.hits.asString,
+						Point(((mark.end-timeoffset) * factor ), view.bounds.height-10), Font( "Helvetica", 10 ));
 				});
 			});
 
@@ -79,58 +81,23 @@ TxalaScore {
 				posy = view.bounds.height - plankpos - (eventamp*plankheight);
 				liney = posy+8;
 
-				if (event.amp == 1.neg, {
-					"GGGGGGAAAAP".postln;
-					//posy = 0;
+				if (event.amp == 1.neg, { // hutsune hit
+					posy = -100;//OFF
+					liney = 0;
+					plankpos = view.bounds.height;
+					Pen.width = 3;
 				});
 
 				Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
-				Pen.fillRect(Rect(time-4, posy, 8, 8));
+				Pen.fillRect(Rect(time-4, posy, 8, 8)); // the square
 
 				Pen.color = Color.black;
-				Pen.stringAtPoint( event.planks.asString, Point(time+4, posy));
-				Pen.line( Point(time, plankpos), Point(time, liney) );
+				Pen.stringAtPoint( event.plank.asString, Point(time+8, posy));
+				Pen.line( Point(time, plankpos), Point(time, liney) ); // the line
 				Pen.stroke;
-
+				Pen.width = 1; //back to normal
 			});
 		});
-/*		view.mouseDownAction_({|view, x, y, mod|
-			selected = nil;
-			block{arg break;
-				events.do({ arg event, i;
-					var rect = Rect(event.time * view.bounds.width-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8);
-					if(rect.contains(Point(x,y)), {
-						 "Inside : ".post; i.postln;
-						selected = i;
-						break.value();
-					});
-				});
-			};
-			if(mod == 262401, {
-				events = events.add(().add(\time -> (x/view.bounds.width)).add(\amp -> (y/view.bounds.height)));
-				this.update(events, marks);
-				view.update;
-			});
-		});
-		view.mouseMoveAction_({|view, x, y|
-			if(selected.isNil.not, {
-				events[selected].time = x/view.bounds.width;
-				events[selected].amp = ((view.bounds.height-y).abs).linlin( events[selected].plank*plankheight , (events[selected].plank+1)*plankheight, 0, 1).postln;
-				this.update(events, marks);
-				view.update;
-			});
-
-		});
-		view.mouseUpAction_({ this.sortEvents });
-		view.keyDownAction_({|view, key, sm, wh|
-			[view, key, sm, wh].postln;
-			if(wh == 127, {
-				events.removeAt(selected);
-				this.update(events, marks);
-				view.update;
-			});
-		});*/
-
 	}
 
 	// start the scrolling movement (better not use this and do it from the outside - see example)

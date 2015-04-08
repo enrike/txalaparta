@@ -81,7 +81,7 @@ TxalaScoreGUI{
 		})
 	}
 
-	doTxalaScore { arg xloc=0, yloc=600, width=1020, height=350, timeframe=4, numactiveplanks=1;
+	doTxalaScore { arg xloc=350, yloc=400, width=1020, height=350, timeframe=4, numactiveplanks=1;
 		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
