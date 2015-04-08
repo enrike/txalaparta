@@ -88,6 +88,7 @@ beat 0 1 2 3 4
 	}
 
 	next2nd{ arg detected;
+		if (detected>4, {detected = 4}); ///limit
 		beatdata2nd[lasthits[1]][lasthits[0]][detected] = beatdata2nd[lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
 		^options.wchoose(beatdata2nd[lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
 	}
