@@ -77,14 +77,13 @@ TxalaOnsetDetection{
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
-				//if (parent.isNil.not, { parent.newgroup() });
-				//if (~outputwin.isNil.not, { ~outputwin.msg( "*** new phrase" + (patternsttime-sttime)) });
+				parent.broadcastgroupstarted(); //
 			},{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
 
 			//if ( msg[4].asBoolean, { freq = this.matchfreq(msg[5]) });
-			freq = 1; // not yet working the pitch detection
+			freq = 0; // not yet working the pitch detection
 
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> msg[3])
@@ -92,7 +91,6 @@ TxalaOnsetDetection{
 			            .add(\plank -> freq);
 			curPattern = curPattern.add(hitdata);
 
-			//if (~outputwin.isNil.not, { ~outputwin.msg( ("".catList( Array.fill(msg[3]*40, {"+"}) )) + curPattern.size + msg[3], Color.red)});
 			if (parent.isNil.not, { parent.newonset( (patternsttime + hittime), msg[3], 1, freq) });
 		});
 	}
