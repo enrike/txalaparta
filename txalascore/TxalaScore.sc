@@ -2,7 +2,7 @@
 
 TxalaScore {
 
-	var win, view, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
+	var win, view, sndview, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
 	var <>drawmode, <>drawgroup=false, eventcutindex=0, markcutindex=0;
 	var <timeframe = 12;
 	var imageArray;
@@ -20,11 +20,13 @@ TxalaScore {
 		numplanks = nplanks; // store but dont use it now
 		drawmode = dmode;
 		drawgroup = dgroup;
-		if (drawmode.asBoolean.not, { numplanks = 1 }); //*
+		//if (drawmode.asBoolean.not, { numplanks = 1 }); //*
+
+		// wave
+		//sndview = SoundFileView.new(parent, rect);
 
 		view = UserView.new(parent, rect);
-
-		view.background = Color.white;
+		view.background = Color.white;//.alpha(1);
 
 		plankheight = (view.bounds.height/(numplanks+1));
 		view.drawFunc_({
@@ -52,6 +54,7 @@ TxalaScore {
 				marks.do({arg mark;
 					var startp = (mark.start-timeoffset) * factor;
 					Pen.stringAtPoint (mark.num.asString, Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
+					Pen.stringAtPoint (mark.hits.asString, Point(((mark.end-timeoffset) * factor ), view.bounds.height-10), Font( "Helvetica", 10 ));
 				});
 			});
 
@@ -64,39 +67,31 @@ TxalaScore {
 
 			// the events themselves
 			Pen.color = Color.black;
-			events.do({arg event;// ** MUST just loop the ones that would fit in the window at current zoom ** [cutindex..]
-				var posy, labely, liney, plankpos;
+			events.do({arg event;// ** SHOULD just loop the ones that would fit in the window at current zoom ** [cutindex..]
+				var posy, labely, liney, plankpos, eventamp;
 				var time = (event.time-timeoffset) * factor;
 
-				plankpos = event.plank;
-				if ( drawmode.asBoolean.not, { plankpos = 1 });
+				plankpos = plankheight * (event.plank+1);
+				eventamp = event.amp;
 
-				posy = (view.bounds.height-((event.amp*plankheight) + (plankheight*plankpos)-4)).abs;
+				if (event.player == 0 && drawmode.asBoolean, {eventamp = eventamp.neg}); // reverse
+
+				posy = view.bounds.height - plankpos - (eventamp*plankheight);
 				liney = posy+8;
 
-				if ( drawmode.asBoolean.not, {
-					if ((event.player == 2), { //mode 0
-						posy = (view.bounds.height+((event.amp*plankheight) - (plankheight*plankpos)-4)).abs;
-						liney = posy;
-					});
-					labely = if(event.player == 1, {posy-15}, {posy+10});
-					Pen.stringAtPoint (event.plank.asString, Point(time-4, labely));//, font, color)
+				if (event.amp == 1.neg, {
+					"GGGGGGAAAAP".postln;
+					//posy = 0;
 				});
 
 				Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
 				Pen.fillRect(Rect(time-4, posy, 8, 8));
+
 				Pen.color = Color.black;
-
-				if ( (event.amp==1.neg), {// hutsune
-					Pen.line( Point(time, view.bounds.height, Point(time, 0)));
-				},{
-					Pen.line( Point(time, (view.bounds.height-(plankheight*plankpos)).abs),
-							Point(time, liney));
-				});
-
-
-				Pen.addRect(Rect(time-4, posy, 8, 8));
+				Pen.stringAtPoint( event.planks.asString, Point(time+4, posy));
+				Pen.line( Point(time, plankpos), Point(time, liney) );
 				Pen.stroke;
+
 			});
 		});
 /*		view.mouseDownAction_({|view, x, y, mod|
