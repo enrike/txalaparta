@@ -48,29 +48,36 @@ TxalaScoreGUI{
 		});
 	}
 
-	mark {arg sttime, endtime, compassnum; // patterns time is relative to first hit. starts with 0
+	mark {arg sttime, endtime, compassnum, hitnum; // patterns time is relative to first hit. starts with 0
 		var data;
 		if (txalascore.isNil.not, {
 			data = ()
 			.add(\start -> (sttime - txalascoresttime))
 			.add(\end-> (endtime - txalascoresttime))
-			.add(\num-> compassnum);
+			.add(\num-> compassnum)
+			.add(\hits-> hitnum);
 			txalascoremarks = txalascoremarks.add(data);
 		});
 	}
 
 	close {
-		if (timelinewin.isNil.not, {timelinewin.close()});
+		if (timelinewin.isNil.not, {
+			timelinewin.close();
+			timelinewin = nil;
+		});
 	}
 
 	updateNumPlanks { arg numplanks;
 		// DO NOT UPDATE IF MODE 0?
-		var mode = 0;
-		if (txalascore.isNil.not, { mode = txalascore.drawmode} );
+		var mode = 0, tframe;
+		if (txalascore.isNil.not, {
+			mode = txalascore.drawmode;
+			tframe = txalascore.timeframe;
+		} );
 		txalascore = nil;
 		if ( (timelinewin.isNil.not), {
 			txalascore = TxalaScore.new(timelinewin,
-				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, mode)
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode)
 		})
 	}
 
@@ -80,9 +87,7 @@ TxalaScoreGUI{
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
 
 		    txalascoresttime = Main.elapsedTime;
-
 			txalascore = nil;
-
 			txalascore = TxalaScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 				numactiveplanks);
@@ -139,7 +144,9 @@ TxalaScoreGUI{
 				txalascore = TxalaScore.new(timelinewin,
 					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 					txalascore.numplanks, tframe, butt.value.asInt, group);
-			});
+				txalascoreevents = nil; // now clear local event memory
+				txalascoremarks = nil
+			}).valueAction_(1);
 
 			Button(timelinewin, Rect(360,timelinewin.bounds.height-22,75,20))
 			.states_([
@@ -148,7 +155,7 @@ TxalaScoreGUI{
 			])
 			.action_({ arg butt;
 				txalascore.drawgroup = butt.value.asBoolean;
-			});
+			}).valueAction_(1);
 
 			AppClock.play(txalascoreF);
 
