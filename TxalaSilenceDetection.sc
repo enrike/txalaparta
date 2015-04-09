@@ -9,7 +9,7 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 
 TxalaSilenceDetection{
 
-	var server, parent, <compass, hitflag, hutsunetimeout, groupst; // tempocalc
+	var server, parent, <>compass, hitflag, hutsunetimeout, groupst; // tempocalc
 	var >processflag, resettime, <>answerposition;
 	var synthOSCcb, <synth;
 
