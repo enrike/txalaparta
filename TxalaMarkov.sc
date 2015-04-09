@@ -5,7 +5,9 @@
 m = TxalaMarkov.new
 m.next // first order markov chain with preset values in beatweigths matrix
 m.update = true; //store data from input?
-m.next2nd(3) // learning 2nd order markov chain
+m.next2nd(3) // learning 2nd order markov chain. 2 compasses
+m.next3rd(3) // 3 compasses
+m.next4th(0) // 4 compasses
 m.reset
 */
 
@@ -15,6 +17,7 @@ TxalaMarkov{
 
 	var beatweigths;
 	var <>beatdata2nd;
+	var <>beatdata3rd;
 	var <>beatdata4th;
 	var lasthits, options, dimension, >update=true;
 
@@ -28,7 +31,10 @@ TxalaMarkov{
 	}
 
 	reset {
-		lasthits = [2, 2, 2]; // me, prev detected, prev me. 2 is most common number in txalaparta hits
+		"reseting Markov Chain states".postln;
+		lasthits = [2, 2, 2, 2, 2, 2, 2]; // me, prev detected, prev me. 2 is most common number in txalaparta hits
+		// this way it uses the information of the last two, three, or four compasses eg (2,3)(2,2)(1,2) as the current value is
+		// input into the markov chain from the detection system
 
 		options = Array.fill(dimension, {arg n=0; n});
 
@@ -40,7 +46,11 @@ TxalaMarkov{
 			[0.0,  0.1,  0.4,  0.2,  0.3 ]
 		];
 
-		beatdata2nd = Array.fillND([options.size, options.size, options.size], { 0 }); // store here the data of changes
+		beatdata2nd = Array.fillND(Array.fill(3, {options.size}), { 0 }); // store here the data of changes
+
+		beatdata3rd = Array.fillND(Array.fill(5, {options.size}), { 0 }); // store here the data of changes
+
+		beatdata4th = Array.fillND(Array.fill(7, {options.size}), { 0 }); // store here the data of changes
 
 		/*		2nd-order matrix for txalaparta beats
 beat 0 1 2 3 4
@@ -91,5 +101,17 @@ beat 0 1 2 3 4
 		if (detected>=dimension, {detected = options.last}); ///limit
 		beatdata2nd[lasthits[1]][lasthits[0]][detected] = beatdata2nd[lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
 		^options.wchoose(beatdata2nd[lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+	}
+
+	next3rd{ arg detected;
+		if (detected>=dimension, {detected = options.last}); ///limit
+		beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
+		^options.wchoose(beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+	}
+
+	next4th{ arg detected;
+		if (detected>=dimension, {detected = options.last}); ///limit
+		beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
+		^options.wchoose(beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
 	}
 }
