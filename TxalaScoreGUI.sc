@@ -69,15 +69,16 @@ TxalaScoreGUI{
 
 	updateNumPlanks { arg numplanks;
 		// DO NOT UPDATE IF MODE 0?
-		var mode = 0, tframe;
+		var mode = 0, tframe, group;
 		if (txalascore.isNil.not, {
 			mode = txalascore.drawmode;
 			tframe = txalascore.timeframe;
+			group = txalascore.drawgroup;
 		} );
 		txalascore = nil;
 		if ( (timelinewin.isNil.not), {
 			txalascore = TxalaScore.new(timelinewin,
-				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode)
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode, group)
 		})
 	}
 
@@ -139,7 +140,7 @@ TxalaScoreGUI{
 			])
 			.action_({ arg butt;
 				var group, tframe;
-				group = txalascore.drawgroup;
+				group = txalascore.drawgroup;// remember past state
 				tframe = txalascore.timeframe;
 				txalascore = TxalaScore.new(timelinewin,
 					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
