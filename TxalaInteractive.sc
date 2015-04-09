@@ -102,9 +102,14 @@ TxalaInteractive{
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
-		//lastPattern = ();
-		if(~answer, { this.answer(true) }); //asap
-		if (~txalascore.isNil.not, { ~txalascore.hit( (SystemClock.seconds-((60/~bpm)/2)), -1, 1, 0) }); // -1 for hutsune
+		lastPattern = ();
+		txalasilence.compass =  txalasilence.compass + 1;
+		if(~answer, { this.answer(0) }); //asap
+		if (~txalascore.isNil.not, {
+			var last = SystemClock.seconds-((60/~bpm)/2);
+			~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
+			~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
+		});
 		tempocalc.pushlasttime(); // must update otherwise tempo drops /2
 		{hutsunebutton.value = 1}.defer;
 		{hutsunebutton.value = 0}.defer(0.2);
@@ -186,10 +191,9 @@ TxalaInteractive{
 
 	// modes: imitation, random (with GUI parameters), markov1, markov2
 	// called from child that detects bpm and group ends
-	answer {arg asap = false;
-		var defertime=0;
+	answer {arg defertime;
 		// calc when in future should answer be. start from last detected hit and use tempo to calculate
-		if (asap.not, {
+		if (defertime.isNil, {
 			defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
 		});
 
@@ -197,14 +201,14 @@ TxalaInteractive{
 			switch (~answermode,
 				0, { this.imitation(defertime) },
 				1, { this.markovnext(defertime) },
-				2, { this.markovnext(defertime, lastPattern.size) }
-				//3, { this.annnext(defertime, lastPattern.size) }
+				2, { this.markovnext(defertime, lastPattern.size, 2) },
+				3, { this.markovnext(defertime, lastPattern.size, 3) },
+				4, { this.markovnext(defertime, lastPattern.size, 4) }
 			);
 		});
 	}
 
 	imitation { arg defertime;
-		// here we would need to make sure that when it is a gap it schedules a single hit (for instance)
 		lastPattern.do({arg hit, index;
 			{
 				this.playhit(hit.amp, 0, index, lastPattern.size)
@@ -213,7 +217,7 @@ TxalaInteractive{
 	}
 
 	// analysing of lastPattern
-	averageamp { // returns average amp from hits in curhits phrase
+	averageamp { // returns average amp from hits in last phrase
 		var val=0;
 		if (lastPattern.size>0, {
 			lastPattern.do({ arg hit;
@@ -226,7 +230,7 @@ TxalaInteractive{
 		^val;
 	}
 
-	averagegap { // returns average gap from hits in curhits phrase
+	averagegap { // returns average gap time between hits in last phrase
 		var val=0;
 		if (lastPattern.size>0, {
 			lastPattern.do({ arg hit, index;
@@ -244,7 +248,7 @@ TxalaInteractive{
 		^val;
 	}
 
-	getaccent{
+	getaccent{ // check if first or last hit are accentuated. true 1st / false 2nd
 		var res;
 		if (lastPattern.size>0, {
 			res = (lastPattern.first.amp >= lastPattern.last.amp);
@@ -254,19 +258,22 @@ TxalaInteractive{
 		^res
 	}
 
-	markovnext {arg defertime=0, size=nil;
+	markovnext {arg defertime=0, size=nil, level=2;
 		var gap=0, curhits, lastaverageamp = this.averageamp();
 
 		if (size.isNil, {
 			curhits = markov.next();
 		},{
-			curhits = markov.next2nd(size);
+			switch (level,
+				2, { curhits = markov.next2nd(size) },
+				3, { curhits = markov.next3rd(size) },
+				4, { curhits = markov.next4th(size) }
+			);
 		});
 
 		if (curhits > 0, { gap = this.averagegap() });
 
-		//if ( ((defertime < 0) || (gap < 0.07)), {curhits = 1}); // if we are late or gaps it too shot they pile up
-		if ( defertime < 0, {curhits = 1});
+		if ( defertime < 0, {curhits = 1}); // if we are late or gaps it too shot they pile up and sounds horrible
 
 		curhits.do({ arg index;
 			var playtime, amp;
@@ -325,7 +332,7 @@ TxalaInteractive{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 500));
+		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 520));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
@@ -419,7 +426,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
-			ControlSpec(0, 2, \lin, 0.01, 1, ""),
+			ControlSpec(0, 1, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
@@ -431,10 +438,14 @@ TxalaInteractive{
 		yindex = yindex + 1.5;
 
 		// mode menu
-		StaticText(win, Rect(10, yloc+(gap*yindex), 120, 25)).string = "Answer mode";
+		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 200, 25)).string = "Answer mode";
 		guielements.add(\answermode->
-				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 150,20))
-			.items_(["imitation", "fixed chances", "learning chances"])//, "learning ANN"])
+				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 210,20))
+			.items_(["imitation",
+				"fixed chances",
+				"learning chances 2 compasses",
+				"learning chances 3 compasses",
+				"learning chances 4 compasses"])
 				.action_({ arg menu;
 					~answermode = menu.value.asInt;
 					("changing to answer mode:" + menu.item).postln;
@@ -442,7 +453,7 @@ TxalaInteractive{
 				.valueAction_(~answermode)
 			);
 
-		yindex = yindex + 1;
+		yindex = yindex + 1.5;
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
@@ -801,7 +812,7 @@ yindex = yindex + 1.5;
 
 		yloc = yloc+20;
 
-		Button(win, Rect(xloc,yloc,170,25))
+		Button(win, Rect(xloc,yloc,85,25))
 		.states_([
 			["learn", Color.white, Color.grey],
 			["learn", Color.white, Color.green]
@@ -810,6 +821,14 @@ yindex = yindex + 1.5;
 			if (markov.isNil.not, {markov.update = butt.value.asBoolean});
 		})
 		.valueAction_(1);
+
+		Button(win, Rect(xloc+85,yloc,85,25))
+		.states_([
+			["reset", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			markov.reset();
+		});
 
 		yloc = yloc+27;
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
