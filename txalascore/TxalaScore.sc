@@ -76,7 +76,7 @@ TxalaScore {
 				plankpos = plankheight * (event.plank+1);
 				eventamp = event.amp;
 
-				if (event.player == 0 && drawmode.asBoolean, {eventamp = eventamp.neg}); // reverse
+				if ( ((event.player == 0) && drawmode.asBoolean), {eventamp = eventamp.neg}); // reverse
 
 				posy = view.bounds.height - plankpos - (eventamp*plankheight);
 				liney = posy+8;
