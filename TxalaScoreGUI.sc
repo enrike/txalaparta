@@ -2,8 +2,19 @@
 // by www.ixi-audio.net
 
 /*
-t = TxalaScoreGUI.new
-t.doTxalaScore()
+n = 3;
+w = TxalaScoreGUI.new;
+w.doTxalaScore();
+w.updateNumPlanks(n);
+p = true;
+
+fork{
+	inf.do({arg i;
+		p = p.not;
+		w.hit(SystemClock.seconds, rrand(0.2, 1), p.asInt, n.rand);
+		0.2.wait;
+	});
+}
 */
 
 TxalaScoreGUI{
@@ -44,7 +55,7 @@ TxalaScoreGUI{
 			            .add(\amp -> amp)
 					    .add(\player -> player) //always 1 in this case
 					    .add(\plank -> plank);// here needs to match mgs[5] against existing samples freq
-			txalascoreevents = txalascoreevents.add(hitdata)
+			txalascoreevents = txalascoreevents.add(hitdata);
 		});
 	}
 
@@ -69,16 +80,17 @@ TxalaScoreGUI{
 
 	updateNumPlanks { arg numplanks;
 		// DO NOT UPDATE IF MODE 0?
-		var mode = 0, tframe, group;
+		var mode = 0, tframe, group, planks;
 		if (txalascore.isNil.not, {
 			mode = txalascore.drawmode;
 			tframe = txalascore.timeframe;
 			group = txalascore.drawgroup;
+			planks = txalascore.drawplanks;
 		} );
 		txalascore = nil;
 		if ( (timelinewin.isNil.not), {
 			txalascore = TxalaScore.new(timelinewin,
-				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode, group)
+				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode, planks, group)
 		})
 	}
 
@@ -139,17 +151,27 @@ TxalaScoreGUI{
 				["mode", Color.white, Color.green]
 			])
 			.action_({ arg butt;
-				var group, tframe;
+				var group, tframe, planks;
 				group = txalascore.drawgroup;// remember past state
+				planks = txalascore.drawplanks;
 				tframe = txalascore.timeframe;
 				txalascore = TxalaScore.new(timelinewin,
 					Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
-					txalascore.numplanks, tframe, butt.value.asInt, group);
+					txalascore.numplanks, tframe, butt.value.asBoolean, planks, group);
 				txalascoreevents = nil; // now clear local event memory
 				txalascoremarks = nil
 			}).valueAction_(1);
 
 			Button(timelinewin, Rect(360,timelinewin.bounds.height-22,75,20))
+			.states_([
+				["planks", Color.white, Color.black],
+				["planks", Color.white, Color.green]
+			])
+			.action_({ arg butt;
+				txalascore.drawplanks = butt.value.asBoolean;
+			}).valueAction_(1);
+
+			Button(timelinewin, Rect(440,timelinewin.bounds.height-22,75,20))
 			.states_([
 				["draw group", Color.white, Color.black],
 				["draw group", Color.white, Color.green]

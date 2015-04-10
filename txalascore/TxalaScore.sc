@@ -3,24 +3,27 @@
 TxalaScore {
 
 	var win, view, sndview, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
-	var <>drawmode, <>drawgroup=false, eventcutindex=0, markcutindex=0;
+	var <>drawmode=false, <>drawplanks=false, <>drawgroup=false, eventcutindex=0, markcutindex=0;
 	var <timeframe = 12;
 	var imageArray;
 
-	*new {|parent, rect, numplanks=3, timeframe=12, drawmode = 0, drawgroup = false|
-		^super.new.initTxalaScore( parent, rect, numplanks, timeframe, drawmode, drawgroup );
+	*new {|parent, rect, numplanks=3, timeframe=12, drawmode = false, drawplanks=false, drawgroup = false|
+		^super.new.initTxalaScore( parent, rect, numplanks, timeframe, drawmode, drawplanks, drawgroup );
 	}
 
-	initTxalaScore {|parent, rect, nplanks, tframe, dmode, dgroup|
-		var plankheight;
+	initTxalaScore {|parent, rect, nplanks, tframe, dmode, dplanks, dgroup|
+		var plankheight, localnumplanks=nplanks;
 		selected = nil;
 		win = parent;
 		imageArray = [];
 		timeframe = tframe;
 		numplanks = nplanks; // store but dont use it now
 		drawmode = dmode;
+		drawplanks = dplanks;
 		drawgroup = dgroup;
-		//if (drawmode.asBoolean.not, { numplanks = 1 }); //*
+
+
+		numplanks.postln;
 
 		// wave
 		//sndview = SoundFileView.new(parent, rect);
@@ -29,8 +32,15 @@ TxalaScore {
 		view.background = Color.white;//.alpha(1);
 
 		plankheight = (view.bounds.height/(numplanks+1));
+
+
+
 		view.drawFunc_({
 			var factor = view.bounds.width/timeframe;
+
+			if (drawplanks.not, { localnumplanks = 1 }, {localnumplanks=numplanks}); // all planks in the same line
+			plankheight = (view.bounds.height/(localnumplanks+1));
+
 			// the time grid (vertical lines)
 			Pen.color = Color.black.alpha_(0.2);
 			20.do({arg i;
@@ -62,7 +72,7 @@ TxalaScore {
 
 			// the planks
 			Pen.color = Color.black.alpha_(0.2);
-			(numplanks).do({arg i;
+			localnumplanks.do({arg i;
 				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
 			});
 			Pen.stroke;
@@ -70,15 +80,16 @@ TxalaScore {
 			// the events themselves
 			Pen.color = Color.black;
 			events.do({arg event;// ** SHOULD just loop the ones that would fit in the window at current zoom ** [cutindex..]
-				var posy, labely, liney, plankpos, eventamp;
+				var posy, labely, liney, plankpos, eventamp, eventplank;
 				var time = (event.time-timeoffset) * factor;
 
-				plankpos = plankheight * (event.plank+1);
 				eventamp = event.amp;
+				if ( ((event.player == 0) && drawmode), { eventamp = eventamp.neg }); // reverse
+				eventplank = event.plank;
+				if (drawplanks.not, {eventplank = 0});
 
-				if ( ((event.player == 0) && drawmode.asBoolean), {eventamp = eventamp.neg}); // reverse
-
-				posy = view.bounds.height - plankpos - (eventamp*plankheight);
+				plankpos = view.bounds.height - (plankheight * (eventplank+1));
+				posy =  plankpos - (eventamp*plankheight);
 				liney = posy+8;
 
 				if (event.amp == 1.neg, { // hutsune hit
@@ -90,11 +101,12 @@ TxalaScore {
 
 				Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
 				Pen.fillRect(Rect(time-4, posy, 8, 8)); // the square
+				Pen.line( Point(time, plankpos), Point(time, liney) ); // the line
+				Pen.stroke;
 
 				Pen.color = Color.black;
 				Pen.stringAtPoint( event.plank.asString, Point(time+8, posy));
-				Pen.line( Point(time, plankpos), Point(time, liney) ); // the line
-				Pen.stroke;
+
 				Pen.width = 1; //back to normal
 			});
 		});
@@ -369,6 +381,9 @@ x.recordScore = true;
 
 )
 x.grabScoreIntoImage
+
+
+////////////////////
 
 
 */
