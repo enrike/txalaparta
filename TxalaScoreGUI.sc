@@ -14,7 +14,7 @@ fork{
 		w.hit(SystemClock.seconds, rrand(0.2, 1), p.asInt, n.rand);
 		0.2.wait;
 	});
-}
+};
 */
 
 TxalaScoreGUI{

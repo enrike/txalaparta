@@ -33,6 +33,7 @@ TxalaInteractive{
 	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
+	var <pitchbuttons, <plankdata;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -41,6 +42,7 @@ TxalaInteractive{
 	initTxalaInteractive { arg aserver, apath;
 		server = aserver;
 		basepath = apath;
+		plankdata = [[],[],[],[],[],[]];
 		this.init();
 		this.doGUI();
 	}
@@ -53,6 +55,7 @@ TxalaInteractive{
 		~autoanswerpriority = true;
 		~answermode = 0; //0,1,3: imitation, markov1, markov2
 		~hutsunelookup = 0.3;
+		~plankdetect = 1;
 
 		~gapswing = 0.01;
 
@@ -81,6 +84,7 @@ TxalaInteractive{
 		("available samples are" + samples).postln;
 
 		~buffers = Array.fill(8, {nil});
+		pitchbuttons = Array.fill(6, {nil});
 
 		markov = TxalaMarkov.new;
 		tempocalc = TempoCalculator.new(2);
@@ -170,6 +174,7 @@ TxalaInteractive{
 			txalasilence=nil;
 		});
 		if (txalaonset.isNil.not, {
+			plankdata = txalaonset.plankdata;// will restore itself on new()
 			txalaonset.kill();
 			txalaonset=nil;
 		});
@@ -395,13 +400,11 @@ TxalaInteractive{
 			["show score", Color.white, Color.black],
 		])
 		.action_({ arg butt;
-			var num;
-			num = this.getnumactiveplanks();
-			~txalascore.reset();
+			var num = 1;
+			try{ txalaonset.numactiveplanks() };
 			~txalascore.doTxalaScore(numactiveplanks:num);
+			~txalascore.reset();
 		});
-
-
 
 		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
 		.states_([
@@ -640,6 +643,31 @@ yindex = yindex + 1.5;
 			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.blue]
 		]);
+
+		// pitch detection area
+		Button( win, Rect(370,400,80,25))
+		.states_([
+			["plank detect", Color.white, Color.black],
+			["plank detect", Color.black, Color.green]
+		])
+		.action_({ arg but;
+			~plankdetect = but.value.asBoolean;
+		}).valueAction_(~plankdetect);
+
+		pitchbuttons.do({ arg item, index;
+			pitchbuttons[index] = Button(win, Rect(450+(30*index), 400, 30, 25))
+			.states_([
+				[(index+1).asString, Color.white, Color.black],
+				[(index+1).asString, Color.black, Color.red]
+			])
+			.action_({ arg butt;
+				if (butt.value.asBoolean, {
+					~recindex = index;
+					pitchbuttons.do({arg bu; bu.value=0});
+					butt.value = 1;
+				})
+			});
+		});
 
 		win.front;
 	}
@@ -886,16 +914,18 @@ yindex = yindex + 1.5;
 
 
 	updateTxalaScoreNumPlanks {
-		var numactiveplanks = this.getnumactiveplanks();
-		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( numactiveplanks ) });
+		var num = 1;
+		try{ txalaonset.numactiveplanks() };
+
+		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( num ) });
 	}
 
-	getnumactiveplanks {
+/*	getnumactiveplanks {
 		var numactiveplanks=0;
 		~buffers.do({arg arr, ind; // checks if enabled for any of the players
 			if( (~buffersenabled[0][ind]||~buffersenabled[1][ind]),
 				{numactiveplanks = numactiveplanks + 1})});
 		^numactiveplanks;
-	}
+	}*/
 
 }

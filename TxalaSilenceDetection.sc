@@ -109,6 +109,7 @@ TxalaSilenceDetection{
 	checkreset {
 		if ((SystemClock.seconds > (groupst + resettime)), {
 			parent.reset();
+			"RESET".postln;
 		});
 	}
 

@@ -8,16 +8,19 @@ to do: improve detected amplitude range and values, plank detection
 
 TxalaOnsetDetection{
 
-	var server, parent, <curPattern, <synth, synthOSCcb, >processflag, <patternsttime, sttime, freqtable;
+	var server, parent, <curPattern, <synth, synthOSCcb, >processflag, <patternsttime, sttime;
+	var <>plankdata;// up to 6 planks
+	var features;
 
-	*new {| aparent=nil, aserver, afreqtable |
-		^super.new.initTxalaOnsetDetection(aparent, aserver, afreqtable);
+	*new {| aparent=nil, aserver |
+		^super.new.initTxalaOnsetDetection(aparent, aserver);
 	}
 
-	initTxalaOnsetDetection { arg aparent, aserver, afreqtable;
+	initTxalaOnsetDetection { arg aparent, aserver;
 		parent = aparent;
 		server = aserver;
-		freqtable = afreqtable;
+		plankdata = [[],[],[],[],[],[]];
+		features = [\chroma, \freq, \keyt];
 		this.reset()
 	}
 
@@ -26,6 +29,7 @@ TxalaOnsetDetection{
 		patternsttime = 0;
 		curPattern = nil;
 		sttime = SystemClock.seconds;
+		plankdata = parent.plankdata; // if anything
 		this.doAudio();
 	}
 
@@ -36,24 +40,25 @@ TxalaOnsetDetection{
 		OSCdef(\txalaonsetOSCdef).free;
 	}
 
-	matchfreq { arg rawfreq;
-		// here we need to match the detected freq to one of the current freqs in the table freqtable
-		// maybe it would be better to pass a table with the buffers of the sounds so that I can here
-		// analyse them and extract its freq characteristics and create the freqtable dynamically here.
-		^rawfreq;
+	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
+		var pat = curPattern;
+		curPattern = nil;
+		^pat;
 	}
 
 	doAudio {
 		this.kill(); // force
 
 		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1|
-		 	var fft, onset, signal, level=0, freq=0, hasFreq=false;
+		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false;
 		 	signal = SoundIn.ar(in) * amp;
 		 	fft = FFT(LocalBuf(2048), signal);
+			chroma = Chromagram.kr(fft, 2048);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
 		 	level = Amplitude.kr(signal);
-		 	//# freq, hasFreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
-			SendReply.kr(onset, '/txalaonset', [level]);// hasFreq, freq]);
+			keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
+			# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
+			SendReply.kr(onset, '/txalaonset', (chroma++[level, hasfreq, freq, keyt]));
 		 }).add;
 
 		{
@@ -71,7 +76,19 @@ TxalaOnsetDetection{
 	}
 
 	process { arg msg;
-		var hitdata, hittime, freq=0;
+		var hitdata, hittime, plank=0, chroma, level, hasfreq, freq, keyt;
+
+		//"------------------".postln;
+
+		msg = msg[3..]; // remove OSC data
+
+		// (chroma++[level, hasfreq, freq, keyt])
+		chroma  = msg[0..11]; //chroma 12 items
+		level   = msg[12];    //level
+		hasfreq = msg[13];    //hasfreq
+		freq    = msg[14];    //freq
+		keyt    = msg[15];    //keyt
+		//msg.size.postln;//16
 
 		if (processflag.not, { // if not answering myself
 			if (curPattern.isNil, { // this is the first hit of a new pattern
@@ -82,22 +99,73 @@ TxalaOnsetDetection{
 				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
 
-			//if ( msg[4].asBoolean, { freq = this.matchfreq(msg[5]) });
-			freq = 0; // not yet working the pitch detection
+			if (~plankdetect, {
+				var off;
+				//if ( hasfreq.asBoolean, {
+				var data = (); // this does need some short of normalization
+				data.add(\chroma -> chroma); // 12 items
+				data.add(\freq -> freq);
+				data.add(\keyt -> keyt);
+
+/*              ["chroma", chroma].postln;
+				["freq", freq].postln;
+				["keyt", keyt].postln;
+				["level", level].postln; */
+
+				if (~recindex.isNil.not, { // extract data from plank into ~recindex slot
+					["storing plank data into", ~recindex, data].postln;
+					plankdata[~recindex] = data; // stores everything
+					//plankdata.postln;
+					this.numactiveplanks();
+					off = parent.pitchbuttons[~recindex];
+					~recindex = nil;
+					{ off.value = 0 }.defer; // off button
+				},{ // plank analysis
+					plank = this.matchplank(data);
+				})
+				//});
+			});
 
 			hitdata = ().add(\time -> hittime)
-			            .add(\amp -> msg[3])
+			            .add(\amp -> level)
 			            .add(\player -> 1) //always 1 in this case
-			            .add(\plank -> freq);
+			            .add(\plank -> plank);
 			curPattern = curPattern.add(hitdata);
 
-			if (parent.isNil.not, { parent.newonset( (patternsttime + hittime), msg[3], 1, freq) });
+			if (parent.isNil.not, { parent.newonset( (patternsttime + hittime), level, 1, plank) });
 		});
 	}
 
-	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
-		var pat = curPattern;
-		curPattern = nil;
-		^pat;
+	numactiveplanks{
+		var num = 0;
+		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
+			//arr.size.asBoolean.postln;
+			if (arr.size.asBoolean, {num=num+1});
+		});
+		if (num==0, {num=1}); //score need one line at least
+		^num
+	}
+
+	matchplank {arg data;
+		var fdata, plank, res = Array.new(plankdata.size); //res = Array.fill(plankdata.size, {0}); // all planks
+		fdata = data.atAll(features).flat; //filtered data
+
+		//["data", data].postln;
+		//["fdata", fdata].postln;
+		this.numactiveplanks();
+		//plankdata.postln;
+
+		plankdata.do({ arg dataset;
+			var fdataset;
+			if (dataset.size.asBoolean, {
+				fdataset = dataset.atAll(features).flat;
+				res = res.add( (fdata-fdataset).abs.sum );
+			});
+		});
+		plank = res.minIndex;
+		if (plank.isNil, {plank = 0; "could not find out".postln});
+		plank.postln;
+		^plank
+		//^if(res.minIndex.isNil, {0},{res.minIndex})
 	}
 }
