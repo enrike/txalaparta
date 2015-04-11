@@ -669,6 +669,8 @@ yindex = yindex + 1.5;
 			});
 		});
 
+		this.doPlanksSetGUI(win, 370, 430);
+
 		win.front;
 	}
 
@@ -800,7 +802,7 @@ yindex = yindex + 1.5;
 		try{ // AUTO load first preset **
 			popup.valueAction_(1);
 		}{ |error|
-			"no predefined preset to be loaded".postln;
+			"no predefined listen preset to be loaded".postln;
 			error.postln;
 		};
 
@@ -877,7 +879,6 @@ yindex = yindex + 1.5;
 			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-
 			try {
 				markov.loaddata( data[\beatdata] );
 			}{|error|
@@ -911,6 +912,71 @@ yindex = yindex + 1.5;
 			newpreset.string = ""; //clean field
 		});
 	}
+
+
+
+
+	doPlanksSetGUI { arg win, xloc, yloc;
+		var newpreset, popup;
+
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Plank set manager";
+
+		yloc = yloc+20;
+		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
+		.items_( this.updatepresetfiles("presets_planks") )
+		.mouseDownAction_( { arg menu;
+			presetmatrix = this.updatepresetfiles("presets_planks");
+			menu.items = presetmatrix;
+		} )
+		.action_({ arg menu;
+			var data;
+			("loading..." + basepath  ++ "/presets_planks/" ++  menu.item).postln;
+			data = Object.readArchive(basepath  ++ "/presets_planks/" ++  menu.item);
+			data.postln;
+
+			try {
+				this.plankdata = data[\plankdata];
+				txalaonset.plankdata = data[\plankdata]; // this causes error on load because txalaonset is nil yet******
+				this.updateTxalaScoreNumPlanks();
+			}{|error|
+				("memory is empty?"+error).postln;
+			};
+		});
+
+		popup.mouseDown;// force creating the menu list
+		try{ // AUTO load first preset **
+			popup.valueAction_(1);
+		}{ |error|
+			"no predefined plank preset to be loaded".postln;
+			error.postln;
+		};
+
+		yloc = yloc+22;
+		newpreset = TextField(win, Rect(xloc, yloc, 95, 25));
+
+		Button(win, Rect(xloc+100,yloc,70,25))
+		.states_([
+			["save", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			var filename, data;
+			if (newpreset.string == "",
+				{filename = Date.getDate.stamp++".preset"},
+				{filename = newpreset.string++".preset"}
+			);
+
+			data = Dictionary.new;
+			try {
+				data.put(\plankdata, txalaonset.plankdata);
+				data.writeArchive(basepath ++ "/presets_planks/" ++ filename);
+			}{|error|
+				("file is empty?"+error).postln;
+			};
+
+			newpreset.string = ""; //clean field
+		});
+	}
+
 
 
 	updateTxalaScoreNumPlanks {
