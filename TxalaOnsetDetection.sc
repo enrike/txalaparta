@@ -49,16 +49,19 @@ TxalaOnsetDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalaonsetlistener, { |in=0, amp=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1|
-		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false;
-		 	signal = SoundIn.ar(in) * amp;
+		SynthDef(\txalaonsetlistener, { |in=0, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.11|
+		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
+		 	signal = SoundIn.ar(in);
+			level = Amplitude.kr(signal);
 		 	fft = FFT(LocalBuf(2048), signal);
 			chroma = Chromagram.kr(fft, 2048);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
-		 	level = Amplitude.kr(signal);
 			keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
 			# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
-			SendReply.kr(onset, '/txalaonset', (chroma++[level, hasfreq, freq, keyt]));
+
+			del = DelayN.kr(onset, offset, offset);// CRUCIAL. percussive sounds are too chaotic at the beggining
+
+			SendReply.kr(del, '/txalaonset', (chroma++[level, hasfreq, freq, keyt]));
 		 }).add;
 
 		{
@@ -77,8 +80,6 @@ TxalaOnsetDetection{
 
 	process { arg msg;
 		var hitdata, hittime, plank=0, chroma, level, hasfreq, freq, keyt;
-
-		//"------------------".postln;
 
 		msg = msg[3..]; // remove OSC data
 
@@ -115,13 +116,12 @@ TxalaOnsetDetection{
 				if (~recindex.isNil.not, { // extract data from plank into ~recindex slot
 					["storing plank data into", ~recindex, data].postln;
 					plankdata[~recindex] = data; // stores everything
-					//plankdata.postln;
-					this.numactiveplanks();
 					off = parent.pitchbuttons[~recindex];
 					~recindex = nil;
 					{ off.value = 0 }.defer; // off button
 				},{ // plank analysis
 					plank = this.matchplank(data);
+					plank.postln;
 				})
 				//});
 			});
@@ -139,21 +139,16 @@ TxalaOnsetDetection{
 	numactiveplanks{
 		var num = 0;
 		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
-			//arr.size.asBoolean.postln;
 			if (arr.size.asBoolean, {num=num+1});
 		});
+		["active planks are", num].postln;
 		if (num==0, {num=1}); //score need one line at least
 		^num
 	}
 
 	matchplank {arg data;
 		var fdata, plank, res = Array.new(plankdata.size); //res = Array.fill(plankdata.size, {0}); // all planks
-		fdata = data.atAll(features).flat; //filtered data
-
-		//["data", data].postln;
-		//["fdata", fdata].postln;
-		this.numactiveplanks();
-		//plankdata.postln;
+		fdata = data.atAll(features).flat; //filtered data. flat not need
 
 		plankdata.do({ arg dataset;
 			var fdataset;
@@ -164,7 +159,6 @@ TxalaOnsetDetection{
 		});
 		plank = res.minIndex;
 		if (plank.isNil, {plank = 0; "could not find out".postln});
-		plank.postln;
 		^plank
 		//^if(res.minIndex.isNil, {0},{res.minIndex})
 	}
