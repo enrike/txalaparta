@@ -1,0 +1,63 @@
+var o, p;
+o = [
+	Dictionary.prNew,  Array.prNew(32),  Array.prNew(6),  Event.prNew,  
+	Array.prNew(16),  Array.prNew(12),  Event.prNew,  Array.prNew(16),  
+	Array.prNew(12),  Event.prNew,  Array.prNew(16),  Array.prNew(12),  
+	Array.prNew,  Array.prNew,  Array.prNew
+];
+p = [
+	// Dictionary
+	0, [ array: o[1],  size: 1 ],  
+	// Array
+	1, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'plankdata',  o[2] ],  
+	// Array
+	2, [ o[3],  o[6],  o[9],  o[12],  
+		o[13],  o[14] ],  
+	// Event
+	3, [ array: o[4],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	4, [ nil,  nil,  'chroma',  o[5],  
+		'freq',  307.584656,  'keyt',  2.000000,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	5, [ 0.081553,  0.767825,  1.858250,  1.864055,  
+		1.577020,  0.283081,  0.156203,  0.085145,  
+		0.047055,  0.144068,  0.297156,  0.223853 ],  
+	// Event
+	6, [ array: o[7],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	7, [ nil,  nil,  'chroma',  o[8],  
+		'freq',  360.142761,  'keyt',  17.000000,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	8, [ 0.643054,  0.851956,  0.220528,  0.207503,  
+		0.356127,  5.645698,  0.945671,  1.064544,  
+		0.172181,  0.130261,  0.057169,  0.194711 ],  
+	// Event
+	9, [ array: o[10],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	10, [ nil,  nil,  'chroma',  o[11],  
+		'freq',  400.283936,  'keyt',  12.000000,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	11, [ 0.158482,  0.090049,  0.123540,  0.720354,  
+		0.049011,  0.062693,  0.362528,  7.051687,  
+		2.910863,  1.738046,  0.059786,  0.046102 ]
+];
+prUnarchive(o,p);
