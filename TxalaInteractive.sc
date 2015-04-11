@@ -401,7 +401,7 @@ TxalaInteractive{
 		])
 		.action_({ arg butt;
 			var num = 1;
-			try{ txalaonset.numactiveplanks() };
+			try{ num = txalaonset.numactiveplanks() };
 			~txalascore.doTxalaScore(numactiveplanks:num);
 			~txalascore.reset();
 		});
@@ -915,17 +915,8 @@ yindex = yindex + 1.5;
 
 	updateTxalaScoreNumPlanks {
 		var num = 1;
-		try{ txalaonset.numactiveplanks() };
+		try{ num = txalaonset.numactiveplanks() };
 
 		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( num ) });
 	}
-
-/*	getnumactiveplanks {
-		var numactiveplanks=0;
-		~buffers.do({arg arr, ind; // checks if enabled for any of the players
-			if( (~buffersenabled[0][ind]||~buffersenabled[1][ind]),
-				{numactiveplanks = numactiveplanks + 1})});
-		^numactiveplanks;
-	}*/
-
 }
