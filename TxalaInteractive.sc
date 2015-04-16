@@ -29,11 +29,11 @@ grup of hits end point
 TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
-	var doGUI, label, reset, answer, hutsune, win, scope;
+	var doGUI, label, reset, answer, hutsune, win, scope, scopesynth;
 	var txalasilence, txalaonset, markov, ann, lastPattern;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
-	var <pitchbuttons, <plankdata;
+	var <pitchbuttons, <>plankdata;
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -50,6 +50,7 @@ TxalaInteractive{
 	init {
 		~bpm = 60;
 		~amp = 1;
+		//~gain = 1; //gain
 		~answer = false;
 		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
@@ -72,7 +73,7 @@ TxalaInteractive{
 		});
 
 		// this is to keep all the values of the listening synths in one place
-		~listenparemeters = ().add(\in->0).add(\amp->1);
+		~listenparemeters = ().add(\in->0).add(\gain->1);
 		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
 
@@ -337,11 +338,12 @@ TxalaInteractive{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 520));
+		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 550));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
+			scopesynth.free;
 			scope.free;
 		};
 
@@ -401,7 +403,7 @@ TxalaInteractive{
 		])
 		.action_({ arg butt;
 			var num = 1;
-			try{ num = txalaonset.numactiveplanks() };
+			try{ num = this.numactiveplanks() };
 			~txalascore.doTxalaScore(numactiveplanks:num);
 			~txalascore.reset();
 		});
@@ -411,21 +413,38 @@ TxalaInteractive{
 			["scope in", Color.white, Color.black],
 		])
 		.action_({ arg but;
-			server.scope(1,8);
+			if (scopesynth.isNil, {
+				SynthDef(\test, { |in=0, gain=1, out=25|
+					Out.ar(out, SoundIn.ar(in)*gain);
+				}).add;
+				{ scopesynth = Synth(\test) }.defer(0.5);
+			});
+
+			server.scope(1,25);//from the txalaonset synth
 		});
 
+		yindex = yindex + 2.3;
 
-		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
-		.states_([
-			["scope in", Color.white, Color.black],
-		])
-		.action_({ arg but;
-			server.scope(1,8);
-		});
-
-		yindex = yindex + 2;
-
-		// ~amplitude
+		// ~gain
+		guielements.add(\gain-> EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"gain in",
+			ControlSpec(0, 2, \lin, 0.01, 1, ""),
+			{ arg ez;
+				~listenparemeters.gain = ez.value.asFloat;
+				if (scopesynth.isNil.not, {scopesynth.set(\gain, ez.value.asFloat)});
+				if (txalasilence.isNil.not, {
+					txalasilence.synth.set(\gain, ez.value.asFloat);
+				});
+				if (txalaonset.isNil.not, {
+					txalaonset.synth.set(\gain, ez.value.asFloat);
+				});
+			},
+			initVal: ~listenparemeters.gain,
+			labelWidth: 60;
+		));
+		yindex = yindex + 1;
+				// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
@@ -436,6 +455,9 @@ TxalaInteractive{
 			initVal: ~amp,
 			labelWidth: 60;
 		));
+
+
+
 
 
 		yindex = yindex + 1.5;
@@ -773,6 +795,7 @@ yindex = yindex + 1.5;
 			if (data.isNil.not, {
 				//~answertimecorrection = data[\answertimecorrection];
 				~amp = data[\amp];
+				//~listenparemeters = data[\amp];
 				~gap = data[\gap];
 				~gapswing = data[\gapswing];
 				~answermode = data[\answermode];
@@ -786,6 +809,8 @@ yindex = yindex + 1.5;
 				guielements.hutsunelookup.valueAction = ~hutsunelookup;
 				//guielements.answertimecorrection.valueAction = ~answertimecorrection;
 				guielements.amp.valueAction = ~amp;
+
+				guielements.gain.valueAction = ~listenparemeters.gain;
 
 				// guielements.inamp.valueAction = ~listenparemeters.amp;
 				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
@@ -822,6 +847,7 @@ yindex = yindex + 1.5;
 
 			//data.put(\answertimecorrection, ~answertimecorrection);
 			data.put(\amp, ~amp);
+			//data.put(\gain, ~gain);
 			data.put(\listenparemeters, ~listenparemeters);
 			data.put(\hutsunelookup, ~hutsunelookup);
 			data.put(\gap, ~gap);
@@ -934,12 +960,13 @@ yindex = yindex + 1.5;
 			data = Object.readArchive(basepath  ++ "/presets_planks/" ++  menu.item);
 			data.postln;
 
+			this.plankdata = data[\plankdata];
+
 			try {
-				this.plankdata = data[\plankdata];
 				txalaonset.plankdata = data[\plankdata]; // this causes error on load because txalaonset is nil yet******
 				this.updateTxalaScoreNumPlanks();
 			}{|error|
-				("memory is empty?"+error).postln;
+				("not listening yet?"+error).postln;
 			};
 		});
 
@@ -981,8 +1008,22 @@ yindex = yindex + 1.5;
 
 	updateTxalaScoreNumPlanks {
 		var num = 1;
-		try{ num = txalaonset.numactiveplanks() };
+		try{
+			num = this.numactiveplanks()
+		}{ |err|
+			num = plankdata.size //bad
+		};
 
 		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( num ) });
+	}
+
+	numactiveplanks{
+		var num = 0;
+		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
+			if (arr.size.asBoolean, {num=num+1});
+		});
+		["active planks are", num].postln;
+		if (num==0, {num=1}); //score need one line at least
+		^num
 	}
 }

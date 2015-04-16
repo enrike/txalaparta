@@ -49,9 +49,9 @@ TxalaOnsetDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalaonsetlistener, { |in=0, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.11|
+		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.11|
 		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
-		 	signal = SoundIn.ar(in);
+		 	signal = SoundIn.ar(in)*gain;
 			level = Amplitude.kr(signal);
 		 	fft = FFT(LocalBuf(2048), signal);
 			chroma = Chromagram.kr(fft, 2048);
@@ -67,7 +67,8 @@ TxalaOnsetDetection{
 		{
 			synth = Synth(\txalaonsetlistener, [
 				\in, ~listenparemeters.in,
-				\amp, ~listenparemeters.amp,
+				\gain, ~listenparemeters.gain,
+				//\amp, ~listenparemeters.amp,
 				\threshold, ~listenparemeters.onset.threshold,
 				\relaxtime, ~listenparemeters.onset.relaxtime,
 				\floor, ~listenparemeters.onset.floor,
@@ -116,6 +117,7 @@ TxalaOnsetDetection{
 				if (~recindex.isNil.not, { // extract data from plank into ~recindex slot
 					["storing plank data into", ~recindex, data].postln;
 					plankdata[~recindex] = data; // stores everything
+					parent.plankdata = plankdata; //inform
 					off = parent.pitchbuttons[~recindex];
 					~recindex = nil;
 					{ off.value = 0 }.defer; // off button
@@ -136,7 +138,7 @@ TxalaOnsetDetection{
 		});
 	}
 
-	numactiveplanks{
+/*	numactiveplanks{
 		var num = 0;
 		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
 			if (arr.size.asBoolean, {num=num+1});
@@ -144,7 +146,7 @@ TxalaOnsetDetection{
 		["active planks are", num].postln;
 		if (num==0, {num=1}); //score need one line at least
 		^num
-	}
+	}*/
 
 	matchplank {arg data;
 		var fdata, plank, res = Array.new(plankdata.size); //res = Array.fill(plankdata.size, {0}); // all planks
@@ -158,7 +160,10 @@ TxalaOnsetDetection{
 			});
 		});
 		plank = res.minIndex;
-		if (plank.isNil, {plank = 0; "could not find out".postln});
+		if (plank.isNil, {
+			plank = 0;
+			//"could not find out".postln
+		});
 		^plank
 		//^if(res.minIndex.isNil, {0},{res.minIndex})
 	}

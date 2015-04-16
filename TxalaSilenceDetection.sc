@@ -45,16 +45,17 @@ TxalaSilenceDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalatempo, {| in=0, amp=1, threshold=0.5, falltime=0.1, checkrate=20 | //thres=0,1
+		SynthDef(\txalatempo, {| in=0, gain=1, threshold=0.5, falltime=0.1, checkrate=20 | //thres=0,1
 			var detected;
-			detected = DetectSilence.ar( SoundIn.ar(in)*amp, amp:threshold, time:falltime );
+			detected = DetectSilence.ar( SoundIn.ar(in)*gain, amp:threshold, time:falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).add;
 
 		{
 			synth = Synth(\txalatempo, [
 				\in, ~listenparemeters.in,
-				\amp, ~listenparemeters.amp,
+				\gain, ~listenparemeters.gain,
+				//\amp, ~listenparemeters.amp,
 				\threshold, ~listenparemeters.tempo.threshold,
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
