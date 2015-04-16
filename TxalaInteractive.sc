@@ -50,7 +50,6 @@ TxalaInteractive{
 	init {
 		~bpm = 60;
 		~amp = 1;
-		//~gain = 1; //gain
 		~answer = false;
 		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
@@ -429,7 +428,7 @@ TxalaInteractive{
 		guielements.add(\gain-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"gain in",
-			ControlSpec(0, 2, \lin, 0.01, 1, ""),
+			ControlSpec(0, 5, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~listenparemeters.gain = ez.value.asFloat;
 				if (scopesynth.isNil.not, {scopesynth.set(\gain, ez.value.asFloat)});
@@ -790,7 +789,6 @@ yindex = yindex + 1.5;
 			var data;
 			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
-			//data.asCompileString.postln;
 
 			if (data.isNil.not, {
 				//~answertimecorrection = data[\answertimecorrection];
@@ -802,17 +800,13 @@ yindex = yindex + 1.5;
 				~hutsunelookup = data[\hutsunelookup];
 				~listenparemeters = data[\listenparemeters];
 
-				// is the saved data correct?
-				//guielements.gap.valueAction = ~gap;
 				guielements.gapswing.valueAction = ~gapswing;
 				guielements.answermode.valueAction = ~answermode; //menu
 				guielements.hutsunelookup.valueAction = ~hutsunelookup;
-				//guielements.answertimecorrection.valueAction = ~answertimecorrection;
 				guielements.amp.valueAction = ~amp;
 
-				guielements.gain.valueAction = ~listenparemeters.gain;
+				try { guielements.gain.valueAction = ~listenparemeters.gain } ;
 
-				// guielements.inamp.valueAction = ~listenparemeters.amp;
 				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 				guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
 				guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
@@ -845,9 +839,7 @@ yindex = yindex + 1.5;
 
 			data = Dictionary.new;
 
-			//data.put(\answertimecorrection, ~answertimecorrection);
 			data.put(\amp, ~amp);
-			//data.put(\gain, ~gain);
 			data.put(\listenparemeters, ~listenparemeters);
 			data.put(\hutsunelookup, ~hutsunelookup);
 			data.put(\gap, ~gap);
