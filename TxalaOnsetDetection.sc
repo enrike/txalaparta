@@ -59,7 +59,8 @@ TxalaOnsetDetection{
 			keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
 			# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
 
-			del = DelayN.kr(onset, offset, offset);// CRUCIAL. percussive sounds are too chaotic at the beggining
+			del = DelayN.kr(onset, offset, offset); // CRUCIAL. percussive sounds are too chaotic at the beggining
+			level = DelayN.kr(level, offset, offset); // but the level needs to be the original
 
 			SendReply.kr(del, '/txalaonset', (chroma++[level, hasfreq, freq, keyt]));
 		 }).add;
@@ -68,7 +69,6 @@ TxalaOnsetDetection{
 			synth = Synth(\txalaonsetlistener, [
 				\in, ~listenparemeters.in,
 				\gain, ~listenparemeters.gain,
-				//\amp, ~listenparemeters.amp,
 				\threshold, ~listenparemeters.onset.threshold,
 				\relaxtime, ~listenparemeters.onset.relaxtime,
 				\floor, ~listenparemeters.onset.floor,
@@ -86,11 +86,10 @@ TxalaOnsetDetection{
 
 		// (chroma++[level, hasfreq, freq, keyt])
 		chroma  = msg[0..11]; //chroma 12 items
-		level   = msg[12];    //level
-		hasfreq = msg[13];    //hasfreq
-		freq    = msg[14];    //freq
-		keyt    = msg[15];    //keyt
-		//msg.size.postln;//16
+		level   = msg[12];
+		hasfreq = msg[13];
+		freq    = msg[14];
+		keyt    = msg[15];
 
 		if (processflag.not, { // if not answering myself
 			if (curPattern.isNil, { // this is the first hit of a new pattern
@@ -103,16 +102,10 @@ TxalaOnsetDetection{
 
 			if (~plankdetect, {
 				var off;
-				//if ( hasfreq.asBoolean, {
 				var data = (); // this does need some short of normalization
 				data.add(\chroma -> chroma); // 12 items
 				data.add(\freq -> freq);
 				data.add(\keyt -> keyt);
-
-/*              ["chroma", chroma].postln;
-				["freq", freq].postln;
-				["keyt", keyt].postln;
-				["level", level].postln; */
 
 				if (~recindex.isNil.not, { // extract data from plank into ~recindex slot
 					["storing plank data into", ~recindex, data].postln;
@@ -123,9 +116,7 @@ TxalaOnsetDetection{
 					{ off.value = 0 }.defer; // off button
 				},{ // plank analysis
 					plank = this.matchplank(data);
-					plank.postln;
 				})
-				//});
 			});
 
 			hitdata = ().add(\time -> hittime)
@@ -137,16 +128,6 @@ TxalaOnsetDetection{
 			if (parent.isNil.not, { parent.newonset( (patternsttime + hittime), level, 1, plank) });
 		});
 	}
-
-/*	numactiveplanks{
-		var num = 0;
-		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
-			if (arr.size.asBoolean, {num=num+1});
-		});
-		["active planks are", num].postln;
-		if (num==0, {num=1}); //score need one line at least
-		^num
-	}*/
 
 	matchplank {arg data;
 		var fdata, plank, res = Array.new(plankdata.size); //res = Array.fill(plankdata.size, {0}); // all planks
@@ -160,10 +141,7 @@ TxalaOnsetDetection{
 			});
 		});
 		plank = res.minIndex;
-		if (plank.isNil, {
-			plank = 0;
-			//"could not find out".postln
-		});
+		if (plank.isNil, { plank = 0 });
 		^plank
 		//^if(res.minIndex.isNil, {0},{res.minIndex})
 	}
