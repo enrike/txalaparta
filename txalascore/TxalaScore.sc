@@ -105,7 +105,7 @@ TxalaScore {
 				Pen.stroke;
 
 				Pen.color = Color.black;
-				Pen.stringAtPoint( event.plank.asString, Point(time+8, posy));
+				Pen.stringAtPoint( (event.plank+1).asString, Point(time+8, posy));
 
 				Pen.width = 1; //back to normal
 			});
