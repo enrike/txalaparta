@@ -55,7 +55,6 @@ TxalaSilenceDetection{
 			synth = Synth(\txalatempo, [
 				\in, ~listenparemeters.in,
 				\gain, ~listenparemeters.gain,
-				//\amp, ~listenparemeters.amp,
 				\threshold, ~listenparemeters.tempo.threshold,
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
