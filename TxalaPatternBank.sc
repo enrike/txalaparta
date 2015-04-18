@@ -16,6 +16,13 @@ TxalaPatternBank{
 		bank = [[],[],[],[]];
 	}
 
+	getrandpattern{ arg numhits=2;
+		var pat=nil;
+		//["choose from those --------->", numhits, bank[numhits-1]].postln;
+		if (numhits>0, { pat = bank[numhits-1].choose() });
+		^pat;
+	}
+
 	addpattern{ arg apattern;
 		var blueprint = "", isthere=false, newpattern=(), size = apattern.size;
 
@@ -24,8 +31,11 @@ TxalaPatternBank{
 		newpattern = newpattern.add(\pattern->apattern);
 		newpattern = newpattern.add(\numtimes->1); // to count how many times has appeared this blueprint
 
+		//bank[apattern.size-1].postln;
+		bank[apattern.size-1] = bank[apattern.size-1].add(newpattern);
+
 		// likely to be a better way to deal with this
-		isthere = bank[apattern.size-1].every({ arg item; item.blueprint == blueprint });// already there?
+/*		isthere = bank[apattern.size-1].every({ arg item; item.blueprint == blueprint });// already there?
 		if (isthere, {
 			bank[apattern.size-1].do({arg pat, index;
 				if (pat.pattern.blueprint == blueprint, { // just increase the count
@@ -33,10 +43,11 @@ TxalaPatternBank{
 				})
 			})
 		},{
-			bank[apattern.size-1] = bank[apattern.size-1].add(apattern);
-		})
+			bank[apattern.size-1] = bank[apattern.size-1].add(newpattern);
+		});*/
+
+		//["sizeis",bank[apattern.size-1].size].postln;
+
 	}
-
 }
-
 

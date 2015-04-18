@@ -266,7 +266,7 @@ TxalaInteractive{
 	}
 
 	markovnext {arg defertime=0, size=nil, level=2;
-		var gap=0, curhits, lastaverageamp = this.averageamp();
+		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
 
 		if (size.isNil, {
 			curhits = markov.next();
@@ -282,6 +282,8 @@ TxalaInteractive{
 
 		if ( defertime < 0, {curhits = 1}); // if we are late or gaps it too shot they pile up and sounds horrible
 
+		hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num by now
+
 		curhits.do({ arg index;
 			var playtime, amp;
 			playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
@@ -295,7 +297,7 @@ TxalaInteractive{
 
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
-			{ this.playhit( amp, 0, index, curhits) }.defer(playtime);
+			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(playtime); //
 		});
 	}
 
@@ -311,8 +313,8 @@ TxalaInteractive{
 		});
 	}
 
-	playhit { arg amp=0, player=0, index=0, total=0;
-		var plank, pos;
+	playhit { arg amp=0, player=0, index=0, total=0, plank;
+/*		var plank,pos;
 		// plank choice here ///////////
 		// in the future we should use a complex system that takes into consideration the users input
 		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
@@ -321,13 +323,13 @@ TxalaInteractive{
 		}.while({
 			pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
 		});
-		plank = ~buffers[pos];
+		plank = ~buffers[pos];*/
 		///////////////////////////////
 
 		this.selfcancel(plank, index, total); // only if enabled by user
 
-		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, plank.bufnum]);
-		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, pos) });
+		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, ~buffers[plank-1].bufnum]); //plank.bufnum]);
+		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
