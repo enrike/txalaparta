@@ -42,6 +42,7 @@ TxalaOnsetDetection{
 
 	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
 		var pat = curPattern;
+		if ( pat.size > 4, { pat = pat[..3] });// discard if longer than 4
 		curPattern = nil;
 		^pat;
 	}
@@ -49,10 +50,15 @@ TxalaOnsetDetection{
 	doAudio {
 		this.kill(); // force
 
+		/*
+		here the problem is that in the one hand we need to know the time of the onset asap but on the other hand we cannot get meaningful
+		data from the sound until ~0.11 secs are gone because of the chaotic nature of the sound in the start area
+		*/
 		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.11|
 		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
 		 	signal = SoundIn.ar(in)*gain;
-			level = Amplitude.kr(signal);
+			//level = Amplitude.kr(signal);
+			level = WAmp.kr(signal, offset);
 		 	fft = FFT(LocalBuf(2048), signal);
 			chroma = Chromagram.kr(fft, 2048);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
