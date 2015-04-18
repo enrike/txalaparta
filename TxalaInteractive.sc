@@ -30,7 +30,7 @@ TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, reset, answer, hutsune, win, scope, scopesynth;
-	var txalasilence, txalaonset, markov, ann, lastPattern;
+	var txalasilence, txalaonset, markov, ann, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 	var <pitchbuttons, <>plankdata;
@@ -87,6 +87,7 @@ TxalaInteractive{
 		pitchbuttons = Array.fill(6, {nil});
 
 		markov = TxalaMarkov.new;
+		patternbank = TxalaPatternBank.new;
 		tempocalc = TempoCalculator.new(2);
 		~txalascore = TxalaScoreGUI.new;
 		//ann = TxalaAnn.new;
@@ -132,6 +133,7 @@ TxalaInteractive{
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
+		patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
 		if( (~answer && ~answerpriority), {this.answer()}); // asap
 		if (~autoanswerpriority, { this.doautoanswerpriority() });
 		if (~txalascore.isNil.not, {
