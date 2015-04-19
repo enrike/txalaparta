@@ -20,7 +20,7 @@ TxalaOnsetDetection{
 		parent = aparent;
 		server = aserver;
 		plankdata = [[],[],[],[],[],[]];
-		features = [\chroma, \freq, \keyt];
+		features = [\chroma];//, \freq, \keyt];
 		this.reset()
 	}
 
@@ -51,24 +51,32 @@ TxalaOnsetDetection{
 		this.kill(); // force
 
 		/*
-		here the problem is that in the one hand we need to know the time of the onset asap but on the other hand we cannot get meaningful
-		data from the sound until ~0.11 secs are gone because of the chaotic nature of the sound in the start area
+		here the problem is that in the one hand we need to know the time of the onset asap but on the other hand we cannot get
+		meaningful data from the sound until some millisecs are gone because of the chaotic nature of the sound in the start area
 		*/
-		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.11|
+		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.040|
 		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
 		 	signal = SoundIn.ar(in)*gain;
 			//level = Amplitude.kr(signal);
 			level = WAmp.kr(signal, offset);
 		 	fft = FFT(LocalBuf(2048), signal);
-			chroma = Chromagram.kr(fft, 2048);
+			chroma = Chromagram.kr(fft, 2048,
+				n: 12,
+				tuningbase: 32.703195662575,
+				octaves: 8,
+				integrationflag: 0,
+				coeff: 0.9,
+				octaveratio: 2,
+				perframenormalize: 1
+			);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
-			keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
-			# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
+			//keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
+			//# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
 
 			del = DelayN.kr(onset, offset, offset); // CRUCIAL. percussive sounds are too chaotic at the beggining
-			level = DelayN.kr(level, offset, offset); // but the level needs to be the original
+			//level = DelayN.kr(level, offset, offset); // but the level needs to be the original
 
-			SendReply.kr(del, '/txalaonset', (chroma++[level, hasfreq, freq, keyt]));
+			SendReply.kr(del, '/txalaonset', (chroma++[level]));
 		 }).add;
 
 		{
@@ -86,16 +94,16 @@ TxalaOnsetDetection{
 	}
 
 	process { arg msg;
-		var hitdata, hittime, plank=0, chroma, level, hasfreq, freq, keyt;
+		var hitdata, hittime, plank=0, chroma, level;
 
 		msg = msg[3..]; // remove OSC data
 
 		// (chroma++[level, hasfreq, freq, keyt])
 		chroma  = msg[0..11]; //chroma 12 items
 		level   = msg[12];
-		hasfreq = msg[13];
-		freq    = msg[14];
-		keyt    = msg[15];
+		//hasfreq = msg[13];
+		//freq    = msg[14];
+		//keyt    = msg[15];
 
 		if (processflag.not, { // if not answering myself
 			if (curPattern.isNil, { // this is the first hit of a new pattern
@@ -110,8 +118,6 @@ TxalaOnsetDetection{
 				var off;
 				var data = (); // this does need some short of normalization
 				data.add(\chroma -> chroma); // 12 items
-				data.add(\freq -> freq);
-				data.add(\keyt -> keyt);
 
 				if (~recindex.isNil.not, { // extract data from plank into ~recindex slot
 					["storing plank data into", ~recindex, data].postln;

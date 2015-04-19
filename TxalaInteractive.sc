@@ -60,12 +60,12 @@ TxalaInteractive{
 		~gapswing = 0.01;
 
 		if (~buffer.isNil, {
-			~buffers = Array.fill(8, {nil});
+			~buffers = Array.fill(6, {nil});
 		});
 
-		if (~plankchance.isNil, {
+/*		if (~plankchance.isNil, {
 			~plankchance = (Array.fill(~buffers.size, {1}));
-		});
+		});*/
 
 		if (~buffersenabled.isNil, {
 			~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})];
@@ -83,8 +83,7 @@ TxalaInteractive{
 		("sndpath is" + sndpath).postln;
 		("available samples are" + samples).postln;
 
-		~buffers = Array.fill(8, {nil});
-		pitchbuttons = Array.fill(6, {nil});
+		pitchbuttons = Array.fill(~buffers.size, {nil});
 
 		markov = TxalaMarkov.new;
 		patternbank = TxalaPatternBank.new;
@@ -196,8 +195,7 @@ TxalaInteractive{
 		txalaonset.processflag = flag;
 	}
 
-	// modes: imitation, random (with GUI parameters), markov1, markov2
-	// called from child that detects bpm and group ends
+	// called from silencedetect that detects bpm and group ends
 	answer {arg defertime;
 		// calc when in future should answer be. start from last detected hit and use tempo to calculate
 		if (defertime.isNil, {
@@ -218,7 +216,7 @@ TxalaInteractive{
 	imitation { arg defertime;
 		lastPattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp, 0, index, lastPattern.size)
+				this.playhit(hit.amp, 0, index, lastPattern.size, hit.plank)
 			}.defer(defertime + hit.time);
 		});
 	}
@@ -243,8 +241,8 @@ TxalaInteractive{
 			lastPattern.do({ arg hit, index;
 				if ( (index > 0), { //sum all gaps
 					val = val + (hit.time-lastPattern[index-1].time);
-					},{
-						val = hit.time; // first one
+				},{
+					val = hit.time; // first one
 				});
 			});
 			val = val/lastPattern.size;
@@ -314,21 +312,10 @@ TxalaInteractive{
 	}
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
-/*		var plank,pos;
-		// plank choice here ///////////
-		// in the future we should use a complex system that takes into consideration the users input
-		pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum); // 0 to 7
-		{
-			~buffersenabled[1][pos] == false; // 1 because here we are always errena
-		}.while({
-			pos = Array.fill(~buffers.size, { arg i; i+1-1 }).wchoose(~plankchance.normalizeSum);
-		});
-		plank = ~buffers[pos];*/
-		///////////////////////////////
 
 		this.selfcancel(plank, index, total); // only if enabled by user
 
-		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, ~buffers[plank-1].bufnum]); //plank.bufnum]);
+		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, ~buffers[plank].bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
@@ -423,7 +410,7 @@ TxalaInteractive{
 				{ scopesynth = Synth(\test) }.defer(0.5);
 			});
 
-			server.scope(1,25);//from the txalaonset synth
+			server.scope(1,25);//bus 25 from the txalaonset synth
 		});
 
 		yindex = yindex + 2.3;
@@ -446,8 +433,10 @@ TxalaInteractive{
 			initVal: ~listenparemeters.gain,
 			labelWidth: 60;
 		));
+
 		yindex = yindex + 1;
-				// ~amplitude
+
+		// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
@@ -708,7 +697,7 @@ TxalaInteractive{
 		// PLANKS - OHOLAK //////////////////////////////////
 		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
-		StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
+		//StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
 
 		planksMenus = Array.fill(~buffers.size, {[nil,nil]});
 
@@ -759,12 +748,12 @@ TxalaInteractive{
 				})
 			});
 
-			Slider(win,Rect(menuxloc+225,yloc+(gap*index),75,20))
+/*			Slider(win,Rect(menuxloc+225,yloc+(gap*index),75,20))
 			.action_({arg sl;
 				~plankchance[index] = sl.value;
 			})
 			.orientation_(\horizontal)
-			.valueAction_(1);
+			.valueAction_(1);*/
 		});
 
 	}
@@ -810,7 +799,11 @@ TxalaInteractive{
 				guielements.hutsunelookup.valueAction = ~hutsunelookup;
 				guielements.amp.valueAction = ~amp;
 
-				try { guielements.gain.valueAction = ~listenparemeters.gain } ;
+				try {
+					guielements.gain.valueAction = ~listenparemeters.gain
+				}{|err|
+					"could not set gain value".postln;
+				} ;
 
 				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 				guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
