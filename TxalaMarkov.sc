@@ -39,11 +39,11 @@ TxalaMarkov{
 		options = Array.fill(dimension, {arg n=0; n});
 
 		beatweigths = [ // this is just a fixed percetage data with some common behaviour
-			[0.0,  0.3,  0.4,  0.2,  0.1 ],
+			[0.0,  0.3,  0.4,  0.2,  0.1 ], // returning 0 to a 0 input is illegal
 			[0.1,  0.3,  0.4,  0.2,  0.1 ],
 			[0.05, 0.15, 0.6,  0.15, 0.05],
 			[0.05, 0.1,  0.4,  0.3,  0.15],
-			[0.0,  0.1,  0.4,  0.2,  0.3 ]
+			[0.1,  0.1,  0.4,  0.2,  0.2 ]
 		];
 
 		beatdata2nd = Array.fillND(Array.fill(3, {options.size}), { 0 }); // store here the data of changes
@@ -52,7 +52,7 @@ TxalaMarkov{
 
 		beatdata4th = Array.fillND(Array.fill(7, {options.size}), { 0 }); // store here the data of changes
 
-		/*		2nd-order matrix for txalaparta beats
+/*		2nd-order matrix for txalaparta beats
 beat 0 1 2 3 4
 00   N N N N N
 01   N N N N N
@@ -80,15 +80,13 @@ beat 0 1 2 3 4
 43   N N N N N
 44   N N N N N
 		*/
-
 	}
-
 
 	next {
 		var weights, curhits;
 		weights = beatweigths[ lasthits[0] ]; // last me
 		curhits = options.wchoose(weights.normalizeSum);
-		lasthits[0] = curhits; // in this case only use the first slot because I know nothing about the detected beats
+		lasthits[0] = curhits; // in this case just use the first slot because I know nothing about the detected beats
 		^curhits;
 	}
 
@@ -97,21 +95,29 @@ beat 0 1 2 3 4
 		beatdata2nd = data;
 	}
 
+	sanitycheck {arg detected;
+		if (detected>=dimension, {detected = options.last}); // max limit
+		if ( (detected==0) && (lasthits[0]==0), { // this is illegal and humans would never do it. more likely to be an error
+			detected = options[1..].choose;
+		});
+		^detected;
+	}
+
 	next2nd{ arg detected;
-		if (detected>=dimension, {detected = options.last}); ///limit
+		detected = this.sanitycheck(detected);
 		beatdata2nd[lasthits[1]][lasthits[0]][detected] = beatdata2nd[lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
 		^options.wchoose(beatdata2nd[lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
 	}
 
 	next3rd{ arg detected;
-		if (detected>=dimension, {detected = options.last}); ///limit
-		beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
-		^options.wchoose(beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+		detected = this.sanitycheck(detected);
+		beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1;
+		^options.wchoose(beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
 	}
 
 	next4th{ arg detected;
-		if (detected>=dimension, {detected = options.last}); ///limit
-		beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
-		^options.wchoose(beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+		detected = this.sanitycheck(detected);
+		beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1;
+		^options.wchoose(beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
 	}
 }
