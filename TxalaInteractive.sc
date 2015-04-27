@@ -114,7 +114,7 @@ TxalaInteractive{
 			~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
 			~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
 		});
-		tempocalc.pushlasttime(); // must update otherwise tempo drops /2
+		tempocalc.pushlasttime(); // empty hits also count for BPM calc
 		{hutsunebutton.value = 1}.defer;
 		{hutsunebutton.value = 0}.defer(0.2);
 	}
@@ -205,7 +205,7 @@ TxalaInteractive{
 		if (defertime.isNaN.not, {
 			switch (~answermode,
 				0, { this.imitation(defertime) },
-				1, { this.markovnext(defertime) },
+				1, { this.markovnext(defertime) }, // fixed values chain
 				2, { this.markovnext(defertime, lastPattern.size, 2) },
 				3, { this.markovnext(defertime, lastPattern.size, 3) },
 				4, { this.markovnext(defertime, lastPattern.size, 4) }
@@ -237,17 +237,15 @@ TxalaInteractive{
 
 	averagegap { // returns average gap time between hits in last phrase
 		var val=0;
-		if (lastPattern.size>0, {
+		if (lastPattern.size > 0, {
 			lastPattern.do({ arg hit, index;
-				if ( (index > 0), { //sum all gaps
+				if (index > 0, { //sum all gaps
 					val = val + (hit.time-lastPattern[index-1].time);
-				},{
-					val = hit.time; // first one
 				});
 			});
-			val = val/lastPattern.size;
+			val = val / (lastPattern.size-1); // num of gaps is num of hits-1
 		}, {
-			val = 0.1; // ??
+			val = 0.1; // if it was an hutsune
 		});
 		if (val < 0.07, {val = 0.07}); //lower limit
 		^val;
@@ -255,7 +253,7 @@ TxalaInteractive{
 
 	getaccent{ // check if first or last hit are accentuated. true 1st / false 2nd
 		var res;
-		if (lastPattern.size>0, {
+		if (lastPattern.size > 0, {
 			res = (lastPattern.first.amp >= lastPattern.last.amp);
 		},{
 			res = true;
@@ -630,37 +628,16 @@ TxalaInteractive{
 
 		yindex = yindex + 1.5;
 
-
-		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
-		label.string = "BPM: --- \nCompass: ---";
-
-		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
-		numbeatslabel.string = "Beats: ---";
-
 		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 
+
+		// plank area
 		this.doPlanks(350,yloc-10, 20, 220, 20);
 
-		hitbutton = Button( win, Rect(370,300,110,55))
-		.states_([
-			["HIT", Color.white, Color.grey],
-			["HIT", Color.white, Color.red]
-		]);
-		compassbutton = Button( win, Rect(480,300,110,55))
-		.states_([
-			["PHRASE", Color.white, Color.grey],
-			["PHRASE", Color.white, Color.red]
-		]);
-
-		hutsunebutton = Button( win, Rect(590,300,100,55))
-		.states_([
-			["HUTSUN", Color.white, Color.grey],
-			["HUTSUN", Color.white, Color.blue]
-		]);
 
 		// pitch detection area
-		Button( win, Rect(370,400,80,25))
+		Button( win, Rect(370,250,80,25))
 		.states_([
 			["plank detect", Color.white, Color.black],
 			["plank detect", Color.black, Color.green]
@@ -670,7 +647,7 @@ TxalaInteractive{
 		}).valueAction_(~plankdetect);
 
 		pitchbuttons.do({ arg item, index;
-			pitchbuttons[index] = Button(win, Rect(450+(30*index), 400, 30, 25))
+			pitchbuttons[index] = Button(win, Rect(450+(30*index), 250, 30, 25))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
 				[(index+1).asString, Color.black, Color.red]
@@ -684,7 +661,35 @@ TxalaInteractive{
 			});
 		});
 
-		this.doPlanksSetGUI(win, 370, 430);
+		this.doPlanksSetGUI(win, 370, 280);
+
+
+		// feddback area
+
+		label = StaticText(win, Rect(370, 375, 250, 60)).font_(Font("Verdana", 25)) ;
+		label.string = "BPM: --- \nCompass: ---";
+
+		numbeatslabel = StaticText(win, Rect(370, 440, 250, 25)).font_(Font("Verdana", 25));
+		numbeatslabel.string = "Beats: ---";
+
+		hitbutton = Button( win, Rect(370,480,110,55))
+		.states_([
+			["HIT", Color.white, Color.grey],
+			["HIT", Color.white, Color.red]
+		]);
+		compassbutton = Button( win, Rect(480,480,110,55))
+		.states_([
+			["PHRASE", Color.white, Color.grey],
+			["PHRASE", Color.white, Color.red]
+		]);
+
+		hutsunebutton = Button( win, Rect(590,480,100,55))
+		.states_([
+			["HUTSUN", Color.white, Color.grey],
+			["HUTSUN", Color.white, Color.blue]
+		]);
+
+
 
 		win.front;
 	}
@@ -748,12 +753,15 @@ TxalaInteractive{
 				})
 			});
 
-/*			Slider(win,Rect(menuxloc+225,yloc+(gap*index),75,20))
-			.action_({arg sl;
-				~plankchance[index] = sl.value;
-			})
-			.orientation_(\horizontal)
-			.valueAction_(1);*/
+			// rec buttons row
+			Button(win, Rect(playxloc+20,yloc+(gap*index),25,20))
+			.states_([
+				["rec", Color.red, Color.black],
+				["rec", Color.black, Color.red]
+			])
+			.action_({ arg butt;
+				"not working yet!".postln;
+			});
 		});
 
 	}
