@@ -59,6 +59,8 @@ TxalaInteractive{
 
 		~gapswing = 0.01;
 
+		// ~buffers should be 3 dimensional array
+		//[plank[area[amp1,amp2,amp3..]]]
 		if (~buffer.isNil, {
 			~buffers = Array.fill(6, {nil});
 		});
@@ -228,7 +230,7 @@ TxalaInteractive{
 			lastPattern.do({ arg hit;
 				val = val + hit.amp;
 			});
-			val = val/lastPattern.size;
+			val = val/(lastPattern.size);
 		}, {
 			val = 0.5;
 		});
@@ -237,7 +239,7 @@ TxalaInteractive{
 
 	averagegap { // returns average gap time between hits in last phrase
 		var val=0;
-		if (lastPattern.size > 0, {
+		if (lastPattern.size > 1, {
 			lastPattern.do({ arg hit, index;
 				if (index > 0, { //sum all gaps
 					val = val + (hit.time-lastPattern[index-1].time);
@@ -245,7 +247,7 @@ TxalaInteractive{
 			});
 			val = val / (lastPattern.size-1); // num of gaps is num of hits-1
 		}, {
-			val = 0.1; // if it was an hutsune
+			val = 0.15; // if it was an hutsune or ttan. should we calculate this according to current bpm?
 		});
 		if (val < 0.07, {val = 0.07}); //lower limit
 		^val;
@@ -274,7 +276,13 @@ TxalaInteractive{
 			);
 		});
 
-		if (curhits > 0, { gap = this.averagegap() });
+		if (curhits > 1, { gap = this.averagegap() });
+		// should we shorten the gap according to num of curhits??
+
+		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), {// here every random time play a chord
+			gap = 0;
+			curhits = 2;
+		});
 
 		if ( defertime < 0, {curhits = 1}); // if we are late or gaps it too shot they pile up and sounds horrible
 
