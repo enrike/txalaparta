@@ -35,6 +35,10 @@ TxalaInteractive{
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 	var <pitchbuttons, <>plankdata;
 
+	var numplanks = 6; // max planks
+	var plankresolution = 5; // max positions per plank
+	var ampresolution = 5; // max amps per position
+
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
 	}
@@ -60,18 +64,21 @@ TxalaInteractive{
 		~gapswing = 0.01;
 
 		// ~buffers should be 3 dimensional array
-		//[plank[area[amp1,amp2,amp3..]]]
-		if (~buffer.isNil, {
+		// Array.fillND([6, 8, 10], { 0 }); // up to 10 amps per posision, 8 positions per plank and 6 planks
+/*		if (~buffer.isNil, {
 			~buffers = Array.fill(6, {nil});
-		});
+		});*/
+
+
+		~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
 
 /*		if (~plankchance.isNil, {
 			~plankchance = (Array.fill(~buffers.size, {1}));
 		});*/
 
-		if (~buffersenabled.isNil, {
+/*		if (~buffersenabled.isNil, {
 			~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})];
-		});
+		});*/
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\gain->1);
@@ -103,6 +110,23 @@ TxalaInteractive{
 				amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
 			)
 		}).add;
+	}
+
+
+	loadsampleset{ arg presetfilename;
+		var foldername = presetfilename.split($.)[0];// get rid of the extension
+		("load sampleset"+foldername).postln;
+		~buffers.do({arg plank, indexplank;
+			plank.do({ arg pos, indexpos;
+				pos.do({ arg amp, indexamp;
+					var filename="plank";
+					filename = filename ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
+					if ( PathName.new(sndpath ++"/"++foldername++"/"++filename).isFile, {
+						~buffers[indexplank][indexpos][indexamp] = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
+					})
+				})
+			})
+		})
 	}
 
 
@@ -263,13 +287,13 @@ TxalaInteractive{
 		^res
 	}
 
-	markovnext {arg defertime=0, size=nil, level=2;
+	markovnext {arg defertime=0, size=nil, order=2;
 		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
 
 		if (size.isNil, {
 			curhits = markov.next();
 		},{
-			switch (level,
+			switch (order,
 				2, { curhits = markov.next2nd(size) },
 				3, { curhits = markov.next3rd(size) },
 				4, { curhits = markov.next4th(size) }
@@ -318,13 +342,22 @@ TxalaInteractive{
 	}
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
-
+		var actualplank, plankpos, plankamp, ranges;
 		this.selfcancel(plank, index, total); // only if enabled by user
 
-		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, ~buffers[plank].bufnum]);
+		// need to check if all slots are full
+		plankpos = Array.fill(plankresolution, {arg n=0; n}).wchoose([0.15, 0.15, 0.3, 0.3, 0.1]); // focus on plank center
+
+		// need to check if all slots are full
+		ranges = Array.fill(ampresolution, {arg num=0; (1/ampresolution)*(num+1)}); // which sample corresponds to this amp
+		plankamp = ranges.detectIndex({arg item; amp<=item});
+
+		actualplank = ~buffers[plank][plankpos][plankamp]; //
+		//["the sample to play", amp, plank, plankpos, plankamp].postln;
+
+		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
-		//{~midiout.noteOff(player, plank.bufnum, amp*127) }.defer(0.2);
 		// if OSC flag then send OSC out messages here
 	}
 
@@ -641,7 +674,7 @@ TxalaInteractive{
 
 
 		// plank area
-		this.doPlanks(350,yloc-10, 20, 220, 20);
+		//this.doPlanks(350,yloc-10, 20, 220, 20);
 
 
 		// pitch detection area
@@ -708,7 +741,7 @@ TxalaInteractive{
 		var playxloc = menuxloc+200+2;
 
 		// PLANKS - OHOLAK //////////////////////////////////
-		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
+		//StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		//StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
 
@@ -718,7 +751,7 @@ TxalaInteractive{
 		~buffers.size.do({ arg index;
 
 			// errena row buttons
-			planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
+			/*planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
 				[(index+1).asString, Color.black, Color.blue],
@@ -726,12 +759,12 @@ TxalaInteractive{
 			.action_({ arg butt;
 				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
 				this.updateTxalaScoreNumPlanks();
-			});
+			});*/
 
-			if (index==0, {
-				planksMenus[index][0].valueAction = 1;
-				//planksMenus[index][1].valueAction = 1;
-			});// ONLY activate first ones
+			// if (index==0, {
+			// 	planksMenus[index][0].valueAction = 1;
+			// 	//planksMenus[index][1].valueAction = 1;
+			// });// ONLY activate first ones
 
 			// menus for each plank
 			planksMenus[index][1] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),200,20))
@@ -974,6 +1007,8 @@ TxalaInteractive{
 			}{|error|
 				("not listening yet?"+error).postln;
 			};
+
+			this.loadsampleset(menu.item);
 		});
 
 		popup.mouseDown;// force creating the menu list
