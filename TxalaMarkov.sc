@@ -46,11 +46,9 @@ TxalaMarkov{
 			[0.1,  0.1,  0.4,  0.2,  0.2 ]
 		];
 
-		beatdata2nd = Array.fillND(Array.fill(3, {options.size}), { 0 }); // store here the data of changes
-
-		beatdata3rd = Array.fillND(Array.fill(5, {options.size}), { 0 }); // store here the data of changes
-
-		beatdata4th = Array.fillND(Array.fill(7, {options.size}), { 0 }); // store here the data of changes
+		beatdata2nd = Array.fillND(Array.fill(3, {options.size}), { 0 }); // store here the data of changes. 2 compasses
+		beatdata3rd = Array.fillND(Array.fill(5, {options.size}), { 0 }); // 3 compasses (5 phrases + current)
+		beatdata4th = Array.fillND(Array.fill(7, {options.size}), { 0 }); // 4 compasses (7 phrases + current)
 
 /*		2nd-order matrix for txalaparta beats
 beat 0 1 2 3 4
@@ -103,21 +101,38 @@ beat 0 1 2 3 4
 		^detected;
 	}
 
+	postsanitycheck {arg num; // ** this needs doublecheck **
+		//if (num>=dimension, {detected = options.last}); // max limit
+		if ( (num==0) && (lasthits[0]==0), { // dont answer 0 to a 0
+			num = options[1..].choose;
+		});
+		if ( (num==0) && (lasthits[1]==0), { // dont answer 0 after having answered a 0
+			num = options[1..].choose;
+		});
+		^num;
+	}
+
 	next2nd{ arg detected;
+		var num;
 		detected = this.sanitycheck(detected);
 		beatdata2nd[lasthits[1]][lasthits[0]][detected] = beatdata2nd[lasthits[1]][lasthits[0]][detected] + 1; // increase this slot
-		^options.wchoose(beatdata2nd[lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+		num = options.wchoose(beatdata2nd[lasthits[1]][lasthits[0]].normalizeSum); // get row's data normalized to 0-1 percentage
+		^this.postsanitycheck(num);
 	}
 
 	next3rd{ arg detected;
+		var num;
 		detected = this.sanitycheck(detected);
 		beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1;
-		^options.wchoose(beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
+		num = options.wchoose(beatdata3rd[lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
+		^this.postsanitycheck(num)
 	}
 
 	next4th{ arg detected;
+		var num;
 		detected = this.sanitycheck(detected);
 		beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] = beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]][detected] + 1;
-		^options.wchoose(beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
+		num = options.wchoose(beatdata4th[lasthits[5]][lasthits[4]][lasthits[3]][lasthits[2]][lasthits[1]][lasthits[0]].normalizeSum);
+		^this.postsanitycheck(num)
 	}
 }
