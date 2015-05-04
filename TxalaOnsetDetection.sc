@@ -21,6 +21,7 @@ TxalaOnsetDetection{
 		server = aserver;
 		plankdata = [[],[],[],[],[],[]];
 		features = [\chroma];//, \freq, \keyt];
+		//plankschromagramdata = Array.fillND([numplanks, plankresolution], { 0 });
 		this.reset()
 	}
 
@@ -63,7 +64,7 @@ TxalaOnsetDetection{
 			chroma = Chromagram.kr(fft, 2048,
 				n: 12,
 				tuningbase: 32.703195662575,
-				octaves: 8,
+				octaves: 24, // try 12, 24, 36... ** TO DO **
 				integrationflag: 0,
 				coeff: 0.9,
 				octaveratio: 2,
