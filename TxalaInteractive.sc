@@ -33,7 +33,7 @@ TxalaInteractive{
 	var txalasilence, txalaonset, markov, ann, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
-	var <pitchbuttons, <>plankdata;
+	var <pitchbuttons, <>plankdata, circleanim, drawingSet;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -63,22 +63,9 @@ TxalaInteractive{
 
 		~gapswing = 0.01;
 
-		// ~buffers should be 3 dimensional array
-		// Array.fillND([6, 8, 10], { 0 }); // up to 10 amps per posision, 8 positions per plank and 6 planks
-/*		if (~buffer.isNil, {
-			~buffers = Array.fill(6, {nil});
-		});*/
-
-
 		~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
 
-/*		if (~plankchance.isNil, {
-			~plankchance = (Array.fill(~buffers.size, {1}));
-		});*/
-
-/*		if (~buffersenabled.isNil, {
-			~buffersenabled = [Array.fill(~buffers.size, {false}), Array.fill(~buffers.size, {false})];
-		});*/
+		drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]}); // why ~buffers.size??
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\gain->1);
@@ -326,6 +313,10 @@ TxalaInteractive{
 			if ( playtime.isNaN, { playtime = 0 } );
 			if ( playtime == inf, { playtime = 0 } );
 			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(playtime); //
+			// I need a task that calls circleanim.scheduleDraw(data)
+			// data must be like drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
+			drawingSet[index] = [0, playtime, true, amp]; // store for drawing on window.refresh
+			{circleanim.scheduleDraw(drawingSet)}.defer;
 		});
 	}
 
@@ -357,6 +348,7 @@ TxalaInteractive{
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
+
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
 		// if OSC flag then send OSC out messages here
 	}
@@ -702,7 +694,18 @@ TxalaInteractive{
 			});
 		});
 
+
+		Button(win,  Rect(370, 20,80,25))
+		.states_([
+			["new set", Color.white, Color.black],
+		])
+		.action_({ arg butt;
+			TxalaSet.new(server, sndpath)
+		});
+
 		this.doPlanksSetGUI(win, 370, 280);
+
+
 
 
 		// feddback area
@@ -730,13 +733,19 @@ TxalaInteractive{
 			["HUTSUN", Color.white, Color.blue]
 		]);
 
+		circleanim = TxalaCircleAnim.new(win, 500, 120, 200);
+
+		// I need a task that calls circleanim.scheduleDraw(data)
+		// data must be like drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
+		// drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
+
 
 
 		win.front;
 	}
 
 
-	doPlanks { arg xloc, yloc, gap, width, height;
+	/*doPlanks { arg xloc, yloc, gap, width, height;
 		var menuxloc = xloc + 44;
 		var playxloc = menuxloc+200+2;
 
@@ -751,7 +760,7 @@ TxalaInteractive{
 		~buffers.size.do({ arg index;
 
 			// errena row buttons
-			/*planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
+			planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
 			.states_([
 				[(index+1).asString, Color.white, Color.black],
 				[(index+1).asString, Color.black, Color.blue],
@@ -759,7 +768,7 @@ TxalaInteractive{
 			.action_({ arg butt;
 				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
 				this.updateTxalaScoreNumPlanks();
-			});*/
+			});
 
 			// if (index==0, {
 			// 	planksMenus[index][0].valueAction = 1;
@@ -805,7 +814,7 @@ TxalaInteractive{
 			});
 		});
 
-	}
+	}*/
 
 	updatepresetfiles{arg folder;
 		var temp;
