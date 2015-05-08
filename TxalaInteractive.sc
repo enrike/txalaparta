@@ -33,11 +33,11 @@ TxalaInteractive{
 	var txalasilence, txalaonset, markov, ann, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
-	var <pitchbuttons, <>plankdata, circleanim, drawingSet;
+	var <pitchbuttons, circleanim, drawingSet;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
-	var ampresolution = 5; // max amps per position
+	var ampresolution = 5; // max amps per position. is this num dynamically set?
 
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
@@ -46,7 +46,7 @@ TxalaInteractive{
 	initTxalaInteractive { arg aserver, apath;
 		server = aserver;
 		basepath = apath;
-		plankdata = [[],[],[],[],[],[]];
+		//~plankdata = [[],[],[],[],[],[]];
 		this.init();
 		this.doGUI();
 	}
@@ -63,7 +63,9 @@ TxalaInteractive{
 
 		~gapswing = 0.01;
 
-		~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
+		//~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
+		~buffers = Array.fillND([numplanks, plankresolution], { [] });
+		~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution??
 
 		drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]}); // why ~buffers.size??
 
@@ -102,14 +104,19 @@ TxalaInteractive{
 
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the extension
-		("load sampleset"+foldername).postln;
+		("load sampleset"+foldername+~buffers).postln;
 		~buffers.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
-				pos.do({ arg amp, indexamp;
-					var filename="plank";
-					filename = filename ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
+				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp
+					var filename = "plank" ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
 					if ( PathName.new(sndpath ++"/"++foldername++"/"++filename).isFile, {
-						~buffers[indexplank][indexpos][indexamp] = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
+						var tmpbuffer;
+						//("loading"+filename).postln;
+						//~buffers[indexplank][indexpos][indexamp] = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
+						tmpbuffer = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
+						~buffers[indexplank][indexpos] = ~buffers[indexplank][indexpos].add(tmpbuffer)
+				//	}, {
+				//			("file does not exist"+(sndpath ++"/"++foldername++"/"++filename)).postln;
 					})
 				})
 			})
@@ -145,6 +152,7 @@ TxalaInteractive{
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
+		if (lastPattern.isNil, {"lastpattern is NIL!"});
 		patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
 		if( (~answer && ~answerpriority), {this.answer()}); // asap
 		if (~autoanswerpriority, { this.doautoanswerpriority() });
@@ -188,7 +196,7 @@ TxalaInteractive{
 			txalasilence=nil;
 		});
 		if (txalaonset.isNil.not, {
-			plankdata = txalaonset.plankdata;// will restore itself on new()
+			//~plankdata = txalaonset.~plankdata;// will restore itself on new()
 			txalaonset.kill();
 			txalaonset=nil;
 		});
@@ -670,7 +678,7 @@ TxalaInteractive{
 
 
 		// pitch detection area
-		Button( win, Rect(370,250,80,25))
+/*		Button( win, Rect(370,250,80,25))
 		.states_([
 			["plank detect", Color.white, Color.black],
 			["plank detect", Color.black, Color.green]
@@ -692,7 +700,7 @@ TxalaInteractive{
 					butt.value = 1;
 				})
 			});
-		});
+		});*/
 
 
 		Button(win,  Rect(370, 20,80,25))
@@ -700,6 +708,8 @@ TxalaInteractive{
 			["new set", Color.white, Color.black],
 		])
 		.action_({ arg butt;
+			// RESET HERE ~plankdata???
+			//~plankdata = Array.fillND([6, 5], { 0 }); // numplanks, plankresolution!!!
 			TxalaSet.new(server, sndpath)
 		});
 
@@ -1006,12 +1016,11 @@ TxalaInteractive{
 			var data;
 			("loading..." + basepath  ++ "/presets_planks/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_planks/" ++  menu.item);
-			data.postln;
 
-			this.plankdata = data[\plankdata];
+			~plankdata = data[\plankdata];
 
 			try {
-				txalaonset.plankdata = data[\plankdata]; // this causes error on load because txalaonset is nil yet******
+				//~plankdata = data[\plankdata]; // this causes error on load because txalaonset is nil yet******
 				this.updateTxalaScoreNumPlanks();
 			}{|error|
 				("not listening yet?"+error).postln;
@@ -1044,11 +1053,13 @@ TxalaInteractive{
 
 			data = Dictionary.new;
 			try {
-				data.put(\plankdata, txalaonset.plankdata);
+				data.put(\plankdata, ~plankdata);
 				data.writeArchive(basepath ++ "/presets_planks/" ++ filename);
 			}{|error|
 				("file is empty?"+error).postln;
 			};
+
+			data.postln;
 
 			newpreset.string = ""; //clean field
 		});
@@ -1061,7 +1072,7 @@ TxalaInteractive{
 		try{
 			num = this.numactiveplanks()
 		}{ |err|
-			num = plankdata.size //bad
+			num = ~plankdata.size //bad
 		};
 
 		if (~txalascore.isNil.not, {~txalascore.updateNumPlanks( num ) });
@@ -1069,7 +1080,7 @@ TxalaInteractive{
 
 	numactiveplanks{
 		var num = 0;
-		plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
+		~plankdata.do({arg arr; // there is a proper way to do this but i cannot be bothered with fighting with the doc system
 			if (arr.size.asBoolean, {num=num+1});
 		});
 		["active planks are", num].postln;
