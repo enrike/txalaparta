@@ -42,6 +42,12 @@ TxalaSet{
 		sndpath = asndpath;
 
 		//sndpath.postln;
+		if (~listenparemeters.isNil, {
+			~listenparemeters = ().add(\in->0).add(\gain->1);
+			~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
+			~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
+		});
+
 
 		if (win.isNil.not, {win.close});
 
@@ -62,11 +68,11 @@ TxalaSet{
 		}).load(server);
 
 		// look for onsets
-		SynthDef(\listener, { arg in=0, thresh = 0.2; // thres should take values from global parameters
-			var sig = SoundIn.ar(in);//In.ar(in) ;
+		SynthDef(\listener, { arg in=0, thresh = 0.7; // thres should take values from global parameters
+			var sig = SoundIn.ar(in);
 			var loc = LocalBuf(1024, 1) ;
 			var chain = FFT(loc, sig);
-			SendTrig.kr(Onsets.kr(chain, thresh, relaxtime:0.5), 999, Loudness.kr(chain));
+			SendTrig.kr(Onsets.kr(chain, thresh, relaxtime:1), 999, Loudness.kr(chain));
 		}).add ;
 
 		// detect silences
@@ -104,21 +110,22 @@ TxalaSet{
 				.action_({ arg butt;
 					if (butt.value.asBoolean, {
 						~recindex = [indexA, indexB];
-						recsynth = Synth(\recBuf, [\bufnum, recbuf.bufnum]);
+						~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT
 						this.process(); // Task that processes the sound in realtime
 
 /*						planksamplebuttons.flat.do({arg bu;
 							if ( (bu.value==1) && (bu!=butt), { bu.valueAction_(0) }, { bu.value=0 }); // update this***
 						});*/
 
-						butt.value = 1;
+						//butt.value = 1;
 						{ butt.valueAction_(0) }.defer(bufflength); //auto OFF
 					}, {
 						//"going OFF".postln;
 						butt.states = [[name, Color.red, Color.black], [name, Color.black, Color.red]];
-						recsynth.free;
+						butt.value = 0;
+						//recsynth.free;
 						//recbuf.plot;
-						this.end(); // correct???
+						//this.end(); // correct???
 						//this.process();
 					})
 				});
@@ -196,20 +203,26 @@ TxalaSet{
 
 		var func =	Task({
 
-			("PROCESSING BUFFER" + ~recindex).postln;
+			//("PROCESSING BUFFER" + ~recindex).postln;
 			// name of file, typically exprtessed as the midi number
 
 			{processbutton.value = 1}.defer;
-
-			{ this.end() }.defer( (recbuf.numFrames / recbuf.numChannels ) / recbuf.sampleRate ); // STOP
+			{ this.end() }.defer( bufflength ); // STOP
 
 			sttime = thisThread.seconds ; // start time
-			onsetsynth = Synth(\listener, [\in, 0, \thresh, ~listenparemeters.tempo.threshold]) ;
-			silencesynth = Synth.newPaused(\silence, [\in, 0, \amp, ~listenparemeters.onset.threshold]) ;
+
+			recbuf.zero; // clear
+			onsetsynth.free;
+			silencesynth.free;
+			recsynth.free;
+
+			recsynth = Synth(\recBuf, [\bufnum, recbuf.bufnum]);
+			onsetsynth = Synth(\listener, [\in, ~listenparemeters.in, \thresh, ~listenparemeters.onset.threshold]) ;
+			silencesynth = Synth.newPaused(\silence, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold]) ;
 
 			// two array to collect onsets and silences
-			onsets = [] ;
-			silences = [] ;
+			onsets = [];
+			silences = [];
 
 			// two responders
 			respOSC = OSCFunc({ arg msg, time;
@@ -232,41 +245,47 @@ TxalaSet{
 
 		});
 
-		func.start; //
+		func.start; //GO
 	}
 
 
 	end {
-		"DONE PROCESSING".postln;
+		var destpath;
 
 		recbuf.plot;
 
 		//there is something wrong here. the more hits are detected the more chop they are in the attack.
 
-		onsetsynth.stop();
+		destpath = sndpath++namefield.value++"/";
 
-		onsets.do({arg onset, index;
-			var sttime, endtime, length, tmpbuffer, destpath, filename;
-			(sndpath++namefield.value++"/").postln;
-			destpath = sndpath++namefield.value++"/";
+		//onsets.do({arg onset, index;
+		silences.do({arg silence, index;
+			var sttime, endtime, length, tmpbuffer, filename;
+			//~recindex.postln;
 			filename = "plank"++~recindex[0].asString++~recindex[1].asString++index.asString++".wav";
-			sttime = (onset - attacktime) * recbuf.sampleRate;
-			endtime = silences[index] * recbuf.sampleRate;
+			filename.postln;
+			sttime = (onsets[index] - attacktime) * recbuf.sampleRate;
+			endtime = silence * recbuf.sampleRate;
 			length = endtime - sttime;
 			tmpbuffer = Buffer.alloc(server, length, 1);
 			recbuf.copyData(tmpbuffer, srcStartAt:sttime, numSamples:length);
 			tmpbuffer.normalize();
-			// here ease the first and last msecs
 
 			if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
 			tmpbuffer.write( (destpath ++ filename), "wav", 'int16' );
 		});
 
-/*		~onsets.postln;
-		~silences.postln;*/
+		["onsets",onsets].postln;
+		["silences",silences].postln;
+
+		onsetsynth.free;
+		silencesynth.free;
+		recsynth.free;
 
 		respOSC.free ;
 		silOSC.free ;
+		~recindex = nil;
+		["DONE PROCESSING"].postln;
 
 		{processbutton.value = 0}.defer;
 	}
