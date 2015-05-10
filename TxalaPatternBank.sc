@@ -13,6 +13,10 @@ TxalaPatternBank{
 	}
 
 	initTxalaPatternBank {
+		this.reset();
+	}
+
+	reset{
 		bank = [[],[],[],[]];
 	}
 
