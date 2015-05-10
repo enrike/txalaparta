@@ -79,7 +79,7 @@ TxalaCircleAnim {
 				});
 			});
 
-			this.drawingSetBuffer = [ this.drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ];
+			this.drawingSetBuffer = [ this.drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ]; // clear
 
 		};
 
