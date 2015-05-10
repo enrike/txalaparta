@@ -13,11 +13,10 @@ TxalaSet{
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank 0-4
 	var ampresolution = 5; // max amps per position 0-4
-	var bufflength = 8; // secs
+	var bufflength = 10; // secs
 	var planksamplebuttons;// Array.fillND([numplanks, plankresolution], { nil });
 	var names;// = ["A","B","C","D","E","F","G","H"];
 	var gridloc;// = Point.new(50,50);
-	var speed = 2.5; // could we speed the processing up???
 	var recsynth;
 	var sndpath;// = thisProcess.nowExecutingPath.dirname++"/sounds/";
 	var silentchannel=100; // channel to send/listen sound while processing
@@ -26,7 +25,7 @@ TxalaSet{
 	var sttime;
 	var processbutton;
 	var recbuf;
-	var win, scope, namefield;
+	var win, scope, namefield, numhits;
 	var server, onsetsynth, silencesynth;
 	var respOSC, silOSC;
 	var onsets, silences;
@@ -41,22 +40,19 @@ TxalaSet{
 		server = aserver;
 		sndpath = asndpath;
 
-		//sndpath.postln;
-		if (~listenparemeters.isNil, {
-			~listenparemeters = ().add(\in->0).add(\gain->1);
-			~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
-			~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
-		});
-
-
 		if (win.isNil.not, {win.close});
+
+		//sndpath.postln;
+/*		if (~listenparemeters.isNil, {
+			~listenparemeters = ().add(\in->0).add(\gain->2.7);
+			~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.24).add(\checkrate->20);
+			~listenparemeters.onset = ().add(\threshold->0.93).add(\relaxtime->0.022).add(\floor->0.24).add(\mingap->1);
+		});*/
 
 		planksamplebuttons =  Array.fillND([numplanks, plankresolution], { nil });
 
 		names = ["A","B","C","D","E","F","G","H"];
 		gridloc = Point.new(50,50);
-
-		~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
 
 		respOSC.free ;
 		silOSC.free ;
@@ -65,18 +61,18 @@ TxalaSet{
 
 		SynthDef(\recBuf,{ arg in=0, bufnum=0;
 			RecordBuf.ar(SoundIn.ar(in), bufnum);
-		}).load(server);
+		}).add;
 
 		// look for onsets
-		SynthDef(\listener, { arg in=0, thresh = 0.7; // thres should take values from global parameters
+		SynthDef(\listener, { arg in=0, thresh = 0.3, relaxtime = 1;
 			var sig = SoundIn.ar(in);
 			var loc = LocalBuf(1024, 1) ;
 			var chain = FFT(loc, sig);
-			SendTrig.kr(Onsets.kr(chain, thresh, relaxtime:1), 999, Loudness.kr(chain));
+			SendTrig.kr(Onsets.kr(chain, thresh, relaxtime:relaxtime), 999, Loudness.kr(chain));
 		}).add ;
 
 		// detect silences
-		SynthDef(\silence, { arg in=0, amp=(-30.dbamp); //amp should take values from global parameters
+		SynthDef(\silence, { arg in=0, amp=0.005;
 			SendTrig.kr(A2K.kr(DetectSilence.ar(SoundIn.ar(in), amp:amp)), 111, 0);
 		}).add ;
 
@@ -89,11 +85,12 @@ TxalaSet{
 
 		win = Window.new("", Rect(10, 100, 340, 210));
 		win.onClose_({
-			if (scope.isNil.not, {scope.kill }) ;
+			//if (scope.isNil.not, {scope.kill }) ;
 			respOSC.free ;
 			silOSC.free ;
 			onsetsynth.free;
-			silencesynth.free
+			silencesynth.free;
+			recsynth.free;
 		});
 
 		numplanks.do({arg indexA;
@@ -110,7 +107,7 @@ TxalaSet{
 				.action_({ arg butt;
 					if (butt.value.asBoolean, {
 						~recindex = [indexA, indexB];
-						~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT
+						~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT. to avoid appending more and more...
 						this.process(); // Task that processes the sound in realtime
 
 /*						planksamplebuttons.flat.do({arg bu;
@@ -118,9 +115,8 @@ TxalaSet{
 						});*/
 
 						//butt.value = 1;
-						{ butt.valueAction_(0) }.defer(bufflength); //auto OFF
+						{ butt.valueAction_(0) }.defer(bufflength); //auto go OFF
 					}, {
-						//"going OFF".postln;
 						butt.states = [[name, Color.red, Color.black], [name, Color.black, Color.red]];
 						butt.value = 0;
 						//recsynth.free;
@@ -171,7 +167,7 @@ TxalaSet{
 			ww.front
 		});
 
-		Button(win, Rect(120,10, 80, 25)) // loads current sample set into memory
+/*		Button(win, Rect(120,10, 80, 25)) // loads current sample set into memory
 		.states_([
 			["load", Color.white, Color.black]
 		])
@@ -188,7 +184,11 @@ TxalaSet{
 					})
 				})
 			});
-		});
+		});*/
+
+
+		// DetectSilence controls //
+		numhits = StaticText(win, Rect(170, 10, 30, 25)).string = "0";
 
 		processbutton = Button(win, Rect(200,10, 70, 25))
 		.states_([
@@ -199,53 +199,51 @@ TxalaSet{
 		win.front;
 	}
 
+	clean {
+		onsetsynth.free;
+		silencesynth.free;
+		recsynth.free;
+
+		respOSC.free ;
+		silOSC.free ;
+
+		// two array to collect onsets and silences
+		onsets = [];
+		silences = [];
+	}
+
 	process {
+		{processbutton.value = 1}.defer;
+		{ this.end() }.defer( bufflength ); // STOP later
 
-		var func =	Task({
+		this.clean(); // just in case
+		recbuf.zero; // erase buffer
 
-			//("PROCESSING BUFFER" + ~recindex).postln;
-			// name of file, typically exprtessed as the midi number
+		onsetsynth = Synth(\listener, [\in, ~listenparemeters.in]) ;
+		silencesynth = Synth.newPaused(\silence, [\in, ~listenparemeters.in]);
 
-			{processbutton.value = 1}.defer;
-			{ this.end() }.defer( bufflength ); // STOP
+		recsynth = Synth(\recBuf, [\in, ~listenparemeters.in, \bufnum, recbuf.bufnum]);
+		sttime = thisThread.seconds ; // start time
 
-			sttime = thisThread.seconds ; // start time
+		// two responders
+		respOSC = OSCFunc({ arg msg, time;
+			if (msg[2] == 999){
+				("attack"+(time-sttime)).postln;
+				onsets = onsets.add(time-sttime) ;
+				silencesynth.run ;
+				onsetsynth.run(false) ;
+			}
+		},'/tr', Server.local.addr);
 
-			recbuf.zero; // clear
-			onsetsynth.free;
-			silencesynth.free;
-			recsynth.free;
-
-			recsynth = Synth(\recBuf, [\bufnum, recbuf.bufnum]);
-			onsetsynth = Synth(\listener, [\in, ~listenparemeters.in, \thresh, ~listenparemeters.onset.threshold]) ;
-			silencesynth = Synth.newPaused(\silence, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold]) ;
-
-			// two array to collect onsets and silences
-			onsets = [];
-			silences = [];
-
-			// two responders
-			respOSC = OSCFunc({ arg msg, time;
-				if (msg[2] == 999){
-					("attack"+(time-sttime)).postln;
-					onsets = onsets.add(( (time-sttime)*speed)) ;
-					silencesynth.run ;
-					onsetsynth.run(false) ;
-				}
-			},'/tr', Server.local.addr);
-
-			silOSC = OSCFunc({ arg msg, time;
-				if (msg[2] == 111){
-					("silence"+(time-sttime)).postln ;
-					silences = silences.add(( (time-sttime)*speed )) ;
-					onsetsynth.run ;
-					silencesynth.run(false) ;
-				}
-			},'/tr', Server.local.addr);
-
-		});
-
-		func.start; //GO
+		silOSC = OSCFunc({ arg msg, time;
+			if (msg[2] == 111){
+				("silence"+(time-sttime)).postln ;
+				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
+				silences = silences.add(time-sttime) ;
+				onsetsynth.run ;
+				silencesynth.run(false) ;
+			}
+		},'/tr', Server.local.addr);
 	}
 
 
@@ -254,16 +252,13 @@ TxalaSet{
 
 		recbuf.plot;
 
-		//there is something wrong here. the more hits are detected the more chop they are in the attack.
-
 		destpath = sndpath++namefield.value++"/";
 
-		//onsets.do({arg onset, index;
-		silences.do({arg silence, index;
+		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
 			var sttime, endtime, length, tmpbuffer, filename;
 			//~recindex.postln;
 			filename = "plank"++~recindex[0].asString++~recindex[1].asString++index.asString++".wav";
-			filename.postln;
+			//filename.postln;
 			sttime = (onsets[index] - attacktime) * recbuf.sampleRate;
 			endtime = silence * recbuf.sampleRate;
 			length = endtime - sttime;
@@ -275,16 +270,13 @@ TxalaSet{
 			tmpbuffer.write( (destpath ++ filename), "wav", 'int16' );
 		});
 
-		["onsets",onsets].postln;
-		["silences",silences].postln;
+		["onsets",onsets.size].postln;
+		["silences",silences.size].postln;
 
-		onsetsynth.free;
-		silencesynth.free;
-		recsynth.free;
+		this.clean();
 
-		respOSC.free ;
-		silOSC.free ;
 		~recindex = nil;
+		numhits.string = "0";
 		["DONE PROCESSING"].postln;
 
 		{processbutton.value = 0}.defer;
