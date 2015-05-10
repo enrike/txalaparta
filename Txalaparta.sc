@@ -306,18 +306,10 @@ Txalaparta{
 					drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
 				}); // END NUMBEATS LOOP
 
-
-					{
-					    if (~makilaanims.isNil.not, { ~makilaanims.scheduleDraw(drawingSet) });
-					}.defer(delaytime); // schedule drawing when first hit fires
+				{
+					if (~makilaanims.isNil.not, { ~makilaanims.scheduleDraw(drawingSet) });
+				}.defer(delaytime); // schedule drawing when first hit fires
 
 		}, {"WARNING: no sound selected for beat".postln; ~buffers.postln});
 	}
-
-
-
-
-
-
-
 }
