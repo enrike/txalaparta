@@ -65,7 +65,8 @@ TxalaInteractive{
 		~buffers = Array.fillND([numplanks, plankresolution], { [] });
 		~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution??
 
-		drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]}); // why ~buffers.size??
+		//drawingSet = Array.fill(8, {[-1, 0, false, 10]}); // max num of hits per phrase
+		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\gain->1);
@@ -108,11 +109,8 @@ TxalaInteractive{
 				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp
 					var filename = "plank" ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
 					if ( PathName.new(sndpath ++"/"++foldername++"/"++filename).isFile, {
-						var tmpbuffer;
-						tmpbuffer = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
+						var tmpbuffer = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
 						~buffers[indexplank][indexpos] = ~buffers[indexplank][indexpos].add(tmpbuffer)
-				//	}, {
-				//			("file does not exist"+(sndpath ++"/"++foldername++"/"++filename)).postln;
 					})
 				})
 			})
@@ -143,27 +141,32 @@ TxalaInteractive{
 	broadcastgroupstarted { // silence detection calls this.
 		~bpm = tempocalc.calculate();
 		if( (~answer && ~answerpriority.not), { this.answer() }); // later
+		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]];
 		{compassbutton.value = 1}.defer;
 	}
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
-		if (lastPattern.isNil, {"lastpattern is NIL!"});
-		patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
-		if( (~answer && ~answerpriority), {this.answer()}); // asap
-		if (~autoanswerpriority, { this.doautoanswerpriority() });
-		if (~txalascore.isNil.not, {
-			~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
-		});
-		{numbeatslabel.string = "Beats:" + lastPattern.size;}.defer;
-		{compassbutton.value = 0}.defer; // display now
+		if (lastPattern.isNil.not, {
+			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render asap //
+			//drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]];
+
+			patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
+			if( (~answer && ~answerpriority), { this.answer() }); // asap
+			if (~autoanswerpriority, { this.doautoanswerpriority() });
+			if (~txalascore.isNil.not, {
+				~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
+			});
+			{numbeatslabel.string = "Beats:" + lastPattern.size}.defer;
+			{compassbutton.value = 0}.defer; // display now
+		})
 	}
 
 	newonset { arg hittime, amp, player, plank;
 		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
-		drawingSet[txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp]; //hittime is wrong??
-		{hitbutton.value = 1}.defer;
-		{hitbutton.value = 0}.defer(0.055); // short flash
+		drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp];
+		{hitbutton.value = 1}.defer; // short flash
+		{hitbutton.value = 0}.defer(0.055);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -265,7 +268,7 @@ TxalaInteractive{
 		}, {
 			val = 0.15; // if it was an hutsune or ttan. should we calculate this according to current bpm?
 		});
-		if (val < 0.07, {val = 0.07}); //lower limit
+		if (val < 0.01, {val = 0.01}); //lower limit
 		^val;
 	}
 
@@ -292,17 +295,26 @@ TxalaInteractive{
 			);
 		});
 
-		if (curhits > 1, { gap = this.averagegap() });
-		// should we shorten the gap according to num of curhits??
+		// should we shorten the gap according to num of curhits?? ******
+		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
+		if (curhits > 1, {
+			gap = this.averagegap();
+			/*
+			if (curhits!=lastPattern.size, {
+				gap = gap / ((curhits-lastPattern.size).abs/1.2);
+			});*/
+		});
 
-		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), {// here every random time play a chord
+		if (curhits==1 && [true, false].wchoose([0.15, 0.85]), { // sometimes play a two hit chord
 			gap = 0;
 			curhits = 2;
 		});
 
-		if ( defertime < 0, {curhits = 1}); // if we are late or gaps it too shot they pile up and sounds horrible
+		drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
 
-		hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num by now
+		if ( defertime < 0, {curhits = 1}); // if we are late or gap is too shot they pile up and sounds horrible
+
+		hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
 
 		curhits.do({ arg index;
 			var hittime, amp;
@@ -317,12 +329,13 @@ TxalaInteractive{
 
 			if ( hittime.isNaN, { hittime = 0 } );
 			if ( hittime == inf, { hittime = 0 } );
-			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime); //
-			// I need a task that calls circleanim.scheduleDraw(data)
-			// data must be like drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
-			drawingSet[index] = [0, hittime, false, amp]; // hittime is wrong?
+			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
+			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
 		});
-		{circleanim.scheduleDraw(drawingSet)}.defer;
+		{
+			circleanim.scheduleDraw(drawingSet[1], 1);
+			//drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
+		}.defer(defertime);// schedule with first hit
 	}
 
 	selfcancel { arg plank, index, total;
@@ -341,9 +354,7 @@ TxalaInteractive{
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
 		this.selfcancel(plank, index, total); // only if enabled by user
 
-
-		positions = ~buffers[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots
-		positions.size.postln;
+		positions = ~buffers[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots. this is not the best way
 
 		if (positions.size==1,{choices = [1]}); // ugly way to solve it
 		if (positions.size==2,{choices = [0.50, 0.50]});
@@ -354,11 +365,10 @@ TxalaInteractive{
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
 		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices); // focus on plank center
 
-		ranges = Array.fill(ampresolution, {arg num=0; (1/ampresolution)*(num+1)}); // which sample corresponds to this amp
+		// which sample corresponds to this amp. careful as each pos might have different num of hits inside
+		ranges = Array.fill(~buffers[plank][plankpos].size, {arg num=0; (1/~buffers[plank][plankpos].size)*(num+1) });
 		plankamp = ranges.detectIndex({arg item; amp<=item});
-
-		actualplank = ~buffers[plank][plankpos][plankamp]; //
-		//["the sample to play", amp, plank, plankpos, plankamp].postln;
+		actualplank = ~buffers[plank][plankpos][plankamp];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
@@ -522,7 +532,7 @@ TxalaInteractive{
 
 		// feddback area
 
-		circleanim = TxalaCircleAnim.new(win, 450, 100, 200);
+		circleanim = TxalaCircle.new(win, 450, 100, 200);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
 		label.string = "BPM: --- \nCompass: ---";
