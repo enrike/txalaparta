@@ -21,7 +21,7 @@ s.boot; //////// BOOT SERVER //////////////////
 
 s.doWhenBooted({
 
-	var presetspath, drawingSetBuffer, txalatempo, currentpath; //
+	var presetspath, txalatempo, currentpath; //
 
 	// GUI vars
 	var window, timelinewin, clock, nextautopilot, samples, istheresomething, findIndex, presets, tscore;
