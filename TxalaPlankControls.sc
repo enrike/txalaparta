@@ -38,9 +38,9 @@ TxalaPlankControls {
 		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
 		StaticText(win, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
 
-		if (~buffers.isNil, {
-			~buffers = Array.fill(8, {nil});
-		});
+		/*		if (~buffers.isNil, {
+		~buffers = Array.fill(8, {nil});
+		});*/
 
 		if (~plankchance.isNil, {
 			~plankchance = (Array.fill(~buffers.size, {1}));
