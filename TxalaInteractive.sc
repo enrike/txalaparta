@@ -29,11 +29,11 @@ grup of hits end point
 TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
-	var doGUI, label, reset, answer, hutsune, win, scope, scopesynth;
-	var txalasilence, txalaonset, markov, ann, lastPattern, patternbank;
+	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
+	var <txalasilence, <txalaonset, markov, ann, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
-	var <pitchbuttons, circleanim, drawingSet;
+	var <pitchbuttons, circleanim, drawingSet, >txalacalibration;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -57,13 +57,11 @@ TxalaInteractive{
 		~answer = false;
 		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
-		~answermode = 0; //0,1,3: imitation, markov1, markov2
+		~answermode = 1; //0,1,3: imitation, markov1, markov2
 		~hutsunelookup = 0.3;
 		~plankdetect = 1;
-
 		~gapswing = 0.01;
 
-		//~buffers = Array.fillND([numplanks, plankresolution, ampresolution], { nil });
 		~buffers = Array.fillND([numplanks, plankresolution], { [] });
 		~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution??
 
@@ -103,7 +101,7 @@ TxalaInteractive{
 
 
 	loadsampleset{ arg presetfilename;
-		var foldername = presetfilename.split($.)[0];// get rid of the extension
+		var foldername = presetfilename.split($.)[0];// get rid of the file extension
 		("load sampleset"+foldername+~buffers).postln;
 		~buffers.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
@@ -111,8 +109,6 @@ TxalaInteractive{
 					var filename = "plank" ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
 					if ( PathName.new(sndpath ++"/"++foldername++"/"++filename).isFile, {
 						var tmpbuffer;
-						//("loading"+filename).postln;
-						//~buffers[indexplank][indexpos][indexamp] = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
 						tmpbuffer = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
 						~buffers[indexplank][indexpos] = ~buffers[indexplank][indexpos].add(tmpbuffer)
 				//	}, {
@@ -165,8 +161,9 @@ TxalaInteractive{
 
 	newonset { arg hittime, amp, player, plank;
 		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
+		drawingSet[txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp]; //hittime is wrong??
 		{hitbutton.value = 1}.defer;
-		{hitbutton.value = 0}.defer(0.055);
+		{hitbutton.value = 0}.defer(0.055); // short flash
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -226,10 +223,10 @@ TxalaInteractive{
 		if (defertime.isNaN.not, {
 			switch (~answermode,
 				0, { this.imitation(defertime) },
-				1, { this.markovnext(defertime) }, // fixed values chain
-				2, { this.markovnext(defertime, lastPattern.size, 2) },
-				3, { this.markovnext(defertime, lastPattern.size, 3) },
-				4, { this.markovnext(defertime, lastPattern.size, 4) }
+				//1, { this.markovnext(defertime) }, // fixed values chain
+				//2, { this.markovnext(defertime, lastPattern.size, 2) },
+				//3, { this.markovnext(defertime, lastPattern.size, 3) },
+				1, { this.markovnext(defertime, lastPattern.size, 4) }
 			);
 		});
 	}
@@ -308,8 +305,8 @@ TxalaInteractive{
 		hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num by now
 
 		curhits.do({ arg index;
-			var playtime, amp;
-			playtime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+			var hittime, amp;
+			hittime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
 			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
 
 			if (this.getaccent, {
@@ -318,14 +315,14 @@ TxalaInteractive{
 				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
 			});
 
-			if ( playtime.isNaN, { playtime = 0 } );
-			if ( playtime == inf, { playtime = 0 } );
-			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(playtime); //
+			if ( hittime.isNaN, { hittime = 0 } );
+			if ( hittime == inf, { hittime = 0 } );
+			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime); //
 			// I need a task that calls circleanim.scheduleDraw(data)
 			// data must be like drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
-			drawingSet[index] = [0, playtime, true, amp]; // store for drawing on window.refresh
-			{circleanim.scheduleDraw(drawingSet)}.defer;
+			drawingSet[index] = [0, hittime, false, amp]; // hittime is wrong?
 		});
+		{circleanim.scheduleDraw(drawingSet)}.defer;
 	}
 
 	selfcancel { arg plank, index, total;
@@ -341,13 +338,22 @@ TxalaInteractive{
 	}
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
-		var actualplank, plankpos, plankamp, ranges;
+		var actualplank, plankpos, plankamp, ranges, positions, choices;
 		this.selfcancel(plank, index, total); // only if enabled by user
 
-		// need to check if all slots are full
-		plankpos = Array.fill(plankresolution, {arg n=0; n}).wchoose([0.15, 0.15, 0.3, 0.3, 0.1]); // focus on plank center
 
-		// need to check if all slots are full
+		positions = ~buffers[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots
+		positions.size.postln;
+
+		if (positions.size==1,{choices = [1]}); // ugly way to solve it
+		if (positions.size==2,{choices = [0.50, 0.50]});
+		if (positions.size==3,{choices = [0.2, 0.65, 0.15]});
+		if (positions.size==4,{choices = [0.15, 0.35, 0.35, 0.15]});
+		if (positions.size==5,{choices = [0.15, 0.15, 0.3, 0.3, 0.1]});
+
+		// the wchoose needs to be a distribution with more posibilites to happen on center and right
+		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices); // focus on plank center
+
 		ranges = Array.fill(ampresolution, {arg num=0; (1/ampresolution)*(num+1)}); // which sample corresponds to this amp
 		plankamp = ranges.detectIndex({arg item; amp<=item});
 
@@ -367,11 +373,12 @@ TxalaInteractive{
 
 	doGUI  {
 		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
-		win = Window("Interactive txalaparta",  Rect(10, 50, 700, 550));
+		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 360));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
+			if (txalacalibration.isNil.not, {txalacalibration.close});
 			scopesynth.free;
 			scope.free;
 		};
@@ -454,24 +461,25 @@ TxalaInteractive{
 
 		yindex = yindex + 2.3;
 
-		// ~gain
-		guielements.add(\gain-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			"gain in",
-			ControlSpec(0, 5, \lin, 0.01, 1, ""),
-			{ arg ez;
-				~listenparemeters.gain = ez.value.asFloat;
-				if (scopesynth.isNil.not, {scopesynth.set(\gain, ez.value.asFloat)});
-				if (txalasilence.isNil.not, {
-					txalasilence.synth.set(\gain, ez.value.asFloat);
-				});
-				if (txalaonset.isNil.not, {
-					txalaonset.synth.set(\gain, ez.value.asFloat);
-				});
-			},
-			initVal: ~listenparemeters.gain,
-			labelWidth: 60;
-		));
+				// mode menu
+		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 100, 25)).string = "Answer mode";
+		guielements.add(\answermode->
+			PopUpMenu(win,Rect(95,yloc+(gap*yindex), 100,20))
+			.items_([
+				"imitation", // copy exactly what the user does
+				"learning" // 4th order markov chain
+			])
+			.action_({ arg menu;
+				try{ // bacwrds comp
+					~answermode = menu.value.asInt;
+					("changing to answer mode:" + menu.item + menu.value).postln;
+				}{|err|
+					~answermode = 1;
+					menu.value = ~answermode;
+				}
+			})
+			.valueAction_(~answermode)
+		);
 
 		yindex = yindex + 1;
 
@@ -487,25 +495,9 @@ TxalaInteractive{
 			labelWidth: 60;
 		));
 
-		yindex = yindex + 1.5;
+		//guielements.answermode.valueAction = ~answermode;
 
-		// mode menu
-		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 200, 25)).string = "Answer mode";
-		guielements.add(\answermode->
-				PopUpMenu(win,Rect(95,yloc+(gap*yindex), 210,20))
-			.items_(["imitation",
-				"fixed chances",
-				"learning chances 2 compasses",
-				"learning chances 3 compasses",
-				"learning chances 4 compasses"])
-				.action_({ arg menu;
-					~answermode = menu.value.asInt;
-					("changing to answer mode:" + menu.item).postln;
-				})
-				.valueAction_(~answermode)
-			);
-
-		yindex = yindex + 1.5;
+		yindex = yindex + 1;
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
@@ -520,311 +512,44 @@ TxalaInteractive{
 
 		yindex = yindex + 1.5;
 
-		// DetectSilence controls //
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Tempo detection";
-
-		yindex = yindex + 1;
-
-		guielements.add(\tempothreshold->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"threshold",// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
-				ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
-				nil,
-				initVal: ~listenparemeters.tempo.threshold,
-				labelWidth: 60;
-			).sliderView.mouseUpAction_({arg ez;
-				if (txalasilence.isNil.not, {
-					txalasilence.updatethreshold(ez.value.asFloat);
-				});
-				~listenparemeters.tempo.threshold = ez.value.asFloat;
-			});
-		);
-
-		yindex = yindex + 1;
-
-		guielements.add(\falltime->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"falltime",
-				ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
-				{ arg ez;
-					if (txalasilence.isNil.not, {
-						txalasilence.synth.set(\falltime, ez.value.asFloat);
-					});
-					~listenparemeters.tempo.falltime = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.tempo.falltime,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1;
-
-		guielements.add(\checkrate->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"rate",
-				ControlSpec(5, 60, \lin, 1, 30, ""),
-				{ arg ez;
-					if (txalasilence.isNil.not, {
-						txalasilence.synth.set(\checkrate, ez.value.asFloat);
-					});
-					~listenparemeters.tempo.checkrate = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.tempo.checkrate,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1.5;
-
-		// hutsune timeout control
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hutsune detection timeout";
-
-		yindex = yindex + 1;
-
-		guielements.add(\hutsunelookup ->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"lookup",
-				ControlSpec(0, 1, \lin, 0.01, 1, ""),
-				{ arg ez;
-					~hutsunelookup = ez.value.asFloat;
-				},
-				initVal: ~hutsunelookup,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1.5;
-
-		// Onset pattern detection controls //
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hit onset detection";
-
-		yindex = yindex + 1;
-
-		guielements.add(\onsetthreshold->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"threshold",
-				ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
-				{ arg ez;
-					if (txalaonset.isNil.not, {
-						txalaonset.synth.set(\threshold, ez.value.asFloat);
-					});
-					~listenparemeters.onset.threshold = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.threshold,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1;
-
-		guielements.add(\relaxtime->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"relaxtime",
-				ControlSpec(0.001, 0.5, \lin, 0.001, 0.05, "ms"),
-				{ arg ez;
-					if (txalaonset.isNil.not, {
-						txalaonset.synth.set(\relaxtime, ez.value.asFloat);
-					});
-					~listenparemeters.onset.relaxtime = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.relaxtime,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1;
-
-		guielements.add(\floor->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"floor",
-				ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
-				{ arg ez;
-					if (txalaonset.isNil.not, {
-						txalaonset.synth.set(\floor, ez.value.asFloat);
-					});
-					~listenparemeters.onset.floor = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.floor,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1;
-
-		guielements.add(\mingap->
-			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
-				"mingap",
-				ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
-				{ arg ez;
-					if (txalaonset.isNil.not, {
-						txalaonset.synth.set(\mingap, ez.value.asFloat);
-					});
-					~listenparemeters.onset.mingap = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.mingap,
-				labelWidth: 60;
-		));
-
-		yindex = yindex + 1.5;
-
-		this.doPresets(win, 7, yloc+(gap*yindex), guielements);
+		this.doCalibrationPresets(win, 7, yloc+(gap*yindex), guielements);
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
+		yindex = yindex + 5;
+		this.doPlanksSetGUI(win, 7, yloc+(gap*yindex));
 
-
-		// plank area
-		//this.doPlanks(350,yloc-10, 20, 220, 20);
-
-
-		// pitch detection area
-/*		Button( win, Rect(370,250,80,25))
-		.states_([
-			["plank detect", Color.white, Color.black],
-			["plank detect", Color.black, Color.green]
-		])
-		.action_({ arg but;
-			~plankdetect = but.value.asBoolean;
-		}).valueAction_(~plankdetect);
-
-		pitchbuttons.do({ arg item, index;
-			pitchbuttons[index] = Button(win, Rect(450+(30*index), 250, 30, 25))
-			.states_([
-				[(index+1).asString, Color.white, Color.black],
-				[(index+1).asString, Color.black, Color.red]
-			])
-			.action_({ arg butt;
-				if (butt.value.asBoolean, {
-					~recindex = index;
-					pitchbuttons.do({arg bu; bu.value=0});
-					butt.value = 1;
-				})
-			});
-		});*/
-
-
-		Button(win,  Rect(370, 20,80,25))
-		.states_([
-			["new set", Color.white, Color.black],
-		])
-		.action_({ arg butt;
-			// RESET HERE ~plankdata???
-			//~plankdata = Array.fillND([6, 5], { 0 }); // numplanks, plankresolution!!!
-			TxalaSet.new(server, sndpath)
-		});
-
-		this.doPlanksSetGUI(win, 370, 280);
-
-
+		StaticText(win, Rect(180, yloc+(gap*yindex), 170, 20)).string = "Rhythm constrains";
 
 
 		// feddback area
 
-		label = StaticText(win, Rect(370, 375, 250, 60)).font_(Font("Verdana", 25)) ;
+		circleanim = TxalaCircleAnim.new(win, 450, 100, 200);
+
+		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
 		label.string = "BPM: --- \nCompass: ---";
 
-		numbeatslabel = StaticText(win, Rect(370, 440, 250, 25)).font_(Font("Verdana", 25));
+		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
 		numbeatslabel.string = "Beats: ---";
 
-		hitbutton = Button( win, Rect(370,480,110,55))
+		hitbutton = Button( win, Rect(370,295,110,55))
 		.states_([
 			["HIT", Color.white, Color.grey],
 			["HIT", Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(480,480,110,55))
+		compassbutton = Button( win, Rect(480,295,110,55))
 		.states_([
 			["PHRASE", Color.white, Color.grey],
 			["PHRASE", Color.white, Color.red]
 		]);
 
-		hutsunebutton = Button( win, Rect(590,480,100,55))
+		hutsunebutton = Button( win, Rect(590,295,100,55))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.blue]
 		]);
 
-		circleanim = TxalaCircleAnim.new(win, 500, 120, 200);
-
-		// I need a task that calls circleanim.scheduleDraw(data)
-		// data must be like drawingSet = Array.fill(~buffers.size, {[-1, 0, false, 10]});
-		// drawingSet[index] = [currenttemposwing, hittime, txakun, hitamp]; // store for drawing on window.refresh
-
-
-
 		win.front;
 	}
 
-
-	/*doPlanks { arg xloc, yloc, gap, width, height;
-		var menuxloc = xloc + 44;
-		var playxloc = menuxloc+200+2;
-
-		// PLANKS - OHOLAK //////////////////////////////////
-		//StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
-		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
-		//StaticText(win, Rect(menuxloc+230, yloc-16, 200, 20)).string = "% chance";
-
-		planksMenus = Array.fill(~buffers.size, {[nil,nil]});
-
-		////////////////
-		~buffers.size.do({ arg index;
-
-			// errena row buttons
-			planksMenus[index][0] = Button(win, Rect(xloc+22,yloc+(gap*index),20,20))
-			.states_([
-				[(index+1).asString, Color.white, Color.black],
-				[(index+1).asString, Color.black, Color.blue],
-			])
-			.action_({ arg butt;
-				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
-				this.updateTxalaScoreNumPlanks();
-			});
-
-			// if (index==0, {
-			// 	planksMenus[index][0].valueAction = 1;
-			// 	//planksMenus[index][1].valueAction = 1;
-			// });// ONLY activate first ones
-
-			// menus for each plank
-			planksMenus[index][1] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),200,20))
-			.items_( samples.asArray.collect({arg item; PathName.new(item).fileName}) )
-			.action_({ arg menu;
-				var item = nil;
-				try { // when there is no sound for this
-					 item = menu.item;
-				} {|error|
-					"empty slot".postln;
-				};
-
-				if (item.isNil.not, {
-					~buffers[index] = Buffer.read(server, sndpath ++ menu.item);
-				});
-			})
-			.valueAction_(index);
-
-			// play buttons row
-			Button(win, Rect(playxloc,yloc+(gap*index),20,20))
-			.states_([
-				[">", Color.white, Color.black]
-			])
-			.action_({ arg butt;// play a single shot
-				if (~buffers[index].isNil.not, {
-					Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
-				})
-			});
-
-			// rec buttons row
-			Button(win, Rect(playxloc+20,yloc+(gap*index),25,20))
-			.states_([
-				["rec", Color.red, Color.black],
-				["rec", Color.black, Color.red]
-			])
-			.action_({ arg butt;
-				"not working yet!".postln;
-			});
-		});
-
-	}*/
 
 	updatepresetfiles{arg folder;
 		var temp;
@@ -836,12 +561,20 @@ TxalaInteractive{
 	}
 
 
-	doPresets { arg win, xloc, yloc, guielements;
+	doCalibrationPresets { arg win, xloc, yloc, guielements;
 		var newpreset, popup;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Presets";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Calibration manager";
 
-		popup = PopUpMenu(win,Rect(xloc,yloc+20,170,20))
+		Button(win,  Rect(xloc,yloc+20,80,25))
+		.states_([
+			["calibrate", Color.white, Color.grey],
+		])
+		.action_({ arg butt;
+			txalacalibration = TxalaCalibration.new(this);
+		});
+
+		popup = PopUpMenu(win,Rect(xloc,yloc+47,170,20))
 		.items_( this.updatepresetfiles("presets_listen") )
 		.mouseDownAction_( {arg menu;
 			presetslisten = this.updatepresetfiles("presets_listen");
@@ -860,26 +593,30 @@ TxalaInteractive{
 				~gapswing = data[\gapswing];
 				~answermode = data[\answermode];
 				~hutsunelookup = data[\hutsunelookup];
-				~listenparemeters = data[\listenparemeters];
+				~listenparemeters = data[\listenparemeters]; //
 
 				guielements.gapswing.valueAction = ~gapswing;
 				guielements.answermode.valueAction = ~answermode; //menu
-				guielements.hutsunelookup.valueAction = ~hutsunelookup;
 				guielements.amp.valueAction = ~amp;
 
-				try {
-					guielements.gain.valueAction = ~listenparemeters.gain
-				}{|err|
-					"could not set gain value".postln;
-				} ;
+				if (txalacalibration.isNil.not, {
+					txalacalibration.guielements.postln;
+					txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
 
-				guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-				guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-				guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
-				guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
-				guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-				guielements.floor.valueAction = ~listenparemeters.onset.floor;
-				guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+					try {
+						txalacalibration.guielements.gain.valueAction = ~listenparemeters.gain
+					}{|err|
+						"could not set gain value".postln;
+					} ;
+
+					txalacalibration.guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+					txalacalibration.guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+					txalacalibration.guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+					txalacalibration.guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
+					txalacalibration.guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+					txalacalibration.guielements.floor.valueAction = ~listenparemeters.onset.floor;
+					txalacalibration.guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+				});
 			});
 		});
 
@@ -891,8 +628,8 @@ TxalaInteractive{
 			error.postln;
 		};
 
-		newpreset = TextField(win, Rect(xloc, yloc+42, 95, 25));
-		Button(win, Rect(xloc+100,yloc+42,70,25))
+		newpreset = TextField(win, Rect(xloc, yloc+70, 95, 25));
+		Button(win, Rect(xloc+100,yloc+70,70,25))
 		.states_([
 			["save", Color.white, Color.grey]
 		])
@@ -928,7 +665,7 @@ TxalaInteractive{
 
 		Button(win, Rect(xloc,yloc,85,25))
 		.states_([
-			["learn", Color.white, Color.grey],
+			["learn", Color.white, Color.grey], // a better word than learn??
 			["learn", Color.white, Color.green]
 		])
 		.action_({ arg butt;
@@ -942,6 +679,7 @@ TxalaInteractive{
 		])
 		.action_({ arg butt;
 			markov.reset();
+			patternbank.reset();
 		});
 
 		yloc = yloc+27;
@@ -1006,6 +744,19 @@ TxalaInteractive{
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Plank set manager";
 
 		yloc = yloc+20;
+
+		Button(win,  Rect(xloc, yloc,80,25))
+		.states_([
+			["sample set", Color.white, Color.grey],
+		])
+		.action_({ arg butt;
+			// RESET HERE ~plankdata???
+			//~plankdata = Array.fillND([6, 5], { 0 }); // numplanks, plankresolution!!!
+			TxalaSet.new(server, sndpath)
+		});
+
+		yloc = yloc+27;
+
 		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_( this.updatepresetfiles("presets_planks") )
 		.mouseDownAction_( { arg menu;
