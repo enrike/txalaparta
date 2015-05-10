@@ -47,7 +47,7 @@ TxalaCircleAnim {
 			if (~pulse.not, {
 
 				try {
-					rot = rot + (((this.drawingSetBuffer[1][0][0]*dpt)))*(pi/180); // apply the rotation of the current beat
+					rot = rot + ((((drawingSetBuffer[1][0][0]*dpt)))*(pi/180)); // apply the rotation of the current beat
 				} {|error| rot = 0};
 				Pen.rotate( rot )
 			});
@@ -59,7 +59,7 @@ TxalaCircleAnim {
 			//Pen.rotate( rot );
 
 			//this.drawHitSet(this.drawingSetBuffer[1], dur, dpt);
-			this.drawingSetBuffer[1].do({arg data; // --> [msecs, txakunflag, amp]
+			drawingSetBuffer[1].do({arg data; // --> [msecs, txakunflag, amp]
 				var offset;
 
 				if (data[3] <= 2, { // only the ones with a valid data
@@ -79,7 +79,8 @@ TxalaCircleAnim {
 				});
 			});
 
-			this.drawingSetBuffer = [ this.drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ]; // clear
+			["drawing set buffer", drawingSetBuffer].postln;
+			drawingSetBuffer = [ drawingSetBuffer[1], Array.fill(4, {[0, -1, false, 10]}) ]; // clear
 
 		};
 
