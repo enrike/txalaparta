@@ -102,7 +102,6 @@ TxalaOnsetDetection{
 		//freq    = msg[14];
 		//keyt    = msg[15];
 
-
 		if (processflag.not, { // if not answering myself
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
