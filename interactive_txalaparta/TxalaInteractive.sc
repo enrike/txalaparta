@@ -382,7 +382,7 @@ TxalaInteractive{
 	}
 
 	doGUI  {
-		var yindex=0, yloc = 35, gap=20, guielements = (); //Array.fill(10, {nil});
+		var yindex=0, yloc = 40, gap=20, guielements = (); //Array.fill(10, {nil});
 		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 360));
 		win.onClose = {
 			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -395,7 +395,7 @@ TxalaInteractive{
 
 		// row of buttons on top side
 
-		Button( win, Rect(0,0,140,35))
+		Button( win, Rect(5,5,140,38))
 		.states_([
 			["listen", Color.white, Color.black],
 			["listen", Color.black, Color.green],
@@ -407,7 +407,7 @@ TxalaInteractive{
 				this.stop();
 			})
 		});
-		Button( win, Rect(0,yloc,140,35))
+		Button( win, Rect(5,yloc+3,140,38))
 		.states_([
 			["answer", Color.white, Color.black],
 			["answer", Color.black, Color.green],
@@ -416,7 +416,7 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-		Button( win, Rect(180,0,80,25))
+		Button( win, Rect(180,5,80,25))
 		.states_([
 			["auto priority", Color.white, Color.black],
 			["auto priority", Color.black, Color.green]
@@ -436,14 +436,14 @@ TxalaInteractive{
 
 		Button( win, Rect(180,yloc+15,80,25))
 		.states_([
-			["cancel me", Color.white, Color.black],
+			["self-cancel", Color.white, Color.black],
 			["cancel me", Color.black, Color.red]
 		])
 		.action_({ arg but;
 			selfcancelation = but.value.asBoolean;
 		});
 
-		Button(win,  Rect(260,0,80,25))
+		Button(win,  Rect(260,5,80,25))
 		.states_([
 			["show score", Color.white, Color.black],
 		])

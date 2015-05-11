@@ -1,0 +1,46 @@
+var o, p;
+o = [
+	Dictionary.prNew,  Array.prNew(32),  Event.prNew,  Array.prNew(16),  
+	Event.prNew,  Array.prNew(16),  Event.prNew,  Array.prNew(16)
+];
+p = [
+	// Dictionary
+	0, [ array: o[1],  size: 6 ],  
+	// Array
+	1, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		'listenparemeters',  o[2],  nil,  nil,  
+		'amp',  1.000000,  'answermode',  2,  
+		nil,  nil,  nil,  nil,  
+		'gap',  0.650000,  'gapswing',  0.050000,  
+		'hutsunelookup',  0.390000,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Event
+	2, [ array: o[3],  size: 5,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	3, [ 'onset',  o[4],  nil,  nil,  
+		nil,  nil,  'tempo',  o[6],  
+		'in',  0,  'gain',  2.720000,  
+		'amp',  1.000000,  nil,  nil ],  
+	// Event
+	4, [ array: o[5],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	5, [ 'threshold',  0.460000,  'relaxtime',  0.022000,  
+		nil,  nil,  nil,  nil,  
+		'floor',  0.240000,  'mingap',  1.000000,  
+		nil,  nil,  nil,  nil ],  
+	// Event
+	6, [ array: o[7],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	7, [ 'threshold',  0.100503,  'checkrate',  20.000000,  
+		'falltime',  0.240000,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ]
+];
+prUnarchive(o,p);
