@@ -9,8 +9,9 @@ this is just a bunch of scripts to research the txalaparta rhythms by implementi
 note that this is a ongoing research project suffering constant changes atm!
 
 there are two main directions atm :
-	- txalaparta_auto.scd : an auto txalaparta that generates both players' output
-	- txalaparta_interactive.scd : an interactive txalaparta that listens to sound input and responds. the response has three different modes
-		- imitation
-		- 1st order markov chain with predefined fixed values
-		- 2nd order markov chain that dinamically learns from the input. it takes into considerarion both the last system's answer and the human response to that
+
+- auto txalaparta : a program that generates txalaparta-like rhtythms that can  be controlled from a GUI
+
+- interactive txalaparta : an interactive txalaparta that listens to a txalaparta plaey input (via mic) and responds. the response has two different modes
+		- imitation: tries to play exactly what listens
+		- learning: using markov chains it tries to learn from the input and responds according to the learnt patterns and style
