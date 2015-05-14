@@ -42,17 +42,10 @@ TxalaSet{
 
 		if (win.isNil.not, {win.close});
 
-		//sndpath.postln;
-/*		if (~listenparemeters.isNil, {
-			~listenparemeters = ().add(\in->0).add(\gain->2.7);
-			~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.24).add(\checkrate->20);
-			~listenparemeters.onset = ().add(\threshold->0.93).add(\relaxtime->0.022).add(\floor->0.24).add(\mingap->1);
-		});*/
-
 		planksamplebuttons =  Array.fillND([numplanks, plankresolution], { nil });
 
 		names = ["A","B","C","D","E","F","G","H"];
-		gridloc = Point.new(50,50);
+		gridloc = Point.new(60,100);
 
 		respOSC.free ;
 		silOSC.free ;
@@ -83,9 +76,8 @@ TxalaSet{
 
 	doGUI {
 
-		win = Window.new("", Rect(10, 100, 340, 210));
+		win = Window.new("", Rect(10, 100, 220, 260));
 		win.onClose_({
-			//if (scope.isNil.not, {scope.kill }) ;
 			respOSC.free ;
 			silOSC.free ;
 			onsetsynth.free;
@@ -93,10 +85,14 @@ TxalaSet{
 			recsynth.free;
 		});
 
+		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 50, 25)).string = "Locs -->";
 		numplanks.do({arg indexA;
 
 			plankresolution.do({arg indexB;
 				var name = (indexA+1).asString++names[indexB];
+				if (indexA==0, {
+					StaticText(win, Rect(gridloc.x+10+(indexB*30), gridloc.y-25, 50, 25)).string = names[indexB];
+				});
 				StaticText(win, Rect(gridloc.x-50, (indexA*25)+gridloc.y, 50, 25)).string = "Plank"+(indexA+1).asString;
 
 				planksamplebuttons[indexA][indexB] = Button(win, Rect((30*indexB)+gridloc.x, (indexA*25)+gridloc.y, 30, 25))
@@ -109,42 +105,20 @@ TxalaSet{
 						~recindex = [indexA, indexB];
 						~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT. to avoid appending more and more...
 						this.process(); // Task that processes the sound in realtime
-
-/*						planksamplebuttons.flat.do({arg bu;
-							if ( (bu.value==1) && (bu!=butt), { bu.valueAction_(0) }, { bu.value=0 }); // update this***
-						});*/
-
-						//butt.value = 1;
 						{ butt.valueAction_(0) }.defer(bufflength); //auto go OFF
 					}, {
 						butt.states = [[name, Color.red, Color.black], [name, Color.black, Color.red]];
 						butt.value = 0;
-						//recsynth.free;
-						//recbuf.plot;
-						//this.end(); // correct???
-						//this.process();
 					})
 				});
 
 			});
 		});
 
-		//scope = FreqScopeView(win, Rect(200, 50, 100, 50));
-		//scope.inBus_(8);
-		//scope.active_(true);
 
-		//server.scope(1,8);//bus 25 from the txalaonset synth
+		StaticText(win, Rect(10, 42, 100, 25)).string = "set name";
 
-
-/*		scope = ScopeView(win, Rect(200, 50, 100, 50));
-		scope.bufnum = 8; // sound in ??
-		*/
-/*		win.view.decorator = FlowLayout( Rect(200, 50, 100, 50) );
-		scope = Stethoscope.new(server, view:win.view);
-		*/
-
-		namefield = TextField(win, Rect(210, 42, 120, 25)).value = Date.getDate.stamp;
-
+		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
 
 		Button(win, Rect(10,10, 50, 25))
 		.states_([
@@ -162,8 +136,8 @@ TxalaSet{
 		])
 		.action_({ arg butt;
 			var ww;
-			ww = Window.new("Help", Rect(0, 0, 300, 500));
-			StaticText(ww, Rect(5, 5, 295, 495)).string = "each row is a plank. each button in a row is a position in the plank. ideally left to right from the edge to the center. select one of the positions by pressing the button and you have 8 secs to hit up to 5 times the same position. after the 8 secs the program processes the recording and tries to save each of the hits to a separated file. do this for each of the positions in each of the planks";
+			ww = Window.new("Help", Rect(0, 0, 300, 200));
+			StaticText(ww, Rect(10, 10, 290, 150)).string = "Each row represents a plank. Each button in the row is a position in the plank. Ideally left to right from the edge to the center. Select one of the positions by pressing the button and you have 10 secs to hit several times in the same plank location. On timeout the program processes the recording and tries to save each of the hits to a separated file. Repeat this for each of the positions in each of the planks. You dont have to fill all positions, one per plank is enough but the more the richer it will sound";
 			ww.front
 		});
 
@@ -188,13 +162,13 @@ TxalaSet{
 
 
 		// DetectSilence controls //
-		numhits = StaticText(win, Rect(170, 10, 30, 25)).string = "0";
-
-		processbutton = Button(win, Rect(200,10, 70, 25))
+		processbutton = Button(win, Rect(110,10, 70, 25))
 		.states_([
 			["procesing", Color.white, Color.black],
 			["procesing", Color.white, Color.red]
 		]);
+
+		numhits = StaticText(win, Rect(190, 10, 30, 25)).string = "0";
 
 		win.front;
 	}
