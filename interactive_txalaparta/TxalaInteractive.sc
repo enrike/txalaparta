@@ -530,7 +530,7 @@ TxalaInteractive{
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"gapswing",
+			"swing",
 			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
 			{ arg ez;
 				~gapswing = ez.value.asFloat;
@@ -548,6 +548,20 @@ TxalaInteractive{
 
 		StaticText(win, Rect(180, yloc+(gap*yindex), 170, 20)).string = "Rhythm constrains";
 
+		yindex = yindex + 1;
+
+		5.do({arg index;
+			Button(win, Rect(180+(20*index), yloc+(gap*yindex),20,25))
+			.states_([
+				[index.asString, Color.white, Color.black],
+				[index.asString, Color.black, Color.blue],
+			])
+			.action_({ arg butt;
+				if (butt.value.asBoolean,
+					{},
+					{});
+			});
+		});
 
 		// feddback area
 
