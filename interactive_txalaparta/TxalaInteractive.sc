@@ -1,4 +1,4 @@
-// txalaparta-like markov chain system
+// txalaparta-like interactive system
 // license GPL
 // by www.ixi-audio.net
 
@@ -30,7 +30,7 @@ TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
-	var <txalasilence, <txalaonset, markov, ann, lastPattern, patternbank;
+	var <txalasilence, <txalaonset, wchoose, tmarkov, tmarkov2, tmarkov4, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration;
@@ -55,9 +55,9 @@ TxalaInteractive{
 		~bpm = 60;
 		~amp = 1;
 		~answer = false;
-		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
+		~answerpriority = true; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
-		~answermode = 1; //0,1,3: imitation, markov1, markov2
+		~answermode = 1; //0,1,3: imitation, wchoose
 		~hutsunelookup = 0.3;
 		~plankdetect = 1;
 		~gapswing = 0.01;
@@ -82,7 +82,10 @@ TxalaInteractive{
 
 		pitchbuttons = Array.fill(~buffers.size, {nil});
 
-		markov = TxalaMarkov.new;
+		wchoose = TxalaWChoose.new;
+		tmarkov = TxalaMarkov.new;
+		tmarkov2 = TxalaMarkov2.new;
+		tmarkov4 = TxalaMarkov4.new;
 		patternbank = TxalaPatternBank.new;
 		tempocalc = TempoCalculator.new(2);
 		~txalascore = TxalaScoreGUI.new;
@@ -120,23 +123,24 @@ TxalaInteractive{
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
 	hutsune {
-		lastPattern = ();
-		txalasilence.compass =  txalasilence.compass + 1;
-		if(~answer, { this.answer(0) }); //asap
-		if (~txalascore.isNil.not, {
-			var last = SystemClock.seconds-((60/~bpm)/2);
-			~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
-			~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
-		});
-		tempocalc.pushlasttime(); // empty hits also count for BPM calc
-		{hutsunebutton.value = 1}.defer;
-		{hutsunebutton.value = 0}.defer(0.2);
+		if (tempocalc.bpms.indexOf(0).isNil, { // wait until it is stable
+			lastPattern = ();
+			txalasilence.compass =  txalasilence.compass + 1;
+			if(~answer, { this.answer(0) }); //asap
+			if (~txalascore.isNil.not, {
+				var last = SystemClock.seconds-((60/~bpm)/2);
+				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
+				~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
+			});
+			tempocalc.pushlasttime(); // empty hits also count for BPM calc
+			{hutsunebutton.value = 1}.defer;
+			{hutsunebutton.value = 0}.defer(0.2);
+		})
 	}
 
 	loop {
 		{ label.string = "BPM:" + ~bpm + "\nCompass:" + txalasilence.compass}.defer
 	}
-
 
 	broadcastgroupstarted { // silence detection calls this.
 		~bpm = tempocalc.calculate();
@@ -147,6 +151,7 @@ TxalaInteractive{
 
 	broadcastgroupended { // silence detection calls this.
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
+
 		if (lastPattern.isNil.not, {
 			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render asap //
 			//drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]];
@@ -216,28 +221,30 @@ TxalaInteractive{
 		txalaonset.processflag = flag;
 	}
 
-	// called from silencedetect that detects bpm and group ends
 	answer {arg defertime;
-		// calc when in future should answer be. start from last detected hit and use tempo to calculate
-		if (defertime.isNil, {
-			defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
-		});
+		if ( lastPattern.isNil.not, {
+			// calc when in future should answer be. start from last detected hit and use tempo to calculate
+			if (defertime.isNil, {
+				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+			});
 
-		if (defertime.isNaN.not, {
-			switch (~answermode,
-				0, { this.imitation(defertime) },
-				//1, { this.markovnext(defertime) }, // fixed values chain
-				//2, { this.markovnext(defertime, lastPattern.size, 2) },
-				//3, { this.markovnext(defertime, lastPattern.size, 3) },
-				1, { this.markovnext(defertime, lastPattern.size, 4) }
-			);
-		});
+			if (defertime.isNaN.not, {
+				switch (~answermode,
+					0, { this.imitation(defertime) },
+					1, { this.next(defertime, lastPattern.size, 1) },
+					2, { this.next(defertime, lastPattern.size, 2) }, // MC 1
+					3, { this.next(defertime, lastPattern.size, 3) }, // MC 2
+					4, { this.next(defertime, lastPattern.size, 4) }  // MC 4
+				);
+			});
+		})
 	}
 
 	imitation { arg defertime;
 		lastPattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp, 0, index, lastPattern.size, hit.plank)
+				this.playhit(hit.amp, 0, index, lastPattern.size, hit.plank);
+				drawingSet[1][index] = [0, (defertime + hit.time), false, hit.amp]; // append each hit
 			}.defer(defertime + hit.time);
 		});
 	}
@@ -282,18 +289,17 @@ TxalaInteractive{
 		^res
 	}
 
-	markovnext {arg defertime=0, size=nil, order=2;
+	next {arg defertime=0, size=nil, mode=0;
 		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
 
-		if (size.isNil, {
-			curhits = markov.next();
-		},{
-			switch (order,
-				2, { curhits = markov.next2nd(size) },
-				3, { curhits = markov.next3rd(size) },
-				4, { curhits = markov.next4th(size) }
-			);
-		});
+		//if (mode==0, {curhits = wchoose.next(size)}, {curhits = tmarkov.next(size)});
+		switch (mode,
+			1, { curhits = wchoose.next(size) },
+			2, { curhits = tmarkov.next(size) }, // MC option 1
+			3, { curhits = tmarkov2.next(size) }, // MC option 2
+			4, { curhits = tmarkov4.next(size) }  // MC option 4
+		);
+		//[size, curhits].postln;
 
 		// should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
@@ -305,37 +311,47 @@ TxalaInteractive{
 			});*/
 		});
 
-		if (curhits==1 && [true, false].wchoose([0.15, 0.85]), { // sometimes play a two hit chord
+		if (curhits==1 && [true, false].wchoose([0.15, 0.85]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
 			curhits = 2;
 		});
 
-		drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
+		if (curhits == 0, {
+			{
+				if (~txalascore.isNil.not, {
+					var last = SystemClock.seconds;
+					~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
+					~txalascore.mark(last, (SystemClock.seconds+defertime), txalasilence.compass, lastPattern.size)
+				});
+				{hutsunebutton.value = 1}.defer;
+				{hutsunebutton.value = 0}.defer(0.2)
+			}.defer(defertime)
+		}, {
 
-		if ( defertime < 0, {curhits = 1}); // if we are late or gap is too shot they pile up and sounds horrible
+			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
+			if ( defertime < 0, {curhits = 1}); // if we are late or gap is too shot they pile up and sounds horrible
+			hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
 
-		hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
+			curhits.do({ arg index;
+				var hittime, amp;
+				hittime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+				amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
 
-		curhits.do({ arg index;
-			var hittime, amp;
-			hittime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
-			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
+				if (this.getaccent, {
+					if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
+					}, {
+						if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+				});
 
-			if (this.getaccent, {
-				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
-			}, {
-				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+				if ( hittime.isNaN, { hittime = 0 } );
+				if ( hittime == inf, { hittime = 0 } );
+
+				{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
+				drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
 			});
 
-			if ( hittime.isNaN, { hittime = 0 } );
-			if ( hittime == inf, { hittime = 0 } );
-			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
-			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
+			{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime + (gap * (curhits.size-1))); // schedule with last hit
 		});
-		{
-			circleanim.scheduleDraw(drawingSet[1], 1);
-			//drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
-		}.defer(defertime);// schedule with first hit
 	}
 
 	selfcancel { arg plank, index, total;
@@ -477,7 +493,10 @@ TxalaInteractive{
 			PopUpMenu(win,Rect(95,yloc+(gap*yindex), 100,20))
 			.items_([
 				"imitation", // copy exactly what the user does
-				"learning" // 4th order markov chain
+				"percentage", // just count all the hits and return a wchoose
+				"learning 1", // 1sr order markov chain
+				"learning 2", // 2nd order markov chain
+				"learning 4" // 4th order markov chain
 			])
 			.action_({ arg menu;
 				try{ // bacwrds comp
@@ -610,7 +629,7 @@ TxalaInteractive{
 				guielements.amp.valueAction = ~amp;
 
 				if (txalacalibration.isNil.not, {
-					txalacalibration.guielements.postln;
+					//txalacalibration.guielements.postln;
 					txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
 
 					try {
@@ -673,22 +692,22 @@ TxalaInteractive{
 
 		yloc = yloc+20;
 
-		Button(win, Rect(xloc,yloc,85,25))
+/*		Button(win, Rect(xloc,yloc,85,25))
 		.states_([
 			["learn", Color.white, Color.grey], // a better word than learn??
 			["learn", Color.white, Color.green]
 		])
 		.action_({ arg butt;
-			if (markov.isNil.not, {markov.update = butt.value.asBoolean});
+			if (wchoose.isNil.not, {wchoose.update = butt.value.asBoolean});
 		})
-		.valueAction_(1);
+		.valueAction_(1);*/
 
 		Button(win, Rect(xloc+85,yloc,85,25))
 		.states_([
 			["reset", Color.white, Color.grey]
 		])
 		.action_({ arg butt;
-			markov.reset();
+			wchoose.reset();
 			patternbank.reset();
 		});
 
@@ -712,11 +731,10 @@ TxalaInteractive{
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
 			try {
-				markov.loaddata( data[\beatdata] );
+				wchoose.loaddata( data[\beatdata] );
 			}{|error|
 				("memory is empty?"+error).postln;
 			};
-			//markov.beatdata2nd.plot;
 		});
 
 		yloc = yloc+22;
@@ -735,7 +753,7 @@ TxalaInteractive{
 
 			data = Dictionary.new;
 			try {
-				data.put(\beatdata, markov.beatdata2nd);
+				data.put(\beatdata, wchoose.beatdata);
 				data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
 			}{|error|
 				("memory is empty?"+error).postln;
