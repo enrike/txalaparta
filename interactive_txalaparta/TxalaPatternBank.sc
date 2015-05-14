@@ -22,7 +22,7 @@ TxalaPatternBank{
 
 	getrandpattern{ arg numhits=2;
 		var pat="";
-		if (numhits>0, { pat = bank[numhits-1].choose() });
+		if (numhits > 0, { pat = bank[numhits-1].choose() });
 		if (pat=="", { // never return nil
 			Array.fill(numhits, {numhits.rand+1}).do({arg item; pat=pat++item}) // just produce a random blueprint
 		});
@@ -39,13 +39,8 @@ TxalaPatternBank{
 		newpattern = newpattern.add(\pattern -> apattern);
 		newpattern = newpattern.add(\numtimes -> 1); // to count how many times has appeared this blueprintapattern.size-1
 
-		//newpattern.postln;
-
 		if (apattern.isNil.not, { // sometimes I get patterns which are nil. WHY?
 			bank[apattern.size-1] = bank[apattern.size-1].add(newpattern);
-/*		},{
-			["pattern->", apattern].postln;
-			*/
 		});
 	}
 }
