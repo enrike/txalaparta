@@ -71,14 +71,13 @@ TxalaCircle {
 					Pen.perform(\fill);
 				}
 			});
-			//"-----------------".postln;
 		};
 
 		parent.drawFunc = drawFunc; // parent is a window that can take a refresh
 	}
 
 	scheduleDraw {arg data, pos;
-		["pos", pos].postln;
+		//["pos", pos].postln;
 		drawingSetBuffer[pos] = data; // store in its slot
 		parent.refresh;
 	}
