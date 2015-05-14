@@ -9,7 +9,7 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 
 TxalaSilenceDetection{
 
-	var server, parent, <>compass, hitflag, hutsunetimeout, groupst; // tempocalc
+	var server, parent, <>compass, hitflag, hutsunetimeout, groupst;
 	var >processflag, resettime, <>answerposition;
 	var synthOSCcb, <synth;
 
@@ -85,8 +85,8 @@ TxalaSilenceDetection{
 		groupst = SystemClock.seconds;
 		hitflag = true;
 		compass = compass + 1;
-		if ( (~hutsunelookup > 0), {
-			hutsunetimeout = SystemClock.seconds + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
+		if ( ~hutsunelookup > 0, {
+			hutsunetimeout = groupst + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 	}
 
@@ -102,7 +102,7 @@ TxalaSilenceDetection{
 		if (SystemClock.seconds >= hutsunetimeout, {
 			parent.hutsune(); // need to update it was 0 hits
 			hutsunetimeout = nil;
-		});
+		})
 	}
 
 	// if too long after the last signal we received reset me
