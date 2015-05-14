@@ -13,7 +13,7 @@ t.lasttime // returns the time when a calculate() was called last time
 
 TempoCalculator{
 
-	var memorylength, bpms, bpm, <lasttime;
+	var memorylength, <bpms, bpm, <lasttime;
 
 	*new {| memorylength = 3 |
 		^super.new.initTempoCalculator( memorylength );
