@@ -25,7 +25,7 @@ TxalaSet{
 	var sttime;
 	var processbutton;
 	var recbuf;
-	var win, scope, namefield, numhits;
+	var win, scope, namefield, namefieldstr, numhits;
 	var server, onsetsynth, silencesynth;
 	var respOSC, silOSC;
 	var onsets, silences;
@@ -78,11 +78,27 @@ TxalaSet{
 
 		win = Window.new("", Rect(10, 100, 220, 260));
 		win.onClose_({
+			var destpath, filename, data;
+
 			respOSC.free ;
 			silOSC.free ;
 			onsetsynth.free;
 			silencesynth.free;
 			recsynth.free;
+
+			// save a file with the data from the chromagram into the directory with the new samples
+			destpath = sndpath++namefieldstr++"/chromagram.preset";
+
+			destpath.postln;
+
+			data = Dictionary.new;
+			try {
+				data.put(\plankdata, ~plankdata);
+			 	data.writeArchive(destpath);
+			}{|error|
+				("did not create a new sample set").postln;
+			};
+
 		});
 
 		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 50, 25)).string = "Locs -->";
@@ -119,6 +135,7 @@ TxalaSet{
 		StaticText(win, Rect(10, 42, 100, 25)).string = "set name";
 
 		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
+		namefieldstr = namefield.value; // this is required later when the window is closing.
 
 		Button(win, Rect(10,10, 50, 25))
 		.states_([
@@ -227,6 +244,7 @@ TxalaSet{
 		recbuf.plot;
 
 		destpath = sndpath++namefield.value++"/";
+		namefieldstr = namefield.value; // this is required later when the window is closing.
 
 		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
 			var sttime, endtime, length, tmpbuffer, filename;
