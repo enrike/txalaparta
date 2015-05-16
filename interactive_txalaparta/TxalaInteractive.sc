@@ -106,7 +106,7 @@ TxalaInteractive{
 
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
-		("load sampleset"+foldername+~buffers).postln;
+		("load sampleset"+foldername).postln;
 		~buffers.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
 				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp
@@ -603,6 +603,17 @@ TxalaInteractive{
 		//presetslisten.asArray.collect({arg item; PathName.new(item).fileName}).insert(0, "---")
 	}
 
+	updatesamplesetpresetfiles{
+		var temp, names;
+		temp = (basepath++"/sounds/*").pathMatch; // update
+		names = temp.asArray.collect({arg item;
+			var ar = item.split($/);
+			ar[ar.size-2]
+		});
+		//names.postln;
+		names = names.insert(0, "---");
+		^names;
+	}
 
 	doCalibrationPresets { arg win, xloc, yloc, guielements;
 		var newpreset, popup;
@@ -706,16 +717,6 @@ TxalaInteractive{
 
 		yloc = yloc+20;
 
-/*		Button(win, Rect(xloc,yloc,85,25))
-		.states_([
-			["learn", Color.white, Color.grey], // a better word than learn??
-			["learn", Color.white, Color.green]
-		])
-		.action_({ arg butt;
-			if (wchoose.isNil.not, {wchoose.update = butt.value.asBoolean});
-		})
-		.valueAction_(1);*/
-
 		Button(win, Rect(xloc+85,yloc,85,25))
 		.states_([
 			["reset", Color.white, Color.grey]
@@ -732,13 +733,6 @@ TxalaInteractive{
 			presetmatrix = this.updatepresetfiles("presets_matrix");
 			menu.items = presetmatrix;
 		} )
-/*		.items_(this.updatepresetfiles("presets_matrix")) //presetmatrix.asArray.collect({arg item; PathName.new(item).fileName}))
-		.mouseDownAction_({arg menu;
-			presetmatrix = (basepath ++ "/presets_matrix/" ++ "*").pathMatch;
-			presetmatrix.insert(0, "---");
-			menu.items = presetmatrix.asArray.collect({arg item;
-				PathName.new(item).fileName});
-		})*/
 		.action_({ arg menu;
 			var data;
 			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
@@ -789,31 +783,29 @@ TxalaInteractive{
 
 		Button(win,  Rect(xloc, yloc,80,25))
 		.states_([
-			["sample set", Color.white, Color.grey],
+			["sample new", Color.white, Color.grey],
 		])
 		.action_({ arg butt;
-			// RESET HERE ~plankdata???
-			//~plankdata = Array.fillND([6, 5], { 0 }); // numplanks, plankresolution!!!
 			TxalaSet.new(server, sndpath)
 		});
 
 		yloc = yloc+27;
 
 		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
-		.items_( this.updatepresetfiles("presets_planks") )
+		.items_( this.updatesamplesetpresetfiles() )
 		.mouseDownAction_( { arg menu;
-			presetmatrix = this.updatepresetfiles("presets_planks");
+			presetmatrix = this.updatesamplesetpresetfiles();
 			menu.items = presetmatrix;
 		} )
 		.action_({ arg menu;
-			var data;
-			("loading..." + basepath  ++ "/presets_planks/" ++  menu.item).postln;
-			data = Object.readArchive(basepath  ++ "/presets_planks/" ++  menu.item);
+			var data, dirname;
+			dirname = menu.item.split($/)[0];
+			("loading..." + dirname).postln;
+			data = Object.readArchive(basepath ++ "/sounds/" ++ dirname ++ "/chromagram.preset");
 
 			~plankdata = data[\plankdata];
 
 			try {
-				//~plankdata = data[\plankdata]; // this causes error on load because txalaonset is nil yet******
 				this.updateTxalaScoreNumPlanks();
 			}{|error|
 				("not listening yet?"+error).postln;
@@ -829,36 +821,7 @@ TxalaInteractive{
 			"no predefined plank preset to be loaded".postln;
 			error.postln;
 		};
-
-		yloc = yloc+22;
-		newpreset = TextField(win, Rect(xloc, yloc, 95, 25));
-
-		Button(win, Rect(xloc+100,yloc,70,25))
-		.states_([
-			["save", Color.white, Color.grey]
-		])
-		.action_({ arg butt;
-			var filename, data;
-			if (newpreset.string == "",
-				{filename = Date.getDate.stamp++".preset"},
-				{filename = newpreset.string++".preset"}
-			);
-
-			data = Dictionary.new;
-			try {
-				data.put(\plankdata, ~plankdata);
-				data.writeArchive(basepath ++ "/presets_planks/" ++ filename);
-			}{|error|
-				("file is empty?"+error).postln;
-			};
-
-			data.postln;
-
-			newpreset.string = ""; //clean field
-		});
 	}
-
-
 
 	updateTxalaScoreNumPlanks {
 		var num = 1;
