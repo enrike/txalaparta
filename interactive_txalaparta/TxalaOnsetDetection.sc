@@ -39,8 +39,12 @@ TxalaOnsetDetection{
 
 	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
 		var pat = curPattern;
-		if ( pat.size > 4, { pat = pat[..3] });// discard if longer than 4
-		if ( curPattern.isNil, {"curPattern is NIL!!".postln});
+		if ( curPattern.isNil, {
+			"curPattern is NIL!!".postln
+		}, {
+			if ( pat.size > 4, { pat = pat[..3] });// discard if longer than 4
+		});
+
 		curPattern = nil;
 		^pat;
 	}
