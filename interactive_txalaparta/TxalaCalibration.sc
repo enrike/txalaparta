@@ -57,7 +57,7 @@ TxalaCalibration{
 				});
 			},
 			initVal: ~listenparemeters.gain,
-			labelWidth: 60;
+			labelWidth: 60
 		));
 
 		yindex = yindex + 1;
@@ -74,7 +74,7 @@ TxalaCalibration{
 				ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 				nil,
 				initVal: ~listenparemeters.tempo.threshold,
-				labelWidth: 60;
+				labelWidth: 60
 			).sliderView.mouseUpAction_({arg ez;
 				if (parent.txalasilence.isNil.not, {
 					parent.txalasilence.updatethreshold(ez.value.asFloat);
@@ -97,7 +97,7 @@ TxalaCalibration{
 					~listenparemeters.tempo.falltime = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.falltime,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1;
@@ -114,7 +114,7 @@ TxalaCalibration{
 					~listenparemeters.tempo.checkrate = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.checkrate,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1.5;
@@ -133,7 +133,7 @@ TxalaCalibration{
 					~hutsunelookup = ez.value.asFloat;
 				},
 				initVal: ~hutsunelookup,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1.5;
@@ -155,7 +155,7 @@ TxalaCalibration{
 					~listenparemeters.onset.threshold = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.threshold,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1;
@@ -172,12 +172,12 @@ TxalaCalibration{
 					~listenparemeters.onset.relaxtime = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.relaxtime,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1;
 
-		guielements.add(\floor->
+		guielements.add(\floor-> // THIS SHOULD DISPLAY FLOAT UP TO 3 DECIMALS TO ALLOW FINE TUNNING!!
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
 				"floor",
@@ -189,7 +189,7 @@ TxalaCalibration{
 					~listenparemeters.onset.floor = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.floor,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		yindex = yindex + 1;
@@ -206,7 +206,7 @@ TxalaCalibration{
 					~listenparemeters.onset.mingap = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.mingap,
-				labelWidth: 60;
+				labelWidth: 60
 		));
 
 		win.front;
