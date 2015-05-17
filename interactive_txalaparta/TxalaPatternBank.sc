@@ -23,9 +23,11 @@ TxalaPatternBank{
 	getrandpattern{ arg numhits=2;
 		var pat="";
 		if (numhits > 0, { pat = bank[numhits-1].choose() });
+		if (pat.isNil, {pat=""});
 		if (pat=="", { // never return nil
 			Array.fill(numhits, {numhits.rand+1}).do({arg item; pat=pat++item}) // just produce a random blueprint
 		});
+		//pat.postln;
 		^pat;
 	}
 
