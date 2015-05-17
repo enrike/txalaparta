@@ -130,7 +130,7 @@ TxalaInteractive{
 			if (~txalascore.isNil.not, {
 				var last = SystemClock.seconds-((60/~bpm)/2);
 				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
-				~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
+				//~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
 			});
 			tempocalc.pushlasttime(); // empty hits also count for BPM calc
 			{hutsunebutton.value = 1}.defer;
@@ -169,7 +169,11 @@ TxalaInteractive{
 
 	newonset { arg hittime, amp, player, plank;
 		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
-		drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp];
+
+		if (((txalaonset.curPattern.size-1) < drawingSet[0].size), { // stop drawing if they pile up
+			drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp]
+		});
+
 		{hitbutton.value = 1}.defer; // short flash
 		{hitbutton.value = 0}.defer(0.055);
 	}
