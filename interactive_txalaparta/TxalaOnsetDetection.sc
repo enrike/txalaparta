@@ -70,11 +70,7 @@ TxalaOnsetDetection{
 				perframenormalize: 1
 			);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
-			//keyt = KeyTrack.kr(fft, 0.01, 0.0); //(chain, keydecay: 2, chromaleak: 0.5)
-			//# freq, hasfreq = Tartini.kr(signal,  threshold: 0.93, n: 2048, k: 0, overlap: 1024, smallCutoff: 0.5 );
-
 			del = DelayN.kr(onset, offset, offset); // CRUCIAL. percussive sounds are too chaotic at the beggining
-			//level = DelayN.kr(level, offset, offset); // but the level needs to be the original
 
 			SendReply.kr(del, '/txalaonset', (chroma++[level]));
 		 }).add;
