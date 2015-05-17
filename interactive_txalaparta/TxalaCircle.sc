@@ -56,7 +56,6 @@ TxalaCircle {
 
 			(drawingSetBuffer[0]++drawingSetBuffer[1]).takeThese({ arg item; item[3]==10 }).do({arg data;
 				var offset;
-				//data.postln;
 				if (data[2], {//txakun
 					offset = 270;
 					Pen.color = Color.red;
@@ -77,7 +76,6 @@ TxalaCircle {
 	}
 
 	scheduleDraw {arg data, pos;
-		//["pos", pos].postln;
 		drawingSetBuffer[pos] = data; // store in its slot
 		parent.refresh;
 	}
