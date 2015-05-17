@@ -3,6 +3,11 @@
 
 /*
 TxalaCalibration.new()
+
+estimatedControlStep.decimalStrings(precision)
+
+numberbox.minDecimals
+g.widgets.do{|x| if(x.isKindOf(EZSlider), {x.round= 0.00001; x.numberView.maxDecimals= 5})}
 */
 
 
@@ -164,7 +169,7 @@ TxalaCalibration{
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
 				"relaxtime",
-				ControlSpec(0.001, 0.5, \lin, 0.001, 0.05, "ms"),
+				ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
 						parent.txalaonset.synth.set(\relaxtime, ez.value.asFloat);
@@ -173,15 +178,15 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.onset.relaxtime,
 				labelWidth: 60
-		));
+		).round_(0.00001).numberView.maxDecimals_(5) );
 
 		yindex = yindex + 1;
 
-		guielements.add(\floor-> // THIS SHOULD DISPLAY FLOAT UP TO 3 DECIMALS TO ALLOW FINE TUNNING!!
+		guielements.add(\floor->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
 				"floor",
-				ControlSpec(0.01, 10, \lin, 0.01, 0.1, "Ms"),
+				ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
 						parent.txalaonset.synth.set(\floor, ez.value.asFloat);
@@ -190,7 +195,7 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.onset.floor,
 				labelWidth: 60
-		));
+		).round_(0.00001).numberView.maxDecimals_(5) );
 
 		yindex = yindex + 1;
 
