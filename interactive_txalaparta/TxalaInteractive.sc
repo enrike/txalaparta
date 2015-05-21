@@ -30,10 +30,11 @@ TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
-	var <txalasilence, <txalaonset, wchoose, tmarkov, tmarkov2, tmarkov4, lastPattern, patternbank;
+	var <txalasilence, <txalaonset, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration;
+	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -82,10 +83,17 @@ TxalaInteractive{
 
 		pitchbuttons = Array.fill(~buffers.size, {nil});
 
-		wchoose = TxalaWChoose.new;
+/*		wchoose = TxalaWChoose.new;
 		tmarkov = TxalaMarkov.new;
 		tmarkov2 = TxalaMarkov2.new;
-		tmarkov4 = TxalaMarkov4.new;
+		tmarkov4 = TxalaMarkov4.new;*/
+		answersystems = [
+			TxalaWChoose.new,
+			TxalaMarkov.new,
+			TxalaMarkov2.new,
+			TxalaMarkov4.new
+		];
+
 		patternbank = TxalaPatternBank.new;
 		tempocalc = TempoCalculator.new(2);
 		~txalascore = TxalaScoreGUI.new;
@@ -297,12 +305,14 @@ TxalaInteractive{
 		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
 
 		//if (mode==0, {curhits = wchoose.next(size)}, {curhits = tmarkov.next(size)});
-		switch (mode,
+
+		curhits = answersystems[mode-1].next(size);
+/*		switch (mode,
 			1, { curhits = wchoose.next(size) },
 			2, { curhits = tmarkov.next(size) }, // MC option 1
 			3, { curhits = tmarkov2.next(size) }, // MC option 2
 			4, { curhits = tmarkov4.next(size) }  // MC option 4
-		);
+		);*/
 		//[size, curhits].postln;
 
 		// should we shorten the gap according to num of curhits?? ******
@@ -549,7 +559,7 @@ TxalaInteractive{
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 		yindex = yindex + 5;
 		this.doPlanksSetGUI(win, 7, yloc+(gap*yindex));
-
+/*
 		StaticText(win, Rect(180, yloc+(gap*yindex), 170, 20)).string = "Rhythm constrains";
 
 		yindex = yindex + 1;
@@ -565,7 +575,7 @@ TxalaInteractive{
 					{},
 					{});
 			});
-		});
+		});*/
 
 		// feddback area
 
@@ -726,7 +736,12 @@ TxalaInteractive{
 			["reset", Color.white, Color.grey]
 		])
 		.action_({ arg butt;
-			wchoose.reset();
+			//wchoose.reset();
+			if (~answermode > 0, {
+				answersystems[~answermode-1].reset();
+			}, {
+				"imitation mode has no memory to reset".postln;
+			});
 			patternbank.reset();
 		});
 
@@ -739,14 +754,19 @@ TxalaInteractive{
 		} )
 		.action_({ arg menu;
 			var data;
-			("loading..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
+			("trying to load..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-			try {
-				wchoose.loaddata( data[\beatdata] );
-			}{|error|
-				("memory is empty?"+error).postln;
-			};
+			[answersystems,~answermode].postln;
+			//try {
+			if (~answermode > 0, {
+				answersystems[~answermode-1].loaddata( data[\beatdata] );
+			}, {
+				"imitation mode cannot load memory".postln;
+			});
+			//}{|error|
+			//	("memory is empty?"+error).postln;
+			//};
 		});
 
 		yloc = yloc+22;
@@ -764,12 +784,16 @@ TxalaInteractive{
 			);
 
 			data = Dictionary.new;
-			try {
-				data.put(\beatdata, wchoose.beatdata);
+			//try {
+			if (~answermode > 0, {
+				data.put(\beatdata, answersystems[~answermode-1].beatdata);
 				data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
-			}{|error|
-				("memory is empty?"+error).postln;
-			};
+			}, {
+				"imitation mode cannot load memory".postln;
+			});
+			//}{|error|
+			//	("memory is empty?"+error).postln;
+			//};
 
 			newpreset.string = ""; //clean field
 		});

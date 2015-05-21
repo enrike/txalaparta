@@ -7,7 +7,7 @@ m.next(0)
 m.reset
 */
 TxalaWChoose{
-	var beatdata;
+	var <>beatdata;
 
 	var options, dimension;
 	*new { | dimension = 5 |
@@ -22,6 +22,16 @@ TxalaWChoose{
 		"reseting data".postln;
 		beatdata = Array.fill(dimension, {0});
 	}
+
+	loaddata{ arg data;
+		if (data.rank == beatdata.rank, {
+			this.reset();
+			beatdata = data;
+		}, {
+			"cannot load memory file beause it does not match current answer system".postln;
+		})
+	}
+
 	next{ arg input;
 		var output;
 

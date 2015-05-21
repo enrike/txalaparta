@@ -39,8 +39,12 @@ TxalaMarkov2{
 	}
 
 	loaddata{ arg data;
-		this.reset();
-		beatdata = data;
+		if (data.rank == beatdata.rank, {
+			this.reset();
+			beatdata = data;
+		}, {
+			"cannot load memory file beause it does not match current answer system".postln;
+		})
 	}
 
 	next{arg input;
