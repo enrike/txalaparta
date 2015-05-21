@@ -121,13 +121,15 @@ TxalaScoreGUI{
 
 			Button(timelinewin, Rect(200,timelinewin.bounds.height-22,75,20))
 			.states_([
-				["save score", Color.white, Color.black]
+				["save MIDI", Color.white, Color.black]
 			])
 			.action_({ arg butt;
 				var midifile;
 				try {
-					midifile = SimpleMIDIFile( "~/" ++ Date.getDate.stamp ++ ".mid" ); // create empty file
+					midifile = SimpleMIDIFile( Platform.userHomeDir ++ "/" ++ Date.getDate.stamp ++ ".mid" ); // create empty file
+					midifile.init1( 2, 120, "4/4" );
 					//m.addNote ( noteNumber, velo, startTime, dur, upVelo, channel, track:1, sort )
+					("trying to save midi file at"+Platform.userHomeDir).postln;
 					txalascoreevents.do({arg evt;
 						midifile.addNote(
 							noteNumber: evt.plank,

@@ -169,7 +169,7 @@ TxalaScore {
 		view.refresh;
 	}
 
-	grabScoreIntoImage {arg number;
+	grabScoreIntoImage {arg number; /* this does not work under QT*/
 		var tempimg;
 		tempimg = Image.fromWindow(win, view.bounds);
 		imageArray = imageArray.add(tempimg);
