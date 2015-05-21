@@ -83,10 +83,6 @@ TxalaInteractive{
 
 		pitchbuttons = Array.fill(~buffers.size, {nil});
 
-/*		wchoose = TxalaWChoose.new;
-		tmarkov = TxalaMarkov.new;
-		tmarkov2 = TxalaMarkov2.new;
-		tmarkov4 = TxalaMarkov4.new;*/
 		answersystems = [
 			TxalaWChoose.new,
 			TxalaMarkov.new,
@@ -97,7 +93,6 @@ TxalaInteractive{
 		patternbank = TxalaPatternBank.new;
 		tempocalc = TempoCalculator.new(2);
 		~txalascore = TxalaScoreGUI.new;
-		//ann = TxalaAnn.new;
 
 /*		MIDIClient.init;
 		MIDIClient.destinations;
@@ -757,7 +752,6 @@ TxalaInteractive{
 			("trying to load..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-			[answersystems,~answermode].postln;
 			//try {
 			if (~answermode > 0, {
 				answersystems[~answermode-1].loaddata( data[\beatdata] );
