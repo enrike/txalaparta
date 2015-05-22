@@ -214,6 +214,16 @@ TxalaCalibration{
 				labelWidth: 60
 		));
 
+		guielements.hutsunelookup.valueAction = ~hutsunelookup;
+		guielements.gain.valueAction = ~listenparemeters.gain;
+		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+		guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
+		guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+		guielements.floor.valueAction = ~listenparemeters.onset.floor;
+		guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+
 		win.front;
 	}
 }
