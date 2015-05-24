@@ -107,21 +107,14 @@ TxalaOnsetDetection{
 					hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
 
-			//if (~plankdetect.asBoolean, {
 			data.add(\chroma -> chroma); // 12 items
-			/*
-			if (~recindex.isNil.not, {
-			~plankdata[~recindex] = ~plankdata[~recindex].add(data);
-			//~plankdata[~recindex[0]][~recindex[1]] = ~plankdata[~recindex[0]][~recindex[1]].add(data);
-			},{ // plank analysis
-			plank = this.matchplank(data);
-			});*/
+
 			if (~recindex.isNil.not, {
 				["storing hit data", ~recindex].postln;
 				~plankdata[~recindex] = data; // stores everything
 				{ parent.chromabuttons[~recindex].valueAction = 0 }.defer;
-				},{ // plank analysis
-					plank = this.matchplank(data);
+			},{ // plank analysis
+				plank = this.matchplank(data);
 			});
 
 			hitdata = ().add(\time   -> hittime)
@@ -131,43 +124,21 @@ TxalaOnsetDetection{
 			curPattern = curPattern.add(hitdata);
 
 			if (parent.isNil.not, { parent.newonset( SystemClock.seconds, level, 1, plank ) });
-			//})
 		})
 	}
 
 	matchplank {arg data;
-		//var fdata, plank, res = Array.fill( ~plankdata.size, {nil} ); // all planks
-		//fdata = data.atAll(features).flat; //filtered data. flat not need
-
-
 		var fdata, plank, res = Array.new(~plankdata.size);
 		fdata = data.atAll(features).flat; //filtered data
 
 		~plankdata.do({ arg dataset;
 			var fdataset;
-			//dataset.postln;
 			if (dataset.size.asBoolean, {
 				fdataset = dataset.atAll(features).flat;
 				res = res.add( (fdata-fdataset).abs.sum );
 			});
 		});
 
-
-/*		~plankdata.do({ arg plank, indexA; // several planks
-			plank.do({ arg pos, indexB;// several positions in each plank
-				var value = 0;
-				pos.do({arg amp, indexC; // many possible hits for each position, with different amp and chromagram data
-					var fdataset;
-					if (amp.size > 0, {
-						fdataset = amp.atAll(features).flat;
-						value = value + ((fdata-fdataset).abs.sum/fdata.size); // sum all values from all positions
-					});
-				});
-				res[indexA] = value/pos.size; //?
-			});
-		});*/
-
-		//res = res.takeThese({ arg item; item.isNil });
 		plank = res.minIndex;
 		if (plank.isNil, { plank = 0 });
 		^plank
