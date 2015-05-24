@@ -56,15 +56,16 @@ TxalaOnsetDetection{
 		meaningful data from the sound until some millisecs are gone because of the chaotic nature of the sound in the start area
 		*/
 		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.040|
-		 	var fft, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
+		 	var fft, fft2, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
 		 	signal = SoundIn.ar(in)*gain;
 			level = WAmp.kr(signal, offset);
 		 	fft = FFT(LocalBuf(2048), signal);
-			chroma = Chromagram.kr(fft, 2048,
+			fft2 = FFT(LocalBuf(2048), HPF.ar(signal, 100)); // get rid of low freqs for chromagram
+			chroma = Chromagram.kr(fft2, 2048,
 				n: 12,
 				tuningbase: 32.703195662575,
-				octaves: 24, // try 12, 24, 36... ** TO DO **
-				integrationflag: 0,
+				octaves: 8, // tried higher 12, 24... but got worst results
+				integrationflag: 1, // looks to work better if this is on
 				coeff: 0.9,
 				octaveratio: 2,
 				perframenormalize: 1
@@ -97,41 +98,62 @@ TxalaOnsetDetection{
 		level   = msg[12];
 
 		if (processflag.not, { // if not answering myself
+			var off, data = ();
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
 				parent.broadcastgroupstarted(); //
-			},{
-				hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
+				},{
+					hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
 
-			if (~plankdetect.asBoolean, {
-				var off;
-				var data = ();
-				data.add(\chroma -> chroma); // 12 items
-
-				if (~recindex.isNil.not, {
-					~plankdata[~recindex[0]][~recindex[1]] = ~plankdata[~recindex[0]][~recindex[1]].add(data);
+			//if (~plankdetect.asBoolean, {
+			data.add(\chroma -> chroma); // 12 items
+			/*
+			if (~recindex.isNil.not, {
+			~plankdata[~recindex] = ~plankdata[~recindex].add(data);
+			//~plankdata[~recindex[0]][~recindex[1]] = ~plankdata[~recindex[0]][~recindex[1]].add(data);
+			},{ // plank analysis
+			plank = this.matchplank(data);
+			});*/
+			if (~recindex.isNil.not, {
+				["storing hit data", ~recindex].postln;
+				~plankdata[~recindex] = data; // stores everything
+				{ parent.chromabuttons[~recindex].valueAction = 0 }.defer;
 				},{ // plank analysis
 					plank = this.matchplank(data);
-				});
 			});
 
 			hitdata = ().add(\time   -> hittime)
-			            .add(\amp    -> level)
-			            .add(\player -> 1) //always 1 in this case
-			            .add(\plank  -> plank);
+			.add(\amp    -> level)
+			.add(\player -> 1) //always 1 in this case
+			.add(\plank  -> plank);
 			curPattern = curPattern.add(hitdata);
 
 			if (parent.isNil.not, { parent.newonset( SystemClock.seconds, level, 1, plank ) });
-		});
+			//})
+		})
 	}
 
 	matchplank {arg data;
-		var fdata, plank, res = Array.fill( ~plankdata.size, {nil} ); // all planks
-		fdata = data.atAll(features).flat; //filtered data. flat not need
+		//var fdata, plank, res = Array.fill( ~plankdata.size, {nil} ); // all planks
+		//fdata = data.atAll(features).flat; //filtered data. flat not need
 
-		~plankdata.do({ arg plank, indexA; // several planks
+
+		var fdata, plank, res = Array.new(~plankdata.size);
+		fdata = data.atAll(features).flat; //filtered data
+
+		~plankdata.do({ arg dataset;
+			var fdataset;
+			//dataset.postln;
+			if (dataset.size.asBoolean, {
+				fdataset = dataset.atAll(features).flat;
+				res = res.add( (fdata-fdataset).abs.sum );
+			});
+		});
+
+
+/*		~plankdata.do({ arg plank, indexA; // several planks
 			plank.do({ arg pos, indexB;// several positions in each plank
 				var value = 0;
 				pos.do({arg amp, indexC; // many possible hits for each position, with different amp and chromagram data
@@ -143,9 +165,9 @@ TxalaOnsetDetection{
 				});
 				res[indexA] = value/pos.size; //?
 			});
-		});
+		});*/
 
-		res = res.takeThese({ arg item; item.isNil });
+		//res = res.takeThese({ arg item; item.isNil });
 		plank = res.minIndex;
 		if (plank.isNil, { plank = 0 });
 		^plank
