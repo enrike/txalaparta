@@ -33,7 +33,7 @@ TxalaInteractive{
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
-	var <pitchbuttons, circleanim, drawingSet, >txalacalibration;
+	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons;
 	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov;
 
 	var numplanks = 6; // max planks
@@ -60,7 +60,7 @@ TxalaInteractive{
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~hutsunelookup = 0.3;
-		~plankdetect = 1;
+		//~plankdetect = 1;
 		~gapswing = 0;
 		~latencycorrection = 0.05;
 		~learning = true;
@@ -83,6 +83,7 @@ TxalaInteractive{
 		("available samples are" + samples).postln;
 
 		pitchbuttons = Array.fill(~buffers.size, {nil});
+		chromabuttons = Array.fill(numplanks, {nil});
 
 		answersystems = [
 			TxalaWChoose.new,
@@ -268,7 +269,7 @@ TxalaInteractive{
 
 			if (defertime.isNaN.not, {
 				switch (~answermode,
-					0, { this.imitation(defertime) },
+					0, { this.imitation(defertime, lastPattern) },
 					1, { this.next(defertime, lastPattern.size, 1) },
 					2, { this.next(defertime, lastPattern.size, 2) }, // MC 1
 					3, { this.next(defertime, lastPattern.size, 3) }, // MC 2
@@ -278,10 +279,10 @@ TxalaInteractive{
 		})
 	}
 
-	imitation { arg defertime;
-		lastPattern.do({arg hit, index;
+	imitation { arg defertime, pattern;
+		pattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp, 0, index, lastPattern.size, hit.plank);
+				this.playhit(hit.amp, 0, index, pattern.size, hit.plank);
 				drawingSet[1][index] = [0, (defertime + hit.time), false, hit.amp]; // append each hit
 			}.defer(defertime + hit.time);
 		});
@@ -328,26 +329,20 @@ TxalaInteractive{
 	}
 
 	next {arg defertime=0, size=nil, mode=0;
-		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
+		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern, swingrange;
 
 		curhits = answersystems[mode-1].next(size);
 
 		// should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
-		if (curhits > 1, {
-			gap = this.averagegap();
-			/*
-			if (curhits!=lastPattern.size, {
-				gap = gap / ((curhits-lastPattern.size).abs/1.2);
-			});*/
-		});
+		if (curhits > 1, { gap = this.averagegap() });
 
-		if (curhits==1 && [true, false].wchoose([0.15, 0.85]), { // sometimes play a two hit chord instead of single hit
+		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
 			curhits = 2;
 		});
 
-		if (curhits == 0, {
+		if (curhits == 0, { // hutsune
 			{
 				if (~txalascore.isNil.not, {
 					var last = SystemClock.seconds;
@@ -357,21 +352,25 @@ TxalaInteractive{
 				{hutsunebutton.value = 1}.defer;
 				{hutsunebutton.value = 0}.defer(0.2)
 			}.defer(defertime)
+
 		}, {
 
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
-			if ( defertime < 0, {curhits = 2}); // if we are late or gap is too shot they pile up and sounds horrible
+
+			if ( defertime < 0, {curhits = 2}); // to late to answer properly?
 			hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
+
+			swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
 
 			curhits.do({ arg index;
 				var hittime, amp;
-				hittime = defertime + (gap * index) + rrand(~gapswing.neg, ~gapswing);
+				hittime = defertime + (gap * index) + rrand(swingrange.neg, swingrange);
 				amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
 
 				if (this.getaccent, {
 					if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
-					}, {
-						if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+				}, {
+					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
 				});
 
 				if ( hittime.isNaN, { hittime = 0 } );
@@ -433,13 +432,14 @@ TxalaInteractive{
 
 		guielements = ();// to later restore from preferences
 
-		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 360));
+		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 380));
 		win.onClose = {
 			this.saveprefsauto();
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
 			if (txalacalibration.isNil.not, {txalacalibration.close});
+			if (txalachroma.isNil.not, {txalachroma.close});
 			scopesynth.free;
 			scope.free;
 		};
@@ -516,7 +516,6 @@ TxalaInteractive{
 				}).add;
 				{ scopesynth = Synth(\test) }.defer(0.5);
 			});
-
 			server.scope(1,25);//bus 25 from the txalaonset synth
 		});
 
@@ -559,14 +558,12 @@ TxalaInteractive{
 			labelWidth: 60;
 		));
 
-		//guielements.answermode.valueAction = ~answermode;
-
 		yindex = yindex + 1;
 
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"swing",
-			ControlSpec(0, 0.2, \lin, 0.01, 0, ""),
+			ControlSpec(0, 100, \lin, 1, 0, ""),
 			{ arg ez;
 				~gapswing = ez.value.asFloat;
 			},
@@ -587,30 +584,13 @@ TxalaInteractive{
 			labelWidth: 60;
 		));
 
-
 		yindex = yindex + 1.5;
 
 		this.doCalibrationPresets(win, 7, yloc+(gap*yindex), guielements);
 		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
 		yindex = yindex + 5;
-		this.doPlanksSetGUI(win, 7, yloc+(gap*yindex));
-/*
-		StaticText(win, Rect(180, yloc+(gap*yindex), 170, 20)).string = "Rhythm constrains";
-
-		yindex = yindex + 1;
-
-		5.do({arg index;
-			Button(win, Rect(180+(20*index), yloc+(gap*yindex),20,25))
-			.states_([
-				[index.asString, Color.white, Color.black],
-				[index.asString, Color.black, Color.blue],
-			])
-			.action_({ arg butt;
-				if (butt.value.asBoolean,
-					{},
-					{});
-			});
-		});*/
+		this.doChromaGUI(win, 7, yloc+(gap*yindex));
+		this.doPlanksSetGUI(win, 180, yloc+(gap*yindex));
 
 		// feddback area
 
@@ -671,7 +651,7 @@ TxalaInteractive{
 
 		Button(win,  Rect(xloc,yloc+20,80,25))
 		.states_([
-			["calibrate", Color.white, Color.grey],
+			["edit", Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			txalacalibration = TxalaCalibration.new(this);
@@ -691,17 +671,7 @@ TxalaInteractive{
 			if (data.isNil.not, {
 
 				~hutsunelookup = data[\hutsunelookup];
-				~listenparemeters = data[\listenparemeters]; //
-
-				//~latencycorrection = data[\latencycorrection];
-				//~amp = data[\amp];
-				//~gap = data[\gap];
-				//~gapswing = data[\gapswing];
-				//~answermode = data[\answermode];
-
-				//guielements.gapswing.valueAction = ~gapswing;
-				//guielements.answermode.valueAction = ~answermode; //menu
-				//guielements.amp.valueAction = ~amp;
+				~listenparemeters = data[\listenparemeters];
 
 				if (txalacalibration.isNil.not, {
 					//txalacalibration.guielements.postln;
@@ -745,17 +715,8 @@ TxalaInteractive{
 			);
 
 			data = Dictionary.new;
-
-
 			data.put(\listenparemeters, ~listenparemeters);
 			data.put(\hutsunelookup, ~hutsunelookup);
-
-/*			data.put(\amp, ~amp);
-			//data.put(\gap, ~gap); // not used
-			data.put(\gapswing, ~gapswing);
-			data.put(\answermode, ~answermode);
-			data.put(\latencycorrection, ~latencycorrection);*/
-
 			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
 
 			newpreset.string = ""; //clean field
@@ -847,7 +808,78 @@ TxalaInteractive{
 		});
 	}
 
+	doChromaGUI{arg win, xloc, yloc;
+		var newpreset, popup;
 
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chroma manager";
+
+/*		Button(win,  Rect(xloc,yloc+20,80,25))
+		.states_([
+			["edit", Color.white, Color.grey],
+		])
+		.action_({ arg butt;
+			txalachroma = TxalaChroma.new(this);
+		});*/
+		chromabuttons.size.do({arg index;
+			chromabuttons[index] = Button(win, Rect(xloc+(25*index), yloc+20, 25, 25))
+			.states_([
+				[(index+1).asString, Color.white, Color.black],
+				[(index+1).asString, Color.white, Color.red]
+			])
+			.action_({ arg butt;
+				if (butt.value.asBoolean, {
+					~recindex = index;
+					chromabuttons.do({arg bu; bu.value=0});//off all
+					butt.value = 1;
+				}, {
+					~recindex = nil
+				})
+			});
+
+		});
+
+		popup = PopUpMenu(win,Rect(xloc,yloc+47,170,20))
+		.items_( this.updatepresetfiles("presets_chroma") )
+		.mouseDownAction_( {arg menu;
+			presetslisten = this.updatepresetfiles("presets_chroma");
+			menu.items = presetslisten;
+		} )
+		.action_({ arg menu;
+			var data;
+			("loading..." + basepath ++ "/presets_chroma/" ++ menu.item).postln;
+			data = Object.readArchive(basepath ++ "/presets_chroma/" ++ menu.item);
+
+			if (data.isNil.not, { ~plankdata = data[\plankdata] });
+		});
+
+		popup.mouseDown;// force creating the menu list
+		try{ // AUTO load first preset **
+			popup.valueAction_(1);
+		}{ |error|
+			"no predefined chroma preset to be loaded".postln;
+			error.postln;
+		};
+
+		newpreset = TextField(win, Rect(xloc, yloc+70, 95, 25));
+		Button(win, Rect(xloc+100,yloc+70,70,25))
+		.states_([
+			["save", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			var filename, data;
+			if (newpreset.string == "",
+				{filename = Date.getDate.stamp++".preset"},
+				{filename = newpreset.string++".preset"}
+			);
+
+			data = Dictionary.new;
+			//data.put(\listenparemeters, ~listenparemeters);
+			data.put(\plankdata, ~plankdata);
+			data.writeArchive(basepath ++ "/presets_chroma/" ++ filename);
+
+			newpreset.string = ""; //clean field
+		});
+	}
 
 
 	doPlanksSetGUI { arg win, xloc, yloc;
