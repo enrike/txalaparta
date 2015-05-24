@@ -57,7 +57,9 @@ TxalaMarkov4{
 
 		if (mem.isNil, { mem = [input, input, input, input] }); // first time
 
-		beatdata[mem[3]][mem[2]][mem[1]][mem[0]][input] = beatdata[mem[3]][mem[2]][mem[1]][mem[0]][input] + 1;
+		if (~learning, {
+			beatdata[mem[3]][mem[2]][mem[1]][mem[0]][input] = beatdata[mem[3]][mem[2]][mem[1]][mem[0]][input] + 1
+		});
 
 		//beatdata[mem[3]][mem[2]][mem[1]][mem[0]][input].postln;
 		//mem = [detected]++mem[0..mem.size-2]; // prepend into memory the input before calc next value

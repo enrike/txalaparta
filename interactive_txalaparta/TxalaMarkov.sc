@@ -47,7 +47,7 @@ TxalaMarkov{
 	next{arg input;
 		var output=0, weights;
 		if (mem.isNil, { mem = [input] }); // first time
-		beatdata[mem[0]][input] = beatdata[mem[0]][input] + 1;
+		if (~learning, {beatdata[mem[0]][input] = beatdata[mem[0]][input] + 1});
 		weights = beatdata[input];
 		output = options.wchoose(weights.normalizeSum);
 		if (output == 0 && input == 0, {

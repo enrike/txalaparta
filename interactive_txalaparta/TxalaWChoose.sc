@@ -35,7 +35,7 @@ TxalaWChoose{
 	next{ arg input;
 		var output;
 
-		beatdata[input] = beatdata[input] + 1; // one more of this type
+		if (~learning, {beatdata[input] = beatdata[input] + 1}); // one more of this type
 		output = options.wchoose( beatdata.normalizeSum );
 
 		// this is probably not very elegant way of avoiding output 0 to a 0 input.
