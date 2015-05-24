@@ -32,7 +32,7 @@ TxalaInteractive{
 	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
-	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
+	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons;
 	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov;
 
@@ -114,7 +114,7 @@ TxalaInteractive{
 	loadprefsauto{
 		var data;
 		("auto loading general preferences ...").postln;
-		data = Object.readArchive(basepath ++ "prefs.preset");
+		data = Object.readArchive(basepath ++ "/" ++ "prefs.preset");
 
 		if (data.isNil.not, {
 
@@ -136,7 +136,7 @@ TxalaInteractive{
 		data.put(\latencycorrection, ~latencycorrection);
 		data.put(\learning, ~learning);
 
-		data.writeArchive(basepath ++ filename);
+		data.writeArchive(basepath ++ "/" ++ filename);
 	}
 
 	loadsampleset{ arg presetfilename;
@@ -357,7 +357,11 @@ TxalaInteractive{
 
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
 
-			if ( defertime < 0, {curhits = 2}); // to late to answer properly?
+			if ( defertime < 0, {
+					"TOO LATE TO ANSWER!!!!".postln;
+				//curhits = 2
+			}); // to late to answer properly?
+
 			hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
 
 			swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
@@ -384,7 +388,7 @@ TxalaInteractive{
 		});
 	}
 
-	selfcancel { arg plank, index, total;
+/*	selfcancel { arg plank, index, total;
 		if (selfcancelation, { // dont listen while I am playing myself
 			if (index==0, { this.processflag(true) });
 
@@ -394,11 +398,11 @@ TxalaInteractive{
 				{ this.processflag(false) }.defer(hitlength)
 			});
 		});
-	}
+	}*/
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
-		this.selfcancel(plank, index, total); // only if enabled by user
+		//this.selfcancel(plank, index, total); // only if enabled by user
 
 		positions = ~buffers[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots. this is not the best way
 
@@ -485,14 +489,14 @@ TxalaInteractive{
 			~answerpriority = but.value.asBoolean;
 		}).valueAction_(~answerpriority);
 
-		Button( win, Rect(180,yloc+15,80,25))
+/*		Button( win, Rect(180,yloc+15,80,25))
 		.states_([
 			["self-cancel", Color.white, Color.black],
 			["cancel me", Color.black, Color.red]
 		])
 		.action_({ arg but;
 			selfcancelation = but.value.asBoolean;
-		});
+		});*/
 
 		Button(win,  Rect(260,5,80,25))
 		.states_([
@@ -756,6 +760,7 @@ TxalaInteractive{
 		});
 
 		yloc = yloc+27;
+
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_( this.updatepresetfiles("presets_matrix") )
 		.mouseDownAction_( { arg menu;
@@ -767,15 +772,11 @@ TxalaInteractive{
 			("trying to load..." + basepath  ++ "/presets_matrix/" ++  menu.item).postln;
 			data = Object.readArchive(basepath  ++ "/presets_matrix/" ++  menu.item);
 
-			//try {
 			if (~answermode > 0, {
 				answersystems[~answermode-1].loaddata( data[\beatdata] );
 			}, {
 				"imitation mode cannot load memory".postln;
 			});
-			//}{|error|
-			//	("memory is empty?"+error).postln;
-			//};
 		});
 
 		yloc = yloc+22;
@@ -813,13 +814,6 @@ TxalaInteractive{
 
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chroma manager";
 
-/*		Button(win,  Rect(xloc,yloc+20,80,25))
-		.states_([
-			["edit", Color.white, Color.grey],
-		])
-		.action_({ arg butt;
-			txalachroma = TxalaChroma.new(this);
-		});*/
 		chromabuttons.size.do({arg index;
 			chromabuttons[index] = Button(win, Rect(xloc+(25*index), yloc+20, 25, 25))
 			.states_([
@@ -849,7 +843,7 @@ TxalaInteractive{
 			("loading..." + basepath ++ "/presets_chroma/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_chroma/" ++ menu.item);
 
-			if (data.isNil.not, { ~plankdata = data[\plankdata] });
+			if (data.isNil.not, { ~plankdata = data[\plankdata]; ~plankdata.postln });
 		});
 
 		popup.mouseDown;// force creating the menu list
@@ -873,7 +867,6 @@ TxalaInteractive{
 			);
 
 			data = Dictionary.new;
-			//data.put(\listenparemeters, ~listenparemeters);
 			data.put(\plankdata, ~plankdata);
 			data.writeArchive(basepath ++ "/presets_chroma/" ++ filename);
 
@@ -907,17 +900,16 @@ TxalaInteractive{
 		} )
 		.action_({ arg menu;
 			var data, dirname;
-			dirname = menu.item.split($/)[0];
-			("loading..." + dirname).postln;
-			data = Object.readArchive(basepath ++ "/sounds/" ++ dirname ++ "/chromagram.preset");
+			//dirname = menu.item.split($/)[0];
+			//("loading..." + dirname).postln;
+			//data = Object.readArchive(basepath ++ "/sounds/" ++ dirname ++ "/chromagram.preset");
+			//~plankdata = data[\plankdata];
 
-			~plankdata = data[\plankdata];
-
-			try {
+/*			try {
 				this.updateTxalaScoreNumPlanks();
 			}{|error|
 				("not listening yet?"+error).postln;
-			};
+			};*/
 
 			this.loadsampleset(menu.item);
 		});
