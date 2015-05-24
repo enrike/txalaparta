@@ -31,7 +31,7 @@ TxalaInteractive{
 	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
-	var presetslisten, presetmatrix, basepath, sndpath, <samples;
+	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration;
 	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov;
@@ -58,15 +58,16 @@ TxalaInteractive{
 		~answer = false;
 		~answerpriority = true; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
-		~answermode = 1; //0,1,3: imitation, wchoose
+		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~hutsunelookup = 0.3;
 		~plankdetect = 1;
-		~gapswing = 0.01;
+		~gapswing = 0;
+		~latencycorrection = 0.05;
+		~learning = true;
 
 		~buffers = Array.fillND([numplanks, plankresolution], { [] });
 		~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution??
 
-		//drawingSet = Array.fill(8, {[-1, 0, false, 10]}); // max num of hits per phrase
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
 
 		// this is to keep all the values of the listening synths in one place
@@ -104,8 +105,38 @@ TxalaInteractive{
 				amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * freq, doneAction:2)!2
 			)
 		}).add;
+
+		this.loadprefsauto();
 	}
 
+
+	loadprefsauto{
+		var data;
+		("auto loading general preferences ...").postln;
+		data = Object.readArchive(basepath ++ "prefs.preset");
+
+		if (data.isNil.not, {
+
+			~latencycorrection = data[\latencycorrection];
+			~amp = data[\amp];
+			~gapswing = data[\gapswing];
+			~answermode = data[\answermode];
+			~learning = data[\learning];
+		})
+	}
+
+	saveprefsauto{
+		var data, filename = "prefs.preset";
+		data = Dictionary.new;
+
+		data.put(\amp, ~amp);
+		data.put(\gapswing, ~gapswing);
+		data.put(\answermode, ~answermode);
+		data.put(\latencycorrection, ~latencycorrection);
+		data.put(\learning, ~learning);
+
+		data.writeArchive(basepath ++ filename);
+	}
 
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
@@ -232,7 +263,7 @@ TxalaInteractive{
 		if ( lastPattern.isNil.not, {
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
 			if (defertime.isNil, {
-				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds - ~latencycorrection;
 			});
 
 			if (defertime.isNaN.not, {
@@ -299,16 +330,7 @@ TxalaInteractive{
 	next {arg defertime=0, size=nil, mode=0;
 		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern;
 
-		//if (mode==0, {curhits = wchoose.next(size)}, {curhits = tmarkov.next(size)});
-
 		curhits = answersystems[mode-1].next(size);
-/*		switch (mode,
-			1, { curhits = wchoose.next(size) },
-			2, { curhits = tmarkov.next(size) }, // MC option 1
-			3, { curhits = tmarkov2.next(size) }, // MC option 2
-			4, { curhits = tmarkov4.next(size) }  // MC option 4
-		);*/
-		//[size, curhits].postln;
 
 		// should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
@@ -338,7 +360,7 @@ TxalaInteractive{
 		}, {
 
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
-			if ( defertime < 0, {curhits = 1}); // if we are late or gap is too shot they pile up and sounds horrible
+			if ( defertime < 0, {curhits = 2}); // if we are late or gap is too shot they pile up and sounds horrible
 			hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
 
 			curhits.do({ arg index;
@@ -407,9 +429,13 @@ TxalaInteractive{
 	}
 
 	doGUI  {
-		var yindex=0, yloc = 40, gap=20, guielements = (); //Array.fill(10, {nil});
+		var yindex=0, yloc = 40, gap=20; //Array.fill(10, {nil});
+
+		guielements = ();// to later restore from preferences
+
 		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 360));
 		win.onClose = {
+			this.saveprefsauto();
 			if (txalasilence.isNil.not, {txalasilence.kill()});
 			if (txalaonset.isNil.not, {txalaonset.kill()});
 			if (~txalascore.isNil.not, {~txalascore.close});
@@ -540,13 +566,27 @@ TxalaInteractive{
 		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"swing",
-			ControlSpec(0, 0.2, \lin, 0.01, 0.2, ""),
+			ControlSpec(0, 0.2, \lin, 0.01, 0, ""),
 			{ arg ez;
 				~gapswing = ez.value.asFloat;
 			},
 			initVal: ~gapswing,
 			labelWidth: 60;
 		));
+
+		yindex = yindex + 1;
+
+		guielements.add(\latency-> EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"latency",
+			ControlSpec(0, 0.2, \lin, 0.01, 0, ""),
+			{ arg ez;
+				~latencycorrection = ez.value.asFloat;
+			},
+			initVal: ~latencycorrection,
+			labelWidth: 60;
+		));
+
 
 		yindex = yindex + 1.5;
 
@@ -649,18 +689,19 @@ TxalaInteractive{
 			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
 
 			if (data.isNil.not, {
-				//~answertimecorrection = data[\answertimecorrection];
-				~amp = data[\amp];
-				//~listenparemeters = data[\amp];
-				~gap = data[\gap];
-				~gapswing = data[\gapswing];
-				~answermode = data[\answermode];
+
 				~hutsunelookup = data[\hutsunelookup];
 				~listenparemeters = data[\listenparemeters]; //
 
-				guielements.gapswing.valueAction = ~gapswing;
-				guielements.answermode.valueAction = ~answermode; //menu
-				guielements.amp.valueAction = ~amp;
+				//~latencycorrection = data[\latencycorrection];
+				//~amp = data[\amp];
+				//~gap = data[\gap];
+				//~gapswing = data[\gapswing];
+				//~answermode = data[\answermode];
+
+				//guielements.gapswing.valueAction = ~gapswing;
+				//guielements.answermode.valueAction = ~answermode; //menu
+				//guielements.amp.valueAction = ~amp;
 
 				if (txalacalibration.isNil.not, {
 					//txalacalibration.guielements.postln;
@@ -672,13 +713,13 @@ TxalaInteractive{
 						"could not set gain value".postln;
 					} ;
 
-					txalacalibration.guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-					txalacalibration.guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-					txalacalibration.guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
-					txalacalibration.guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
-					txalacalibration.guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-					txalacalibration.guielements.floor.valueAction = ~listenparemeters.onset.floor;
-					txalacalibration.guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+					txalacalibration.guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
+					txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
+					txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					txalacalibration.guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
+					txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
+					txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
+					txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
 				});
 			});
 		});
@@ -705,12 +746,15 @@ TxalaInteractive{
 
 			data = Dictionary.new;
 
-			data.put(\amp, ~amp);
+
 			data.put(\listenparemeters, ~listenparemeters);
 			data.put(\hutsunelookup, ~hutsunelookup);
-			data.put(\gap, ~gap);
+
+/*			data.put(\amp, ~amp);
+			//data.put(\gap, ~gap); // not used
 			data.put(\gapswing, ~gapswing);
 			data.put(\answermode, ~answermode);
+			data.put(\latencycorrection, ~latencycorrection);*/
 
 			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
 
@@ -725,6 +769,16 @@ TxalaInteractive{
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Memory manager";
 
 		yloc = yloc+20;
+
+		guielements.add(\learning, Button(win, Rect(xloc,yloc,85,25))
+		.states_([
+			["learn", Color.white, Color.grey],
+			["learn", Color.white, Color.green]
+		])
+		.action_({ arg butt;
+			~learning = butt.value.asBoolean;
+		}).value_(~learning)
+		);
 
 		Button(win, Rect(xloc+85,yloc,85,25))
 		.states_([
