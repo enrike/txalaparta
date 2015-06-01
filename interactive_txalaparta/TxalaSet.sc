@@ -57,7 +57,7 @@ TxalaSet{
 		}).add;
 
 		// look for onsets
-		SynthDef(\listener, { arg in=0, thresh = 0.3, relaxtime = 1;
+		SynthDef(\listener, { arg in=0, thresh = 0.2, relaxtime = 1;
 			var sig = SoundIn.ar(in);
 			var loc = LocalBuf(1024, 1) ;
 			var chain = FFT(loc, sig);
@@ -158,26 +158,6 @@ TxalaSet{
 			ww.front
 		});
 
-/*		Button(win, Rect(120,10, 80, 25)) // loads current sample set into memory
-		.states_([
-			["load", Color.white, Color.black]
-		])
-		.action_({ arg butt;
-			~buffers.do({arg plank, indexplank;
-				plank.do({ arg pos, indexpos;
-					pos.do({ arg amp, indexamp;
-						var filename="plank";
-						filename = filename ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
-
-						if ( PathName.new(sndpath ++ filename).isFile, {
-							~buffers[indexplank][indexpos][indexamp] = Buffer.read(server, sndpath ++ filename);
-						})
-					})
-				})
-			});
-		});*/
-
-
 		// DetectSilence controls //
 		processbutton = Button(win, Rect(110,10, 70, 25))
 		.states_([
@@ -219,20 +199,20 @@ TxalaSet{
 		// two responders
 		respOSC = OSCFunc({ arg msg, time;
 			if (msg[2] == 999){
-				("attack"+(time-sttime)).postln;
 				onsets = onsets.add(time-sttime) ;
 				silencesynth.run ;
 				onsetsynth.run(false) ;
+				("attack"+(time-sttime)).postln;
 			}
 		},'/tr', Server.local.addr);
 
 		silOSC = OSCFunc({ arg msg, time;
 			if (msg[2] == 111){
-				("silence"+(time-sttime)).postln ;
-				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
 				silences = silences.add(time-sttime) ;
 				onsetsynth.run ;
 				silencesynth.run(false) ;
+				("silence"+(time-sttime)).postln ;
+				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
 			}
 		},'/tr', Server.local.addr);
 	}
