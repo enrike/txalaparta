@@ -362,7 +362,7 @@ TxalaInteractive{
 				//curhits = 2
 			}); // to late to answer properly?
 
-			hitpattern = patternbank.getrandpattern(curhits); // just get any corresponding to curhits num
+			hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
 
 			swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
 
@@ -750,7 +750,6 @@ TxalaInteractive{
 			["reset", Color.white, Color.grey]
 		])
 		.action_({ arg butt;
-			//wchoose.reset();
 			if (~answermode > 0, {
 				answersystems[~answermode-1].reset();
 			}, {
@@ -774,6 +773,7 @@ TxalaInteractive{
 
 			if (~answermode > 0, {
 				answersystems[~answermode-1].loaddata( data[\beatdata] );
+				patternbank.loaddata( data[\patterndata] );
 			}, {
 				"imitation mode cannot load memory".postln;
 			});
@@ -797,6 +797,7 @@ TxalaInteractive{
 			//try {
 			if (~answermode > 0, {
 				data.put(\beatdata, answersystems[~answermode-1].beatdata);
+				data.put(\patterndata, patternbank.bank);
 				data.writeArchive(basepath ++ "/presets_matrix/" ++ filename);
 			}, {
 				"imitation mode cannot load memory".postln;
