@@ -6,7 +6,7 @@
 */
 
 TxalaPatternBank{
-	var bank;
+	var <bank;
 
 	*new {
 		^super.new.initTxalaPatternBank();
@@ -18,6 +18,10 @@ TxalaPatternBank{
 
 	reset{
 		bank = [[],[],[],[]];
+	}
+
+	loaddata {arg bankdata;
+		bank = bankdata;
 	}
 
 	dorandpattern{ arg numhits=1; // just make up a safe random pattern in case there was none to return in bank
@@ -55,7 +59,7 @@ TxalaPatternBank{
 		// get pattern blueprint
 		apattern.collect({ arg item; item.plank.asString }).do({arg item; blueprint = blueprint++item });
 
-		apattern = this.normalisetime(apattern);
+		//apattern = this.normalisetime(apattern);
 		//apattern = this.normaliseamp(apattern);
 
 		newpattern = newpattern.add(\blueprint -> blueprint); // plank sequence. 4123, 13, 343, 114 or 22 for instance
@@ -77,8 +81,8 @@ TxalaPatternBank{
 
 	normalisetime{arg apattern; // return the pattern data with the time values normalised to 0-1
 		if (apattern.size > 1,{
-			appatern.do({arg hit, index;
-				appatern[index].time = hit.time/apattern.last.time // last is length
+			apattern.do({arg hit, index;
+				apattern[index].time = hit.time/apattern.last.time // last is length
 			})
 		});
 		^apattern;
