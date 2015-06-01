@@ -293,7 +293,7 @@ Txalaparta{
 							~makilaanims.makilaF(txakun.not.asInteger, makilaindex, 0.2);//slider animation
 						});
 
-						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos + 1));
+						~txalascore.hit(Main.elapsedTime, hitamp, (flagindex + 1), (pos));
 						//~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
 						//{~midiout.noteOff(txakun.not.asInteger, plank.bufnum, hitamp*127) }.defer(0.2);
 
