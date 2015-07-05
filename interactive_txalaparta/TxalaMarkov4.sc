@@ -25,7 +25,7 @@ TxalaMarkov4{
 	reset {
 		"reseting Markov Chain states".postln;
 		mem = nil; // me last output, user last input <--
-		options = Array.fill(dimension, {arg n=0; n}); // [0,1,2,3,4]
+		options = Array.fill(dimension, {arg n=0; n}); // [0,1,2,3,4] --> output options
 		//beatdata = Array.fillND(Array.fill(2, {options.size}), { 0 });
 		beatdata = Array.fill(options.size, {Array.fill(options.size, {Array.fill(options.size, {[]})})});
 		//beatdata.postln;
