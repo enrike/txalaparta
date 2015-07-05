@@ -34,7 +34,7 @@ TxalaInteractive{
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons;
-	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov;
+	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -76,6 +76,7 @@ TxalaInteractive{
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
 
 		lastPattern = nil;
+		phrasemode = 0; // make up a new phrase or imitate a stored one?
 
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
@@ -288,6 +289,42 @@ TxalaInteractive{
 		});
 	}
 
+
+	makephrase { arg curhits, defertime;
+		var gap=0, hitpattern, swingrange, lastaverageamp = this.averageamp();
+
+		// should we shorten the gap according to num of curhits?? ******
+		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
+		if (curhits > 1, { gap = this.averagegap() });
+
+		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), { // sometimes play a two hit chord instead of single hit
+			gap = 0;
+			curhits = 2;
+		});
+
+		hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
+
+		swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
+
+		curhits.do({ arg index;
+			var hittime, amp;
+			hittime = defertime + (gap * index) + rrand(swingrange.neg, swingrange);
+			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
+
+			if (this.getaccent, {
+				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
+				}, {
+					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+			});
+
+			if ( hittime.isNaN, { hittime = 0 } );
+			if ( hittime == inf, { hittime = 0 } );
+
+			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
+			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
+		});
+	}
+
 	// analysing of lastPattern
 	averageamp { // returns average amp from hits in last phrase
 		var val=0;
@@ -329,18 +366,16 @@ TxalaInteractive{
 	}
 
 	next {arg defertime=0, size=nil, mode=0;
-		var gap=0, curhits, lastaverageamp = this.averageamp(), hitpattern, swingrange;
+		var curhits = answersystems[mode-1].next(size);
 
-		curhits = answersystems[mode-1].next(size);
-
-		// should we shorten the gap according to num of curhits?? ******
+/*		// should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
 		if (curhits > 1, { gap = this.averagegap() });
 
 		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
 			curhits = 2;
-		});
+		});*/
 
 		if (curhits == 0, { // hutsune
 			{
@@ -358,11 +393,18 @@ TxalaInteractive{
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
 
 			if ( defertime < 0, {
-					"TOO LATE TO ANSWER!!!!".postln;
-				//curhits = 2
+				"TOO LATE TO ANSWER!!!!".postln;
 			}); // to late to answer properly?
 
-			hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
+
+			if (phrasemode.asBoolean.not, { // synth the phrase
+				this.makephrase(curhits, defertime)
+			},{ // slack
+				var pat = patternbank.getrandpattern(curhits);
+				this.imitation(defertime, pat.pattern);
+			});
+
+/*			hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
 
 			swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
 
@@ -382,9 +424,10 @@ TxalaInteractive{
 
 				{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
 				drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
-			});
+			});*/
 
-			{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime + (gap * (curhits.size-1))); // schedule with last hit
+		// THIS NEEDS THE GAP
+		//	{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime + (gap * (curhits.size-1))); // schedule with last hit
 		});
 	}
 
@@ -547,6 +590,15 @@ TxalaInteractive{
 			})
 			.valueAction_(~answermode)
 		);
+
+		Button(win, Rect(200,yloc+(gap*yindex)-3,55,20))
+		.states_([
+			["slack", Color.white, Color.grey],
+			["slack", Color.white, Color.green]
+		])
+		.action_({ arg butt;
+			phrasemode = butt.value;
+		}).value_(phrasemode);
 
 		yindex = yindex + 1;
 
