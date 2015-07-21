@@ -399,7 +399,7 @@ TxalaInteractive{
 
 			if (phrasemode.asBoolean.not, { // synth the phrase
 				this.makephrase(curhits, defertime)
-			},{ // slack
+			},{ // lick
 				var pat = patternbank.getrandpattern(curhits);
 				this.imitation(defertime, pat.pattern);
 			});
@@ -593,8 +593,8 @@ TxalaInteractive{
 
 		Button(win, Rect(200,yloc+(gap*yindex)-3,55,20))
 		.states_([
-			["slack", Color.white, Color.grey],
-			["slack", Color.white, Color.green]
+			["lick", Color.white, Color.grey],
+			["lick", Color.white, Color.green]
 		])
 		.action_({ arg butt;
 			phrasemode = butt.value;
