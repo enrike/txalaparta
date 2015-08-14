@@ -33,7 +33,7 @@ TxalaInteractive{
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
-	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons;
+	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons, makilaanims;
 	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode;
 
 	var numplanks = 6; // max planks
@@ -320,7 +320,11 @@ TxalaInteractive{
 			if ( hittime.isNaN, { hittime = 0 } );
 			if ( hittime == inf, { hittime = 0 } );
 
-			{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
+			{
+				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank);
+				makilaanims.makilaF(index, hittime); // prepare anim
+			}.defer(hittime);
+
 			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
 		});
 	}
@@ -651,6 +655,8 @@ TxalaInteractive{
 		// feddback area
 
 		circleanim = TxalaCircle.new(win, 450, 100, 200);
+
+		makilaanims = TxalaSliderAnim.new(win, 580, 10);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
 		label.string = "BPM: --- \nCompass: ---";
