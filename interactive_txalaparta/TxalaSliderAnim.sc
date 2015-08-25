@@ -47,7 +47,7 @@ TxalaSliderAnim {
 		sl.value = 1;
 
 		loopF = Routine({
-			sl.knobColor = Color.red;
+			sl.knobColor = Color.blue;
 			(steps*2).do({ arg i;
 				sl.value = sl.value - stepvalue;
 				if (i == (steps-1), { stepvalue = stepvalue.neg });
