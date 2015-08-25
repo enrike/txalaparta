@@ -322,11 +322,13 @@ TxalaInteractive{
 
 			{
 				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank);
-				makilaanims.makilaF(index, hittime); // prepare anim
+				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(hittime);
 
 			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
 		});
+
+		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer; // render blue asap //
 	}
 
 	// analysing of lastPattern
@@ -678,7 +680,7 @@ TxalaInteractive{
 		hutsunebutton = Button( win, Rect(590,295,100,55))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
-			["HUTSUN", Color.white, Color.blue]
+			["HUTSUN", Color.white, Color.green]
 		]);
 
 		win.front;
