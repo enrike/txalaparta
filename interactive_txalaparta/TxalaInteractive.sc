@@ -165,7 +165,7 @@ TxalaInteractive{
 			if(~answer, { this.answer(0) }); //asap
 			if (~txalascore.isNil.not, {
 				var last = SystemClock.seconds-((60/~bpm)/2);
-				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
+				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune // detected hutsune from human
 				//~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
 			});
 			tempocalc.pushlasttime(); // empty hits also count for BPM calc
@@ -387,7 +387,7 @@ TxalaInteractive{
 			{
 				if (~txalascore.isNil.not, {
 					var last = SystemClock.seconds;
-					~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune
+					~txalascore.hit(last, -1, 0, 0) ; // -1 for hutsune // machine hutsune
 					~txalascore.mark(last, (SystemClock.seconds+defertime), txalasilence.compass, lastPattern.size)
 				});
 				{hutsunebutton.value = 1}.defer;
@@ -399,7 +399,7 @@ TxalaInteractive{
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
 
 			if ( defertime < 0, {
-				"TOO LATE TO ANSWER!!!!".postln;
+				"oops... too late to answer properly".postln;
 			}); // to late to answer properly?
 
 
@@ -409,45 +409,9 @@ TxalaInteractive{
 				var pat = patternbank.getrandpattern(curhits);
 				this.imitation(defertime, pat.pattern);
 			});
-
-/*			hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
-
-			swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
-
-			curhits.do({ arg index;
-				var hittime, amp;
-				hittime = defertime + (gap * index) + rrand(swingrange.neg, swingrange);
-				amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
-
-				if (this.getaccent, {
-					if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
-				}, {
-					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
-				});
-
-				if ( hittime.isNaN, { hittime = 0 } );
-				if ( hittime == inf, { hittime = 0 } );
-
-				{ this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank) }.defer(hittime);
-				drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
-			});*/
-
-		// THIS NEEDS THE GAP
-		//	{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime + (gap * (curhits.size-1))); // schedule with last hit
 		});
 	}
 
-/*	selfcancel { arg plank, index, total;
-		if (selfcancelation, { // dont listen while I am playing myself
-			if (index==0, { this.processflag(true) });
-
-			if ((index==(total-1)), { // listen again when the last hit stops
-				var hitlength = plank.numFrames/plank.sampleRate;
-				hitlength = hitlength * 0.4; // but remove the sound tail. expose this in the GUI?
-				{ this.processflag(false) }.defer(hitlength)
-			});
-		});
-	}*/
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
@@ -538,15 +502,6 @@ TxalaInteractive{
 			~answerpriority = but.value.asBoolean;
 		}).valueAction_(~answerpriority);
 
-/*		Button( win, Rect(180,yloc+15,80,25))
-		.states_([
-			["self-cancel", Color.white, Color.black],
-			["cancel me", Color.black, Color.red]
-		])
-		.action_({ arg but;
-			selfcancelation = but.value.asBoolean;
-		});*/
-
 		Button(win,  Rect(260,5,80,25))
 		.states_([
 			["show score", Color.white, Color.black],
@@ -597,10 +552,10 @@ TxalaInteractive{
 			.valueAction_(~answermode)
 		);
 
-		Button(win, Rect(200,yloc+(gap*yindex)-3,55,20))
+		Button(win, Rect(200,yloc+(gap*yindex),125,20))
 		.states_([
-			["lick", Color.white, Color.grey],
-			["lick", Color.white, Color.green]
+			["lick from memory", Color.white, Color.grey],
+			["lick from memory", Color.white, Color.green]
 		])
 		.action_({ arg butt;
 			phrasemode = butt.value;
@@ -693,7 +648,6 @@ TxalaInteractive{
 		temp = temp.asArray.collect({arg item; PathName.new(item).fileName});
 		temp = temp.insert(0, "---");
 		^temp;
-		//presetslisten.asArray.collect({arg item; PathName.new(item).fileName}).insert(0, "---")
 	}
 
 	updatesamplesetpresetfiles{
@@ -703,7 +657,6 @@ TxalaInteractive{
 			var ar = item.split($/);
 			ar[ar.size-2]
 		});
-		//names.postln;
 		names = names.insert(0, "---");
 		^names;
 	}
@@ -738,7 +691,6 @@ TxalaInteractive{
 				~listenparemeters = data[\listenparemeters];
 
 				if (txalacalibration.isNil.not, {
-					//txalacalibration.guielements.postln;
 					txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
 
 					try {
@@ -759,7 +711,7 @@ TxalaInteractive{
 		});
 
 		popup.mouseDown;// force creating the menu list
-		try{ // AUTO load first preset **
+		try{ // AUTO load first preset
 			popup.valueAction_(1);
 		}{ |error|
 			"no predefined listen preset to be loaded".postln;
@@ -862,9 +814,6 @@ TxalaInteractive{
 			}, {
 				"imitation mode cannot load memory".postln;
 			});
-			//}{|error|
-			//	("memory is empty?"+error).postln;
-			//};
 
 			newpreset.string = ""; //clean field
 		});
@@ -960,18 +909,6 @@ TxalaInteractive{
 			menu.items = presetmatrix;
 		} )
 		.action_({ arg menu;
-			var data, dirname;
-			//dirname = menu.item.split($/)[0];
-			//("loading..." + dirname).postln;
-			//data = Object.readArchive(basepath ++ "/sounds/" ++ dirname ++ "/chromagram.preset");
-			//~plankdata = data[\plankdata];
-
-/*			try {
-				this.updateTxalaScoreNumPlanks();
-			}{|error|
-				("not listening yet?"+error).postln;
-			};*/
-
 			this.loadsampleset(menu.item);
 		});
 
