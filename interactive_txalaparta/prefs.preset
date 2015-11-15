@@ -9,8 +9,8 @@ p = [
 	1, [ nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
-		'amp',  1.000000,  'answermode',  2,  
-		'learning',  true,  'latencycorrection',  0.070000,  
+		'amp',  1.000000,  'answermode',  3,  
+		'learning',  true,  'latencycorrection',  0.090000,  
 		nil,  nil,  'gapswing',  0.000000,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ]
