@@ -285,6 +285,7 @@ TxalaInteractive{
 			{
 				this.playhit(hit.amp, 0, index, pattern.size, hit.plank);
 				drawingSet[1][index] = [0, (defertime + hit.time), false, hit.amp]; // append each hit
+				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(defertime + hit.time);
 		});
 	}
@@ -407,7 +408,7 @@ TxalaInteractive{
 				this.makephrase(curhits, defertime)
 			},{ // lick
 				var pat = patternbank.getrandpattern(curhits);
-				this.imitation(defertime, pat.pattern);
+				this.imitation(defertime, pat.pattern); // just play it as you stored it
 			});
 		});
 	}
@@ -449,7 +450,7 @@ TxalaInteractive{
 
 		guielements = ();// to later restore from preferences
 
-		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 700, 380));
+		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 640, 380));
 		win.onClose = {
 			this.saveprefsauto();
 			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -613,7 +614,7 @@ TxalaInteractive{
 
 		circleanim = TxalaCircle.new(win, 450, 100, 200);
 
-		makilaanims = TxalaSliderAnim.new(win, 580, 10);
+		makilaanims = TxalaSliderAnim.new(win, 550, 10);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
 		label.string = "BPM: --- \nCompass: ---";
@@ -621,18 +622,18 @@ TxalaInteractive{
 		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
 		numbeatslabel.string = "Beats: ---";
 
-		hitbutton = Button( win, Rect(370,295,110,55))
+		hitbutton = Button( win, Rect(370,295,90,65))
 		.states_([
 			["HIT", Color.white, Color.grey],
 			["HIT", Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(480,295,110,55))
+		compassbutton = Button( win, Rect(460,295,90,65))
 		.states_([
 			["PHRASE", Color.white, Color.grey],
 			["PHRASE", Color.white, Color.red]
 		]);
 
-		hutsunebutton = Button( win, Rect(590,295,100,55))
+		hutsunebutton = Button( win, Rect(550,295,80,65))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.green]
