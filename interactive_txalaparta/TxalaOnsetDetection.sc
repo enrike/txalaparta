@@ -65,7 +65,7 @@ TxalaOnsetDetection{
 				n: 12,
 				tuningbase: 32.703195662575,
 				octaves: 8, // tried higher 12, 24... but got worst results
-				integrationflag: 1, // looks to work better if this is on
+				//integrationflag: 1, // looks to work better if this is on
 				coeff: 0.9,
 				octaveratio: 2,
 				perframenormalize: 1
