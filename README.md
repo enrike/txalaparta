@@ -29,3 +29,6 @@ Interactive txalaparta:
 	- hit CTRL + Return, or Apple + Return on Mac
 
 
+To do:
+- implement async compasses with interface to choose
+- implement additive / subdivisive rhythm choice
