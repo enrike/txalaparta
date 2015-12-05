@@ -66,7 +66,8 @@ TxalaInteractive{
 		~learning = true;
 
 		~buffers = Array.fillND([numplanks, plankresolution], { [] });
-		~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution??
+		//~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution?? // << this is wrong and it is overwritten later. please fix
+		~plankdata = Array.fill(numplanks, {[]});
 
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
 
@@ -842,6 +843,18 @@ TxalaInteractive{
 			});
 
 		});
+
+		// the one to delete
+		//Button(win, Rect(xloc+(25*(chromabuttons.size+1)), yloc+20, 25, 25))
+		Button(win, Rect(xloc+(25*(chromabuttons.size)), yloc+20, 20, 25))
+		.states_([
+			["C", Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+		    ~plankdata = Array.fill(numplanks, {[]});
+			"chromagram data cleared".postln;
+		});
+
 
 		popup = PopUpMenu(win,Rect(xloc,yloc+47,170,20))
 		.items_( this.updatepresetfiles("presets_chroma") )
