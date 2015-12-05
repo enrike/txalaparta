@@ -32,3 +32,5 @@ Interactive txalaparta:
 To do:
 - implement async compasses with interface to choose
 - implement additive / subdivisive rhythm choice
+- translate interface to basque and spanish
+
