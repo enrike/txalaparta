@@ -1,9 +1,12 @@
+/*
+class not used any longer??
+*/
 
 TxalaView {
-	
+
 	var view, events, selected, timeoffset;
 	var timeframe = 12;
-	
+
 	*new {|parent, rect, numPlanks=3|
 		^super.new.initTxalaScore( parent, rect, numPlanks );
 	}
@@ -16,13 +19,13 @@ TxalaView {
 		plankheight = (view.bounds.height/(numPlanks+1));		view.drawFunc_({
 			// the planks
 			(numPlanks).do({arg i;
-				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1))); 
+				Pen.line(Point(0, plankheight*(i+1)), Point(view.bounds.width,plankheight*(i+1)));
 			});
 			Pen.stroke;
 			// the time grid (vertical lines)
 			Pen.color = Color.black.alpha_(0.2);
 			20.do({arg i;
-				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height)); 
+				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height));
 			});
 			Pen.stroke;
 			// the events themselves
@@ -31,10 +34,10 @@ TxalaView {
 				var time = event.time * view.bounds.width;
 			//	var time = (event.time-timeoffset) * (view.bounds.width);
 				Pen.color = if(event.player == 1, {Color.red.alpha_(0.5)}, {Color.blue.alpha_(0.5)});
-				Pen.fillRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8)); 
+				Pen.fillRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
 				Pen.color = Color.black;
-				Pen.line(Point(time, (view.bounds.height-(plankheight*event.plank)).abs), Point(time, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-8)).abs)); 
-				Pen.addRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8)); 
+				Pen.line(Point(time, (view.bounds.height-(plankheight*event.plank)).abs), Point(time, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-8)).abs));
+				Pen.addRect(Rect(time-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8));
 				Pen.stroke;
 			});
 		});
@@ -43,10 +46,10 @@ TxalaView {
 			block{arg break;
 				events.do({ arg event, i;
 					var rect = Rect(event.time * view.bounds.width-4, (view.bounds.height-((event.amp*plankheight) + (plankheight*event.plank)-4)).abs, 8, 8);
-					if(rect.contains(Point(x,y)), { 
+					if(rect.contains(Point(x,y)), {
 						 "Inside : ".post; i.postln;
-						selected = i; 
-						break.value(); 
+						selected = i;
+						break.value();
 					});
 				});
 			};
@@ -59,37 +62,37 @@ TxalaView {
 		view.mouseMoveAction_({|view, x, y|
 			if(selected.isNil.not, {
 				events[selected].time = (x/view.bounds.width).postln;
-				
+
 				events[selected].amp = ((view.bounds.height-y).abs).linlin( events[selected].plank*plankheight , (events[selected].plank+1)*plankheight, 0, 1).postln;
 				this.update(events);
 				view.update;
 			});
-			
+
 		});
 		view.mouseUpAction_({ this.sortEvents });
 		view.keyDownAction_({|view, key, sm, wh|
 			[view, key, sm, wh].postln;
 			if(wh == 127, {
-				events.removeAt(selected);	
+				events.removeAt(selected);
 				this.update(events);
 				view.update;
 			});
 		});
-		
+
 	}
-	
+
 	sortEvents {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });
 	}
-	
+
 	update { |arr |
 		events = arr;
 		view.refresh;
 	}
-	
+
 	postEvents {
 		" EVENTS ____________________ \n".postln;
-		events.postln;	
+		events.postln;
 	}
 
 }
@@ -120,7 +123,7 @@ fork{
 o = e.reject({arg event; event.player == 1})
 t = e.reject({arg event; event.player == 0})
 
-	
+
 // ////////////////////
 
 w = Window.new("txalascore", Rect(100, 100, 1400, 500)).front;
@@ -147,6 +150,6 @@ fork{
 	};
 
 x.timeframe =6
-	
+
 */
 
