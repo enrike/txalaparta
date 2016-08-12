@@ -10,7 +10,7 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 TxalaSilenceDetection{
 
 	var server, parent, <>compass, hitflag, hutsunetimeout, groupst;
-	var >processflag, resettime, <>answerposition;
+	var  resettime, <>answerposition; //>processflag,
 	var synthOSCcb, <synth;
 
 	*new {| aparent, aserver, ananswerposition = true |
@@ -27,7 +27,7 @@ TxalaSilenceDetection{
 	reset {
 		compass = 0;
 		hutsunetimeout = nil;
-		processflag = false;
+		//processflag = false;
 		hitflag = false;
 		resettime = 5; // how many secs to wait before reseting the system
 		groupst = 0;
@@ -83,6 +83,7 @@ TxalaSilenceDetection{
 
 	groupstart {
 		groupst = SystemClock.seconds;
+		parent.broadcastgroupstarted(); //
 		hitflag = true;
 		compass = compass + 1;
 		if ( ~hutsunelookup > 0, {
@@ -94,7 +95,7 @@ TxalaSilenceDetection{
 	// on the answer time. there is no silence between groups or that silence is too short.
 	groupend {
 		hitflag = false;
-		parent.broadcastgroupended(); // needed by onset detector to close pattern groups
+		parent.broadcastgroupended(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
 	}
 
 	// checks for empty phases in the compass
@@ -118,8 +119,8 @@ TxalaSilenceDetection{
 	// and resets the system if no input for longer than resettime secs
 	process {arg value;
 		var timetogo, gap;
-		if ( processflag.not, {
-			if (value == 0, { // signal
+		//if ( processflag.not, {
+			if (value == 0, { // there is signal
 				if (hitflag.not, {
 					this.groupstart();
 				});
@@ -133,8 +134,8 @@ TxalaSilenceDetection{
 						this.checkreset();
 					});
 				});
-			})
-		});
+			});
+		//});
 		parent.loop(); // this is just to update some GUI
 	}
 }
