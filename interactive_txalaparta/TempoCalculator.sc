@@ -34,12 +34,8 @@ TempoCalculator{
 	}
 
 	sanityCheck {arg abpm;
-		if (abpm == inf, {
-			abpm = bpms.last;
-			"inf".postln;
-		});
+		if (abpm == inf, { abpm = bpms.last});
 		if (abpm > 250, { abpm = bpms.last}); // if too high something went wrong
-
 		^abpm;
 	}
 
@@ -49,7 +45,7 @@ TempoCalculator{
 		newTempo = (60/(nowTime - lasttime)).round(0.1);
 		newTempo = this.sanityCheck(newTempo);
 		bpms = bpms.shift(1, newTempo); // store
-		newTempo = (bpms.sum/bpms.size); // average of all stored tempos
+		newTempo = bpms.sum/bpms.size; // average of all stored tempos
 		bpm = newTempo;
 		lasttime = nowTime;
 
