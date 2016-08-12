@@ -34,13 +34,13 @@ TxalaScoreGUI{
 		txalascoreevents = nil;
 		txalascoremarks = nil;
 		if (txalascore.isNil.not, {txalascore.events = nil; txalascore.marks = nil});
-		txalascoreF = Routine({
+		txalascoreF = Routine({ // is a Routine the best way?
 			inf.do({
+				var frame = 40;
 				if (txalascore.isNil.not, {
-					var now = Main.elapsedTime - txalascoresttime;
-					txalascore.update(txalascoreevents, txalascoremarks, now);
+					txalascore.update( Main.elapsedTime - txalascoresttime );
 				});
-				0.05.wait;
+				0.05.wait; // 20fps. 1/20
 			});
 		});
 	}
@@ -56,6 +56,7 @@ TxalaScoreGUI{
 					    .add(\player -> player) //always 1 in this case
 					    .add(\plank -> plank);// here needs to match mgs[5] against existing samples freq
 			txalascoreevents = txalascoreevents.add(hitdata);
+			txalascore.events = txalascoreevents;
 		});
 	}
 
@@ -68,6 +69,7 @@ TxalaScoreGUI{
 			.add(\num-> compassnum)
 			.add(\hits-> hitnum);
 			txalascoremarks = txalascoremarks.add(data);
+			txalascore.marks = txalascoremarks;
 		});
 	}
 
@@ -94,7 +96,7 @@ TxalaScoreGUI{
 		})
 	}
 
-	doTxalaScore { arg xloc=350, yloc=400, width=1020, height=350, timeframe=4, numactiveplanks=1;
+	doTxalaScore { arg xloc=0, yloc=400, width=1020, height=350, timeframe=4, numactiveplanks=1;
 		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
 			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
