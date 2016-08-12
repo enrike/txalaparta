@@ -36,7 +36,7 @@ TxalaScore {
 
 
 		view.drawFunc_({
-			var factor = view.bounds.width/timeframe;
+			var factor = view.bounds.width/timeframe, frame=40;// To DO: frame should be dynamic acording to the zoom factor
 
 			if (drawplanks.not, { localnumplanks = 1 }, {localnumplanks=numplanks}); // all planks in the same line
 			plankheight = (view.bounds.height/(localnumplanks+1));
@@ -47,26 +47,29 @@ TxalaScore {
 				Pen.line(Point((view.bounds.width/20)*i, 0), Point((view.bounds.width/20)*i, view.bounds.height));
 			});
 			Pen.stroke;
+
 			//////////////
 			if (drawgroup, {
-				Pen.color = Color.green.lighten(0.5);
-				//Pen.alpha = 0.3;
-				marks.do({arg mark;
-					var startp, endp;
-					startp = (mark.start-timeoffset) * factor;
-					endp = ((mark.end-timeoffset) * factor ) - startp; // this is the width of the rectangle
-					Pen.addRect( Rect(startp, view.bounds.top, endp, view.bounds.bottom) );
-				});
-				Pen.fill;
+				if (marks.isNil.not, { //avoid error with frame when marks is nil
+					Pen.color = Color.green.lighten(0.5);
+					//Pen.alpha = 0.3;
+					marks[marks.size-frame..].do({arg mark;
+						var startp, endp;
+						startp = (mark.start-timeoffset) * factor;
+						endp = ((mark.end-timeoffset) * factor ) - startp; // this is the width of the rectangle
+						Pen.addRect( Rect(startp, view.bounds.top, endp, view.bounds.bottom) );
+					});
+					Pen.fill;
 
-				Pen.color = Color.black;
-				//Pen.alpha = 1;
-				marks.do({arg mark;
-					var startp = (mark.start-timeoffset) * factor;
-					Pen.stringAtPoint (mark.num.asString,
-						Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
-					Pen.stringAtPoint (mark.hits.asString,
-						Point(((mark.end-timeoffset) * factor ), view.bounds.height-10), Font( "Helvetica", 10 ));
+					Pen.color = Color.black;
+					//Pen.alpha = 1;
+					marks[marks.size-frame..].do({arg mark;
+						var startp = (mark.start-timeoffset) * factor;
+						Pen.stringAtPoint (mark.num.asString,
+							Point(startp, view.bounds.height-10), Font( "Helvetica", 10 ));
+						Pen.stringAtPoint (mark.hits.asString,
+							Point(((mark.end-timeoffset) * factor ), view.bounds.height-10), Font( "Helvetica", 10 ));
+					});
 				});
 			});
 
@@ -79,35 +82,37 @@ TxalaScore {
 
 			// the events themselves
 			Pen.color = Color.black;
-			events.do({arg event;// ** SHOULD just loop the ones that would fit in the window at current zoom ** [cutindex..]
-				var posy, labely, liney, plankpos, eventamp, eventplank;
-				var time = (event.time-timeoffset) * factor;
+			if (events.isNil.not, { //avoid error with frame when events is nil
+				events[events.size-frame..].do({arg event; // just deal with the last ones
+					var posy, labely, liney, plankpos, eventamp, eventplank;
+					var time = (event.time-timeoffset) * factor;
 
-				eventamp = event.amp;
-				if ( ((event.player == 0) && drawmode), { eventamp = eventamp.neg }); // reverse
-				eventplank = event.plank;
-				if (drawplanks.not, {eventplank = 0});
+					eventamp = event.amp;
+					if ( ((event.player == 0) && drawmode), { eventamp = eventamp.neg }); // reverse
+					eventplank = event.plank;
+					if (drawplanks.not, {eventplank = 0});
 
-				plankpos = view.bounds.height - (plankheight * (eventplank+1));
-				posy =  plankpos - (eventamp*plankheight);
-				liney = posy+8;
+					plankpos = view.bounds.height - (plankheight * (eventplank+1));
+					posy =  plankpos - (eventamp*plankheight);
+					liney = posy+8;
 
-				if (event.amp == 1.neg, { // hutsune hit
-					posy = -100;//OFF
-					liney = 0;
-					plankpos = view.bounds.height;
-					Pen.width = 3;
+					if (event.amp == 1.neg, { // hutsune hit
+						posy = -100;//OFF
+						liney = 0;
+						plankpos = view.bounds.height;
+						Pen.width = 3;
+					});
+
+					Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
+					Pen.fillRect(Rect(time-4, posy, 8, 8)); // the square
+					Pen.line( Point(time, plankpos), Point(time, liney) ); // the line
+					Pen.stroke;
+
+					Pen.color = Color.black;
+					Pen.stringAtPoint( (event.plank+1).asString, Point(time+8, posy));
+
+					Pen.width = 1; //back to normal
 				});
-
-				Pen.color = if(event.player == 1, {Color.red}, {Color.blue});
-				Pen.fillRect(Rect(time-4, posy, 8, 8)); // the square
-				Pen.line( Point(time, plankpos), Point(time, liney) ); // the line
-				Pen.stroke;
-
-				Pen.color = Color.black;
-				Pen.stringAtPoint( (event.plank+1).asString, Point(time+8, posy));
-
-				Pen.width = 1; //back to normal
 			});
 		});
 	}
@@ -119,7 +124,8 @@ TxalaScore {
 		task = fork{
 			inf.do({arg i;
 				var now = Main.elapsedTime - offsettime;
-				{this.update(events, marks, now)}.defer;
+				{this.update(events[events.size-40..], marks[events.size-40..], now)}.defer; // just display the last 40 items. TO DO: make this dynamicaccording to zoom level
+				//{this.update(events, marks, now)}.defer;
 				0.05.wait;
 			});
 		};
@@ -162,10 +168,8 @@ TxalaScore {
 		events = events.sort({arg e1, e2; e1.time <= e2.time });
 	}
 
-	update { |arr, arr2, timeoff=0|
+	update { |timeoff=0|
 		timeoffset = timeoff-timeframe;
-		events = arr;
-		marks = arr2;
 		view.refresh;
 	}
 
