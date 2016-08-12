@@ -82,7 +82,7 @@ TxalaInteractive{
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
 		("sndpath is" + sndpath).postln;
-		("available samples are" + samples).postln;
+		("available sample sets are" + samples).postln;
 
 		pitchbuttons = Array.fill(~buffers.size, {nil});
 		chromabuttons = Array.fill(numplanks, {nil});
@@ -257,19 +257,22 @@ TxalaInteractive{
 		this.start();
 	}
 
-	processflag { arg flag;
+/*	processflag { arg flag;
 		txalasilence.processflag = flag;
 		txalaonset.processflag = flag;
-	}
+	}*/
 
 	answer {arg defertime;
 		if ( lastPattern.isNil.not, {
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
 			if (defertime.isNil, {
+				// MUST CHECK THIS. are answer in the right time location????
+				// tempocalc.lasttime is when the first hit of the last phrase happened
 				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds - ~latencycorrection;
 			});
 
 			if (defertime.isNaN.not, {
+				// this is a bit ridiculous. ~answermode is 1,2,3,4 anyway. no?
 				switch (~answermode,
 					0, { this.imitation(defertime, lastPattern) },
 					1, { this.next(defertime, lastPattern.size, 1) },
@@ -299,7 +302,7 @@ TxalaInteractive{
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
 		if (curhits > 1, { gap = this.averagegap() });
 
-		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), { // sometimes play a two hit chord instead of single hit
+		if (curhits==1 && [true, false].wchoose([0.05, 0.95]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
 			curhits = 2;
 		});
@@ -315,8 +318,8 @@ TxalaInteractive{
 
 			if (this.getaccent, {
 				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
-				}, {
-					if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+			}, {
+				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
 			});
 
 			if ( hittime.isNaN, { hittime = 0 } );
@@ -595,12 +598,13 @@ TxalaInteractive{
 		guielements.add(\latency-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"latency",
-			ControlSpec(0, 0.2, \lin, 0.01, 0, ""),
+			ControlSpec(0, 0.2, \lin, 0.001, 0, ""),
 			{ arg ez;
 				~latencycorrection = ez.value.asFloat;
 			},
 			initVal: ~latencycorrection,
-			labelWidth: 60;
+			//labelWidth: 60,
+			//numberWidth:65;
 		));
 
 		yindex = yindex + 1.5;
@@ -761,7 +765,7 @@ TxalaInteractive{
 
 		Button(win, Rect(xloc+85,yloc,85,25))
 		.states_([
-			["reset", Color.white, Color.grey]
+			["clear", Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			if (~answermode > 0, {
