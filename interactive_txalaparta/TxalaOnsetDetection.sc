@@ -53,9 +53,9 @@ TxalaOnsetDetection{
 		this.kill(); // force
 		/*
 		here the problem is that in the one hand we need to know the time of the onset asap but on the other hand we cannot get
-		meaningful data from the sound until some millisecs are gone because of the chaotic nature of the sound in the start area
+		meaningful data from the sound until 0.04 millisecs are gone because of the chaotic nature of the sound in the start area
 		*/
-		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.040|
+		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.04|
 		 	var fft, fft2, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
 		 	signal = SoundIn.ar(in)*gain;
 			level = WAmp.kr(signal, offset);
@@ -71,6 +71,7 @@ TxalaOnsetDetection{
 				perframenormalize: 1
 			);
 		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
+
 			del = DelayN.kr(onset, offset, offset); // CRUCIAL. percussive sounds are too chaotic at the beggining
 
 			SendReply.kr(del, '/txalaonset', (chroma++[level]));
@@ -91,18 +92,18 @@ TxalaOnsetDetection{
 	}
 
 	process { arg msg;
-		var hitdata, hittime, plank=0, chroma, level;
+		var hitdata, hittime, plank=0, chroma, level, off, data = ();
 
 		msg = msg[3..]; // remove OSC data
 		chroma  = msg[0..11]; //chroma 12 items
 		level   = msg[12];
 
-		if (processflag.not, { // if not answering myself
-			var off, data = ();
+		//if (processflag.not, { // if not answering myself
+			//var off, data = ();
 			if (curPattern.isNil, { // this is the first hit of a new pattern
 				hittime = 0; // start counting on first one
 				patternsttime = SystemClock.seconds;
-				parent.broadcastgroupstarted(); //
+				//parent.broadcastgroupstarted(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
 				},{
 					hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
 			});
@@ -123,8 +124,9 @@ TxalaOnsetDetection{
 			.add(\plank  -> plank);
 			curPattern = curPattern.add(hitdata);
 
-			if (parent.isNil.not, { parent.newonset( SystemClock.seconds, level, 1, plank ) });
-		})
+			//if (parent.isNil.not, { parent.newonset( SystemClock.seconds, level, 1, plank ) });
+			parent.newonset( SystemClock.seconds, level, 1, plank );
+		//})
 	}
 
 	matchplank {arg data;
