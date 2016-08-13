@@ -65,7 +65,7 @@ TxalaInteractive{
 		~latencycorrection = 0.05;
 		~learning = true;
 
-		~buffers = Array.fillND([numplanks, plankresolution], { [] });
+		~buffersND = Array.fillND([numplanks, plankresolution], { [] });
 		//~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution?? // << this is wrong and it is overwritten later. please fix
 		~plankdata = Array.fill(numplanks, {[]});
 
@@ -84,7 +84,7 @@ TxalaInteractive{
 		("sndpath is" + sndpath).postln;
 		("available sample sets are" + samples).postln;
 
-		pitchbuttons = Array.fill(~buffers.size, {nil});
+		pitchbuttons = Array.fill(~buffersND.size, {nil});
 		chromabuttons = Array.fill(numplanks, {nil});
 
 		answersystems = [
@@ -144,13 +144,13 @@ TxalaInteractive{
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
 		("load sampleset"+foldername).postln;
-		~buffers.do({arg plank, indexplank;
+		~buffersND.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
 				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp
 					var filename = "plank" ++ indexplank.asString++indexpos.asString++indexamp.asString++".wav";
 					if ( PathName.new(sndpath ++"/"++foldername++"/"++filename).isFile, {
 						var tmpbuffer = Buffer.read(server, sndpath ++"/"++foldername++"/"++filename);
-						~buffers[indexplank][indexpos] = ~buffers[indexplank][indexpos].add(tmpbuffer)
+						~buffersND[indexplank][indexpos] = ~buffersND[indexplank][indexpos].add(tmpbuffer)
 					})
 				})
 			})
@@ -422,7 +422,7 @@ TxalaInteractive{
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
 		//this.selfcancel(plank, index, total); // only if enabled by user
 
-		positions = ~buffers[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots. this is not the best way
+		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots. this is not the best way
 
 		if (positions.size==1,{choices = [1]}); // ugly way to solve it
 		if (positions.size==2,{choices = [0.50, 0.50]});
@@ -434,9 +434,9 @@ TxalaInteractive{
 		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices); // focus on plank center
 
 		// which sample corresponds to this amp. careful as each pos might have different num of hits inside
-		ranges = Array.fill(~buffers[plank][plankpos].size, {arg num=0; (1/~buffers[plank][plankpos].size)*(num+1) });
+		ranges = Array.fill(~buffersND[plank][plankpos].size, {arg num=0; (1/~buffersND[plank][plankpos].size)*(num+1) });
 		plankamp = ranges.detectIndex({arg item; amp<=item});
-		actualplank = ~buffers[plank][plankpos][plankamp];
+		actualplank = ~buffersND[plank][plankpos][plankamp];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
