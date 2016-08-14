@@ -52,6 +52,11 @@ TxalaInteractive{
 		this.doGUI();
 	}
 
+	kill {
+		this.stop();
+		win.close;
+	}
+
 	init {
 		~bpm = 60;
 		~amp = 1;

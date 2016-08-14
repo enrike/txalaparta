@@ -42,6 +42,13 @@ TxalaAuto{
 		if (~verbose>0, {~buffers});
 
 	}
+
+
+	kill {
+		//this.stop();
+		window.close;
+	}
+
 	/* check if any of the values in an array is not nil
 	*/
 	istheresomething {arg alist;
