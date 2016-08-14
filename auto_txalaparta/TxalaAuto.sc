@@ -27,7 +27,7 @@ TxalaAuto{
 		beatButtons = [Array.fill(5, {nil}), Array.fill(5, {nil})];
 		beatSliders = Array.fill(5, {nil});
 
-		~txalascore = TxalaScoreGUI.new;
+		~txalascoreAuto = TxalaScoreGUI.new;
 
 		this.doWindow(430, 550, "Txalaparta. www.ixi-audio.net");
 
@@ -78,7 +78,7 @@ TxalaAuto{
 		window.onClose = {
 			if (txalatempo.isNil.not, {txalatempo.closeGUI()});
 			if (~makilaanims.isNil.not, {~makilaanims.close()});
-			if (~txalascore.isNil.not, {~txalascore.close});
+			if (~txalascoreAuto.isNil.not, {~txalascoreAuto.close});
 			AppClock.clear;
 			SystemClock.clear;
 
@@ -185,8 +185,8 @@ TxalaAuto{
 		.action_({ arg butt;
 			var num;
 			num = ~txalaparta.getnumactiveplanks();
-			~txalascore.reset();
-			~txalascore.doTxalaScore(numactiveplanks:num);
+			~txalascoreAuto.reset();
+			~txalascoreAuto.doTxalaScore(numactiveplanks:num);
 		});
 
 		// txakascore timeline

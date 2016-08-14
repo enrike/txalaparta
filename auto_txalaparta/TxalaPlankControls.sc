@@ -137,7 +137,7 @@ TxalaPlankControls {
 
 	updateTxalaScoreNumPlanks {
 		var numactiveplanks = ~txalaparta.getnumactiveplanks();
-		~txalascore.updateNumPlanks( numactiveplanks );
+		~txalascoreAuto.updateNumPlanks( numactiveplanks );
 	}
 
 
