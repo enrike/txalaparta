@@ -47,7 +47,6 @@ TxalaInteractive{
 	initTxalaInteractive { arg aserver, apath;
 		server = aserver;
 		basepath = apath;
-		//~plankdata = [[],[],[],[],[],[]];
 		this.init();
 		this.doGUI();
 	}
@@ -65,13 +64,11 @@ TxalaInteractive{
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~hutsunelookup = 0.3;
-		//~plankdetect = 1;
 		~gapswing = 0;
 		~latencycorrection = 0.05;
 		~learning = true;
 
 		~buffersND = Array.fillND([numplanks, plankresolution], { [] });
-		//~plankdata = Array.fillND([numplanks, plankresolution], { [] }); // ampresolution?? // << this is wrong and it is overwritten later. please fix
 		~plankdata = Array.fill(numplanks, {[]});
 
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
@@ -172,7 +169,6 @@ TxalaInteractive{
 			if (~txalascore.isNil.not, {
 				var last = SystemClock.seconds-((60/~bpm)/2);
 				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune // detected hutsune from human
-				//~txalascore.mark(last, (last+((60/~bpm)/4)), txalasilence.compass, lastPattern.size)
 			});
 			tempocalc.pushlasttime(); // empty hits also count for BPM calc
 			{hutsunebutton.value = 1}.defer;
@@ -261,11 +257,6 @@ TxalaInteractive{
 		this.stop();
 		this.start();
 	}
-
-/*	processflag { arg flag;
-		txalasilence.processflag = flag;
-		txalaonset.processflag = flag;
-	}*/
 
 	answer {arg defertime;
 		if ( lastPattern.isNil.not, {
@@ -455,7 +446,7 @@ TxalaInteractive{
 	}
 
 	doGUI  {
-		var yindex=0, yloc = 40, gap=20; //Array.fill(10, {nil});
+		var yindex=0, yloc = 40, gap=20;
 
 		guielements = ();// to later restore from preferences
 
@@ -608,8 +599,6 @@ TxalaInteractive{
 				~latencycorrection = ez.value.asFloat;
 			},
 			initVal: ~latencycorrection,
-			//labelWidth: 60,
-			//numberWidth:65;
 		));
 
 		yindex = yindex + 1.5;
@@ -620,7 +609,7 @@ TxalaInteractive{
 		this.doChromaGUI(win, 7, yloc+(gap*yindex));
 		this.doPlanksSetGUI(win, 180, yloc+(gap*yindex));
 
-		// feddback area
+		// feedback area
 
 		circleanim = TxalaCircle.new(win, 450, 100, 200);
 
@@ -876,7 +865,7 @@ TxalaInteractive{
 			("loading..." + basepath ++ "/presets_chroma/" ++ menu.item).postln;
 			data = Object.readArchive(basepath ++ "/presets_chroma/" ++ menu.item);
 
-			if (data.isNil.not, { ~plankdata = data[\plankdata]; ~plankdata.postln });
+			if (data.isNil.not, { ~plankdata = data[\plankdata] });
 		});
 
 		popup.mouseDown;// force creating the menu list
