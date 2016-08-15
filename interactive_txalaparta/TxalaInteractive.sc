@@ -127,6 +127,7 @@ TxalaInteractive{
 			~gapswing = data[\gapswing];
 			~answermode = data[\answermode];
 			~learning = data[\learning];
+			phrasemode = data[\phrasemode];
 		})
 	}
 
@@ -139,6 +140,7 @@ TxalaInteractive{
 		data.put(\answermode, ~answermode);
 		data.put(\latencycorrection, ~latencycorrection);
 		data.put(\learning, ~learning);
+		data.put(\phrasemode, phrasemode);
 
 		data.writeArchive(basepath ++ "/" ++ filename);
 	}
@@ -553,14 +555,16 @@ TxalaInteractive{
 			.valueAction_(~answermode)
 		);
 
-		Button(win, Rect(200,yloc+(gap*yindex),125,20))
-		.states_([
-			["lick from memory", Color.white, Color.grey],
-			["lick from memory", Color.white, Color.green]
-		])
-		.action_({ arg butt;
-			phrasemode = butt.value;
-		}).value_(phrasemode);
+		guielements.add(\amp-> Button(win, Rect(200,yloc+(gap*yindex),125,20))
+			.states_([
+				["lick from memory", Color.white, Color.grey],
+				["lick from memory", Color.white, Color.green]
+			])
+			.action_({ arg butt;
+				phrasemode = butt.value;
+			}).value_(phrasemode);
+
+		);
 
 		yindex = yindex + 1;
 
@@ -568,7 +572,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
-			ControlSpec(0, 1, \lin, 0.01, 1, ""),
+			ControlSpec(0, 1.5, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
