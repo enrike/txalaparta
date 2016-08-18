@@ -154,7 +154,7 @@ TxalaSet{
 		.action_({ arg butt;
 			var ww;
 			ww = Window.new("Help", Rect(0, 0, 300, 200));
-			StaticText(ww, Rect(10, 10, 290, 150)).string = "Each row represents a plank. Each button in the row is a position in the plank. Ideally left to right from the edge to the center. Select one of the positions by pressing the button and you have 10 secs to hit several times in the same plank location. On timeout the program processes the recording and tries to save each of the hits to a separated file. Repeat this for each of the positions in each of the planks. You dont have to fill all positions, one per plank is enough but the more the richer it will sound";
+			StaticText(ww, Rect(10, 10, 290, 150)).string = "Each row represents a plank. Each button in the row represents a position within the plank. Ideally those positions go left to right from the edge until the center of the plank. Select one of the positions by pressing its button, then you have 10 secs to hit several times in the same plank location with different amplitudes. Make sure you leave time for each hit so finish before hitting again. On timeout the program will process the recording and try to save each of the hits into a separated file. Repeat this procedure for each of the positions in each of the planks. You dont have to fill all positions, in fact one per plank is enough, but the more the richer the output will sound";
 			ww.front
 		});
 
