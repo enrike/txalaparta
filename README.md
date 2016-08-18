@@ -31,22 +31,20 @@ http://doc.sccode.org/Classes/WAmp.html
 Some video demos explaning the functionality can be found here
 http://www.ixi-audio.net/txalaparta
 
-Autotxalaparta:
-	- open with Supercollider the auto_txalaparta/txalaparta_auto.scd
-	- select all the text in the file
-	- hit CTRL + Return, or Apple + Return on Mac
+- open with Supercollider the digital_txalaparta.scd
+- select all the text in the file
+- hit CTRL + Return, or Apple + Return on Mac
 
-Interactive txalaparta:
-	- open with Supercollider the interactive_txalaparta/txalaparta_interactive.scd
-	- select all the text in the file
-	- hit CTRL + Return, or Apple + Return on Mac
+you can also run each app independently	
+	 auto_txalaparta/txalaparta_auto.scd
+	 interactive_txalaparta/txalaparta_interactive.scd
 
 
 To do:
 - produce an easy to run and install package for mac and windows
 - translate interface to basque and spanish
 - implement async compasses with interface to choose
-- implement additive / subdivisive rhythm choice
+- implement additive / subdivisive rhythm choice?
 - improve rhythm detection
 - improve learning and answering system
 

@@ -33,7 +33,7 @@ TxalaAuto{
 
 		timecontrols = TxalaTimeControls.new(window, path:currentpath);
 		plankcontrols = TxalaPlankControls.new(window, 10,160, 400, 20,
-			~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath);
+			~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath); // pass file names to GUI
 
 		this.doButtons(10, 350);
 		this.doPresets(10, 420);
