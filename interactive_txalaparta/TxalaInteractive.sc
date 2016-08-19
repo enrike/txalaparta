@@ -64,7 +64,7 @@ TxalaInteractive{
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~hutsunelookup = 0.3;
-		~gapswing = 0;
+		//~gapswing = 0;
 		~latencycorrection = 0.05;
 		~learning = true;
 
@@ -121,10 +121,9 @@ TxalaInteractive{
 		data = Object.readArchive(basepath ++ "/" ++ "prefs.preset");
 
 		if (data.isNil.not, {
-
 			~latencycorrection = data[\latencycorrection];
 			~amp = data[\amp];
-			~gapswing = data[\gapswing];
+			//~gapswing = data[\gapswing];
 			~answermode = data[\answermode];
 			~learning = data[\learning];
 			phrasemode = data[\phrasemode];
@@ -136,7 +135,7 @@ TxalaInteractive{
 		data = Dictionary.new;
 
 		data.put(\amp, ~amp);
-		data.put(\gapswing, ~gapswing);
+		//data.put(\gapswing, ~gapswing);
 		data.put(\answermode, ~answermode);
 		data.put(\latencycorrection, ~latencycorrection);
 		data.put(\learning, ~learning);
@@ -184,8 +183,8 @@ TxalaInteractive{
 
 	broadcastgroupstarted { // silence detection calls this.
 		~bpm = tempocalc.calculate();
-		if( (~answer && ~answerpriority.not), { this.answer() }); // later
-		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]];
+		if( (~answer && ~answerpriority.not), { this.answer() }); // schedule BEFORE new phrase ends
+		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]]; // prepare red for new data
 		{compassbutton.value = 1}.defer;
 	}
 
@@ -193,11 +192,10 @@ TxalaInteractive{
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
 
 		if (lastPattern.isNil.not, {
-			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render asap //
-			//drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]];
+			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render red asap
 
 			patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
-			if( (~answer && ~answerpriority), { this.answer() }); // asap
+			if( (~answer && ~answerpriority), { this.answer() }); // schedule AFTER new phrase ends
 			if (~autoanswerpriority, { this.doautoanswerpriority() });
 			if (~txalascore.isNil.not, {
 				~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
@@ -211,7 +209,7 @@ TxalaInteractive{
 		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
 
 		if (((txalaonset.curPattern.size-1) < drawingSet[0].size), { // stop drawing if they pile up
-			drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp]
+			drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp] // new red hit
 		});
 
 		{hitbutton.value = 1}.defer; // short flash
@@ -222,8 +220,7 @@ TxalaInteractive{
 
 	// activates/deactivates answerpriority if to tight to answer with priority
 	doautoanswerpriority {
-		var defertime;
-		defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+		var defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
 		~answerpriority = defertime > 0;
 		{ prioritybutton.value = ~answerpriority.asInt }.defer;
 	}
@@ -240,15 +237,7 @@ TxalaInteractive{
 	}
 
 	start {
-		if (txalasilence.isNil.not, {
-			txalasilence.kill();
-			txalasilence=nil;
-		});
-		if (txalaonset.isNil.not, {
-			//~plankdata = txalaonset.~plankdata;// will restore itself on new()
-			txalaonset.kill();
-			txalaonset=nil;
-		});
+		this.stop();
 		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 		txalaonset = TxalaOnsetDetection.new(this, server);
 		~txalascore.reset();
@@ -262,10 +251,11 @@ TxalaInteractive{
 
 	answer {arg defertime;
 		if ( lastPattern.isNil.not, {
+			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
+
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
+			// tempocalc.lasttime is when the first hit of the last phrase happened
 			if (defertime.isNil, {
-				// MUST CHECK THIS. are answer in the right time location????
-				// tempocalc.lasttime is when the first hit of the last phrase happened
 				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds - ~latencycorrection;
 			});
 
@@ -286,17 +276,19 @@ TxalaInteractive{
 		pattern.do({arg hit, index;
 			{
 				this.playhit(hit.amp, 0, index, pattern.size, hit.plank);
-				drawingSet[1][index] = [0, (defertime + hit.time), false, hit.amp]; // append each hit
 				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(defertime + hit.time);
+			drawingSet[1][index] = [0, hit.time, false, hit.amp]; // new blue hit
 		});
+
+		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue AFTER all hits have been scheduled
 	}
 
 
 	makephrase { arg curhits, defertime;
-		var gap=0, hitpattern, swingrange, lastaverageamp = this.averageamp();
+		var gap=0, hitpattern, lastaverageamp = this.averageamp(); //swingrange,
 
-		// should we shorten the gap according to num of curhits?? ******
+		// TO DO: should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
 		if (curhits > 1, { gap = this.averagegap() });
 
@@ -307,31 +299,31 @@ TxalaInteractive{
 
 		hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
 
-		swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
+		//swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
 
 		curhits.do({ arg index;
 			var hittime, amp;
-			hittime = defertime + (gap * index) + rrand(swingrange.neg, swingrange);
-			amp = (lastaverageamp + rrand(-0.05, 0.05)) * ~amp; // adapt amplitude to prev detected
+			hittime = defertime + (gap * index);// + rrand(swingrange.neg, swingrange);
+			amp = lastaverageamp * ~amp; // adapt amplitude to prev detected
 
 			if (this.getaccent, {
-				if ((index==0), { amp = amp + rand(0.02, 0.05) });// accent first
+				if ((index==0), { amp = amp + rand(0.02, 0.05) });// try to accent first
 			}, {
-				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // accent last;
+				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // try to accent last;
 			});
 
 			if ( hittime.isNaN, { hittime = 0 } );
 			if ( hittime == inf, { hittime = 0 } );
 
 			{
-				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank);
+				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank );
 				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(hittime);
 
-			drawingSet[1][index] = [0, (hittime-defertime), false, amp]; // append each hit
+			drawingSet[1][index] = [0, hittime-defertime, false, amp]; // append each hit
 		});
 
-		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer; // render blue asap //
+		{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime); // render blue
 	}
 
 	// analysing of lastPattern
@@ -386,31 +378,24 @@ TxalaInteractive{
 			curhits = 2;
 		});*/
 
-		if (curhits == 0, { // hutsune
+		if (curhits == 0, { //  we have produced an hutsune
 			{
 				if (~txalascore.isNil.not, {
 					var last = SystemClock.seconds;
 					~txalascore.hit(last, -1, 0, 0) ; // -1 for hutsune // machine hutsune
 					~txalascore.mark(last, (SystemClock.seconds+defertime), txalasilence.compass, lastPattern.size)
 				});
-				{hutsunebutton.value = 1}.defer;
+				{hutsunebutton.value = 1}.defer; // flash button
 				{hutsunebutton.value = 0}.defer(0.2)
 			}.defer(defertime)
-
 		}, {
-
-			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})];
-
-			if ( defertime < 0, {
-				"oops... too late to answer properly".postln;
-			}); // to late to answer properly?
-
+			if ( defertime < 0, { "oops... running late".postln});
 
 			if (phrasemode.asBoolean.not, { // synth the phrase
 				this.makephrase(curhits, defertime)
-			},{ // lick
-				var pat = patternbank.getrandpattern(curhits);
-				this.imitation(defertime, pat.pattern); // just play it as you stored it
+			},{ // answer with a lick from memory
+				var pat = patternbank.getrandpattern(curhits); // just get a previously played pattern
+				this.imitation(defertime, pat.pattern); // and imitate it
 			});
 		});
 	}
@@ -418,22 +403,24 @@ TxalaInteractive{
 
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
-		//this.selfcancel(plank, index, total); // only if enabled by user
 
-		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 });// get rid of empty slots. this is not the best way
+		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 }); // get rid of empty slots. this is not the best way
 
-		if (positions.size==1,{choices = [1]}); // ugly way to solve it
+		// chances of diferent areas depending on number of areas // ugly way to solve it
+		if (positions.size==1,{choices = [1]});
 		if (positions.size==2,{choices = [0.50, 0.50]});
 		if (positions.size==3,{choices = [0.2, 0.65, 0.15]});
 		if (positions.size==4,{choices = [0.15, 0.35, 0.35, 0.15]});
 		if (positions.size==5,{choices = [0.15, 0.15, 0.3, 0.3, 0.1]});
 
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
-		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices); // focus on plank center
+		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices);
 
 		// which sample corresponds to this amp. careful as each pos might have different num of hits inside
 		ranges = Array.fill(~buffersND[plank][plankpos].size, {arg num=0; (1/~buffersND[plank][plankpos].size)*(num+1) });
+
 		plankamp = ranges.detectIndex({arg item; amp<=item});
+		if (plankamp.isNil, {plankamp = 1}); // if amp too high it goes nil
 		actualplank = ~buffersND[plank][plankpos][plankamp];
 
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
@@ -443,6 +430,8 @@ TxalaInteractive{
 		// if OSC flag then send OSC out messages here
 	}
 
+
+	/////////////////////////////////// GUI /////////////////////////////////////////////////////////////
 	closeGUI {
 		win.close();
 	}
@@ -516,9 +505,9 @@ TxalaInteractive{
 			~txalascore.reset();
 		});
 
-		Button( win, Rect(260,yloc-10,80,25)) //Rect(140,30,70,25))
+		Button( win, Rect(260,yloc-10,40,25)) //Rect(140,30,70,25))
 		.states_([
-			["scope in", Color.white, Color.black],
+			["scope", Color.white, Color.black],
 		])
 		.action_({ arg but;
 			if (scopesynth.isNil, {
@@ -528,6 +517,15 @@ TxalaInteractive{
 				{ scopesynth = Synth(\test) }.defer(0.5);
 			});
 			server.scope(1,25);//bus 25 from the txalaonset synth
+		});
+
+
+		Button( win, Rect(300,yloc-10,40,25)) //Rect(140,30,70,25))
+		.states_([
+			["meter", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			server.meter(1,1);
 		});
 
 		yindex = yindex + 2.3;
@@ -582,7 +580,7 @@ TxalaInteractive{
 
 		yindex = yindex + 1;
 
-		guielements.add(\gapswing-> EZSlider( win,
+/*		guielements.add(\gapswing-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"swing",
 			ControlSpec(0, 100, \lin, 1, 0, ""),
@@ -593,7 +591,7 @@ TxalaInteractive{
 			labelWidth: 60;
 		));
 
-		yindex = yindex + 1;
+		yindex = yindex + 1;*/
 
 		guielements.add(\latency-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
@@ -954,7 +952,7 @@ TxalaInteractive{
 			if (arr.size.asBoolean, {num=num+1});
 		});
 		["active planks are", num].postln;
-		if (num==0, {num=1}); //score need one line at least
+		if (num==0, {num=1}); // one line at least
 		^num
 	}
 }
