@@ -162,27 +162,29 @@ TxalaInteractive{
 
 
 	// SYNTH'S CALLBACKS /////////////////////////////////////////////////////////////////
+	// called from silence detection and onset detection synths
 	hutsune {
 		if (tempocalc.bpms.indexOf(0).isNil, { // wait until it is stable
 			lastPattern = ();
-			txalasilence.compass =  txalasilence.compass + 1;
-			if(~answer, { this.answer(0) }); //asap
+			if (~answer, { this.answer(0) }); //asap
+			tempocalc.pushlasttime(); // empty hits also count for BPM calc
+
 			if (~txalascore.isNil.not, {
 				var last = SystemClock.seconds-((60/~bpm)/2);
-				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune // detected hutsune from human
+				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune // detected hutsune on input
 			});
-			tempocalc.pushlasttime(); // empty hits also count for BPM calc
-			{hutsunebutton.value = 1}.defer;
+			{hutsunebutton.value = 1}.defer; // flash button
 			{hutsunebutton.value = 0}.defer(0.2);
 		})
 	}
 
-	loop {
+	updateGUIstrings {
 		{ label.string = "BPM:" + ~bpm + "\nCompass:" + txalasilence.compass}.defer
 	}
 
 	broadcastgroupstarted { // silence detection calls this.
 		~bpm = tempocalc.calculate();
+		this.updateGUIstrings();
 		if( (~answer && ~answerpriority.not), { this.answer() }); // schedule BEFORE new phrase ends
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]]; // prepare red for new data
 		{compassbutton.value = 1}.defer;
@@ -202,7 +204,8 @@ TxalaInteractive{
 			});
 			{numbeatslabel.string = "Beats:" + lastPattern.size}.defer;
 			{compassbutton.value = 0}.defer; // display now
-		})
+		});
+		this.updateGUIstrings();
 	}
 
 	newonset { arg hittime, amp, player, plank;
