@@ -7,11 +7,11 @@ p = [
 	0, [ array: o[1],  size: 5 ],  
 	// Array
 	1, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'phrasemode',  1,  
 		nil,  nil,  nil,  nil,  
+		'amp',  1.5,  'answermode',  2,  
+		'learning',  false,  'latencycorrection',  0.031,  
 		nil,  nil,  nil,  nil,  
-		'amp',  1.000000,  'answermode',  3,  
-		'learning',  true,  'latencycorrection',  0.090000,  
-		nil,  nil,  'gapswing',  0.000000,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ]
 ];
