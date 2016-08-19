@@ -23,13 +23,10 @@ TxalaCircle {
 		yloc = ay;
 		width = aw;
 		rot = 0;
-
-		//drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with a max 4 hits each part
-		drawingSetBuffer = [[], []];
+		drawingSetBuffer = [Array.fill(4, {[0, 0, false, 10]}), Array.fill(4, {[0, 0, false, 10]})]; //one buelta with a max 4 hits each part
 
 		if (~tempo.isNil, {~tempo=120});
 		if (~pulse.isNil, {~pulse=true});
-
 
 		drawFunc = { // drawing the visualization of circles
 			var dur, dpt; // duration of the circle and degrees per time unit
@@ -54,6 +51,9 @@ TxalaCircle {
 			Pen.line(0@90.neg, 0@90); //vertical line
 			Pen.perform(\stroke); // static if maintaining pulse
 
+			// drawing set structure is [int delay???, float time, boolean txakun/errena, int 0-1 amp]m
+
+			// joins both sets. if item amp == 10 dont render
 			(drawingSetBuffer[0]++drawingSetBuffer[1]).takeThese({ arg item; item[3]==10 }).do({arg data;
 				var offset;
 				if (data[2], {//txakun
@@ -76,7 +76,7 @@ TxalaCircle {
 	}
 
 	scheduleDraw {arg data, pos;
-		drawingSetBuffer[pos] = data; // store in its slot
+		drawingSetBuffer[pos] = data; // store in this set into its slot
 		parent.refresh;
 	}
 }
