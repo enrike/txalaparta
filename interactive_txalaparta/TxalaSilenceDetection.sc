@@ -103,6 +103,7 @@ TxalaSilenceDetection{
 		if (SystemClock.seconds >= hutsunetimeout, {
 			parent.hutsune(); // need to update it was 0 hits
 			hutsunetimeout = nil;
+			compass = compass + 1; // advance manually
 		})
 	}
 
@@ -118,24 +119,20 @@ TxalaSilenceDetection{
 	// calculates tempo and schedules answer in time with tempo. it tries to find out hutsunes
 	// and resets the system if no input for longer than resettime secs
 	process {arg value;
-		var timetogo, gap;
-		//if ( processflag.not, {
-			if (value == 0, { // there is signal
-				if (hitflag.not, {
-					this.groupstart();
-				});
-			}, { // silence
-				if (hitflag, {
-					this.groupend();
+		if (value == 0, { // there is signal
+			if (hitflag.not, {
+				this.groupstart();
+			});
+		}, { // there is silence
+			if (hitflag, {
+				this.groupend();
+			}, {
+				if ( hutsunetimeout.isNil.not, {
+					this.checkhutsune();
 				}, {
-					if ( hutsunetimeout.isNil.not, {
-						this.checkhutsune();
-					}, {
-						this.checkreset();
-					});
+					this.checkreset();
 				});
 			});
-		//});
-		parent.loop(); // this is just to update some GUI
+		});
 	}
 }
