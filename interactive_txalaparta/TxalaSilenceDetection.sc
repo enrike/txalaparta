@@ -86,13 +86,14 @@ TxalaSilenceDetection{
 		parent.broadcastgroupstarted(); //
 		hitflag = true;
 		compass = compass + 1;
-		if ( ~hutsunelookup > 0, {
+		if ( (~hutsunelookup > 0) && (compass > 2), {
+			// TO DO: fix false positives
 			hutsunetimeout = groupst + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 	}
 
-	// scheduling answers at this moment does not work with fast tempos as the tile of the signal steps
-	// on the answer time. there is no silence between groups or that silence is too short.
+	// scheduling answers at this moment does not work with fast tempos as the tail of the signal steps
+	// over the answer time -> there is no silence between groups or silence is too short.
 	groupend {
 		hitflag = false;
 		parent.broadcastgroupended(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
