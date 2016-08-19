@@ -9,9 +9,9 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 
 TxalaSilenceDetection{
 
-	var server, parent, <>compass, hitflag, hutsunetimeout, groupst;
-	var  resettime, <>answerposition; //>processflag,
-	var synthOSCcb, <synth;
+	var server, parent, <>compass, hitflag, >hutsunetimeout, groupst;
+	var resettime, <>answerposition;
+	var <synth;
 
 	*new {| aparent, aserver, ananswerposition = true |
 		^super.new.initTxalaSilenceDetection(aparent, aserver, ananswerposition);
@@ -27,7 +27,6 @@ TxalaSilenceDetection{
 	reset {
 		compass = 0;
 		hutsunetimeout = nil;
-		//processflag = false;
 		hitflag = false;
 		resettime = 5; // how many secs to wait before reseting the system
 		groupst = 0;

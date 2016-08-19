@@ -29,7 +29,7 @@ grup of hits end point
 TxalaInteractive{
 
 	var loopF, intermakilagap, server, tempocalc;
-	var doGUI, label, reset, answer, hutsune, win, scope, <scopesynth;
+	var doGUI, label, win, scope, <scopesynth;
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
@@ -322,6 +322,9 @@ TxalaInteractive{
 			{
 				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank );
 				makilaanims.makilaF(index, 0.15); // prepare anim
+
+				// TO DO: double check this is ok here!!!
+				txalasilence.hutsunetimeout = nil; // no need to keep looking for hutsune at this point
 			}.defer(hittime);
 
 			drawingSet[1][index] = [0, hittime-defertime, false, amp]; // append each hit
