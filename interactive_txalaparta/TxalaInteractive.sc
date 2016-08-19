@@ -194,11 +194,12 @@ TxalaInteractive{
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
 
 		if (lastPattern.isNil.not, {
-			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render red asap
-
-			patternbank.addpattern(lastPattern); // store into bank in case it wasnt there
 			if( (~answer && ~answerpriority), { this.answer() }); // schedule AFTER new phrase ends
 			if (~autoanswerpriority, { this.doautoanswerpriority() });
+
+			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render red asap
+			patternbank.addpattern(lastPattern); // store into bank in case it wasnt there);
+
 			if (~txalascore.isNil.not, {
 				~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
 			});
@@ -353,13 +354,13 @@ TxalaInteractive{
 			});
 			val = val / (lastPattern.size-1); // num of gaps is num of hits-1
 		}, {
-			val = 0.15; // if it was an hutsune or ttan. should we calculate this according to current bpm?
+			val = 0.15; // TO DO: if it was an hutsune or ttan. should we calculate this according to current bpm?
 		});
 		if (val < 0.01, {val = 0.01}); //lower limit
 		^val;
 	}
 
-	getaccent{ // check if first or last hit are accentuated. true 1st / false 2nd
+	getaccent{ // check if first or last hit are accentuated. true 1st / false other
 		var res;
 		if (lastPattern.size > 0, {
 			res = (lastPattern.first.amp >= lastPattern.last.amp);
