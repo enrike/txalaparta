@@ -121,9 +121,7 @@ TxalaSilenceDetection{
 	// and resets the system if no input for longer than resettime secs
 	process {arg value;
 		if (value == 0, { // there is signal
-			if (hitflag.not, {
-				this.groupstart();
-			});
+			if (hitflag.not, { this.groupstart() }) // a new group of hits just started
 		}, { // there is silence
 			if (hitflag, {
 				this.groupend();
