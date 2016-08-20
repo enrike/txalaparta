@@ -83,13 +83,12 @@ TxalaSilenceDetection{
 	groupstart {
 		groupst = SystemClock.seconds;
 		parent.broadcastgroupstarted();
-		["start from SILENCE", SystemClock.seconds].postln;
-		hitflag = true;
-		compass = compass + 1;
 		if ( (~hutsunelookup > 0) && (compass > 2), {
 			// TO DO: fix false positives
 			hutsunetimeout = groupst + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
+		hitflag = true;
+		compass = compass + 1;
 	}
 
 	// scheduling answers at this moment does not work with fast tempos as the tail of the signal steps
