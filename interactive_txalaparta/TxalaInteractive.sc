@@ -265,13 +265,11 @@ TxalaInteractive{
 				// this is a bit ridiculous. ~answermode is 1,2,3,4 anyway. no?
 				switch (~answermode,
 					0, { this.imitation(defertime, lastPattern) },
-					1, { this.next(defertime, lastPattern.size, 1) },
-					2, { this.next(defertime, lastPattern.size, 2) }, // MC 1
-					3, { this.next(defertime, lastPattern.size, 3) }, // MC 2
-					4, { this.next(defertime, lastPattern.size, 4) }  // MC 4
+					1, { this.next(defertime, 1) },
+					2, { this.next(defertime, 2) }, // MC 1
+					3, { this.next(defertime, 3) }, // MC 2
+					4, { this.next(defertime, 4) }  // MC 4
 				);
-				// TO DO: double check this is ok here!!!
-				{ txalasilence.hutsunetimeout = nil }.defer(defertime); // dont look for hutsune at this point
 			});
 
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
@@ -296,6 +294,7 @@ TxalaInteractive{
 
 		// TO DO: should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
+
 		if (curhits > 1, { gap = this.averagegap() });
 
 		if (curhits==1 && [true, false].wchoose([0.05, 0.95]), { // sometimes play a two hit chord instead of single hit
@@ -356,9 +355,9 @@ TxalaInteractive{
 			});
 			val = val / (lastPattern.size-1); // num of gaps is num of hits-1
 		}, {
-			val = 0.15; // TO DO: if it was an hutsune or ttan. should we calculate this according to current bpm?
+			val = 0.05; // TO DO: if it was an hutsune or ttan. should we calculate this according to current bpm?
 		});
-		if (val < 0.01, {val = 0.01}); //lower limit
+		if (val < 0.007, {val = 0.007}); //lower limit
 		^val;
 	}
 
@@ -372,8 +371,8 @@ TxalaInteractive{
 		^res
 	}
 
-	next {arg defertime=0, size=nil, mode=0;
-		var curhits = answersystems[mode-1].next(size);
+	next {arg defertime=0, mode=0;
+		var curhits = answersystems[mode-1].next(lastPattern.size); // decide number of hits in answer
 
 /*		// should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
@@ -395,9 +394,9 @@ TxalaInteractive{
 				{hutsunebutton.value = 0}.defer(0.2)
 			}.defer(defertime)
 		}, {
-			if ( defertime < 0, { "oops... running late".postln});
+			if ( defertime < 0, { "answering late!".postln});
 
-			if (phrasemode.asBoolean.not, { // synth create the answer
+			if (phrasemode.asBoolean.not, { // create the answer "synthetically"
 				this.makephrase(curhits, defertime)
 			},{ // answer with a lick from memory
 				var pat = patternbank.getrandpattern(curhits); // just get a previously played pattern
