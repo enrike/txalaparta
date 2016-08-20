@@ -34,7 +34,7 @@ TxalaInteractive{
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons, makilaanims;
-	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode, lastgap;
+	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode, lastgap, lastamp;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -81,6 +81,7 @@ TxalaInteractive{
 		lastPattern = nil;
 		phrasemode = 0; // make up a new phrase or imitate a stored one?
 		lastgap = 0;
+		lastamp = 0;
 
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
@@ -180,7 +181,7 @@ TxalaInteractive{
 	}
 
 	updateGUIstrings {
-		{ label.string = "BPM:" + ~bpm + "\nCompass:" + txalasilence.compass}.defer
+		{ label.string = "Compass:" + txalasilence.compass + "\nBPM:" + ~bpm }.defer
 	}
 
 	broadcastgroupstarted { // silence detection calls this.
@@ -296,9 +297,7 @@ TxalaInteractive{
 		// TO DO: should we shorten the gap according to num of curhits?? ******
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
 
-		if (curhits > 1, { gap = this.averagegap() });
-		if (lastPattern.size==0, { gap = lastgap });
-		lastgap = gap;
+		gap = this.averagegap();
 
 		if (curhits==1 && [true, false].wchoose([0.05, 0.95]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
@@ -343,8 +342,9 @@ TxalaInteractive{
 			});
 			val = val/(lastPattern.size);
 		}, {
-			val = 0.5;
+			val = lastamp;
 		});
+		lastamp = val;
 		^val;
 	}
 
@@ -358,9 +358,10 @@ TxalaInteractive{
 			});
 			val = val / (lastPattern.size-1); // num of gaps is num of hits-1
 		}, {
-			val = 0.05; // TO DO: if it was an hutsune or ttan. should we calculate this according to current bpm?
+			val = lastgap;
 		});
 		if (val < 0.007, {val = 0.007}); //lower limit
+		lastgap = val;
 		^val;
 	}
 
@@ -626,7 +627,7 @@ TxalaInteractive{
 		makilaanims = TxalaSliderAnim.new(win, 550, 10);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
-		label.string = "BPM: --- \nCompass: ---";
+		label.string = "Compass: --- \nBPM: ---";
 
 		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
 		numbeatslabel.string = "Beats: ---";
