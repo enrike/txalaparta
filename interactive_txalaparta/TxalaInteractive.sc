@@ -185,7 +185,7 @@ TxalaInteractive{
 	broadcastgroupstarted { // silence detection calls this.
 		~bpm = tempocalc.calculate();
 		this.updateGUIstrings();
-		if( (~answer && ~answerpriority.not), { this.answer() }); // schedule BEFORE new phrase ends
+		if( (~answer && ~answerpriority.not), { this.answer() }); // schedule BEFORE new group ends
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), drawingSet[1]]; // prepare red for new data
 		{compassbutton.value = 1}.defer;
 	}
@@ -194,7 +194,7 @@ TxalaInteractive{
 		lastPattern = txalaonset.closegroup(); // to close beat group in the onset detector
 
 		if (lastPattern.isNil.not, {
-			if( (~answer && ~answerpriority), { this.answer() }); // schedule AFTER new phrase ends
+			if( (~answer && ~answerpriority), { this.answer() }); // schedule AFTER new group ends
 			if (~autoanswerpriority, { this.doautoanswerpriority() });
 
 			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render red asap
@@ -258,7 +258,7 @@ TxalaInteractive{
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
 
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
-			// tempocalc.lasttime is when the first hit of the last phrase happened
+			// tempocalc.lasttime is when the first hit of the last group happened
 			if (defertime.isNil, {
 				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds - ~latencycorrection;
 			});
@@ -334,7 +334,7 @@ TxalaInteractive{
 	}
 
 	// analysing of lastPattern
-	averageamp { // returns average amp from hits in last phrase
+	averageamp { // returns average amp from hits in last group
 		var val=0;
 		if (lastPattern.size>0, {
 			lastPattern.do({ arg hit;
@@ -347,7 +347,7 @@ TxalaInteractive{
 		^val;
 	}
 
-	averagegap { // returns average gap time between hits in last phrase
+	averagegap { // returns average gap time between hits in last group
 		var val=0;
 		if (lastPattern.size > 1, {
 			lastPattern.do({ arg hit, index;
@@ -398,7 +398,7 @@ TxalaInteractive{
 		}, {
 			if ( defertime < 0, { "oops... running late".postln});
 
-			if (phrasemode.asBoolean.not, { // synth the phrase
+			if (phrasemode.asBoolean.not, { // synth create the answer
 				this.makephrase(curhits, defertime)
 			},{ // answer with a lick from memory
 				var pat = patternbank.getrandpattern(curhits); // just get a previously played pattern
