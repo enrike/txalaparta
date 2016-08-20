@@ -42,7 +42,7 @@ TxalaOnsetDetection{
 		if ( curPattern.isNil, {
 			"curPattern is NIL!!".postln
 		}, {
-			if ( pat.size > 4, { pat = pat[..3] });// discard if longer than 4
+			if ( pat.size > 4, { pat = pat[..3] });// discard if longer than 4. not sure if this can be skipped
 		});
 
 		curPattern = nil;
@@ -92,41 +92,40 @@ TxalaOnsetDetection{
 	}
 
 	process { arg msg;
-		var hitdata, hittime, plank=0, chroma, level, off, data = ();
+		var hitdata, hittime, localtime, plank=0, chroma, level, off, data = ();
+
+		localtime = SystemClock.seconds;
 
 		msg = msg[3..]; // remove OSC data
 		chroma  = msg[0..11]; //chroma 12 items
 		level   = msg[12];
 
-		//if (processflag.not, { // if not answering myself
-			//var off, data = ();
-			if (curPattern.isNil, { // this is the first hit of a new pattern
-				hittime = 0; // start counting on first one
-				patternsttime = SystemClock.seconds;
-				//parent.broadcastgroupstarted(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
-				},{
-					hittime = SystemClock.seconds - patternsttime; // distance from first hit of this group
-			});
+		if (curPattern.isNil, { // this is the first hit of a new pattern
+			hittime = 0; // start counting on first one
+			patternsttime = localtime; //  abs start time of the new group
+			//parent.broadcastgroupstarted(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
+			["start from ONSET", localtime].postln;
+		},{
+			hittime = localtime - patternsttime; // distance from first hit of this group
+		});
 
-			data.add(\chroma -> chroma); // 12 items
+		data.add(\chroma -> chroma); // 12 items
 
-			if (~recindex.isNil.not, {
-				["storing hit data", ~recindex].postln;
-				~plankdata[~recindex] = data; // stores everything
-				{ parent.chromabuttons[~recindex].valueAction = 0 }.defer;
-			},{ // plank analysis
-				plank = this.matchplank(data);
-			});
+		if (~recindex.isNil, { // plank analysis
+			plank = this.matchplank(data);
+		},{
+			["storing hit chroma  data", ~recindex].postln;
+			~plankdata[~recindex] = data;
+			{ parent.chromabuttons[~recindex].valueAction = 0 }.defer; // off rec button
+		});
 
-			hitdata = ().add(\time   -> hittime)
-			.add(\amp    -> level)
-			.add(\player -> 1) //always 1 in this case
-			.add(\plank  -> plank);
-			curPattern = curPattern.add(hitdata);
+		hitdata = ().add(\time   -> hittime)
+		.add(\amp    -> level)
+		.add(\player -> 1) // here always 1 for errena player
+		.add(\plank  -> plank);
+		curPattern = curPattern.add(hitdata);
 
-			//if (parent.isNil.not, { parent.newonset( SystemClock.seconds, level, 1, plank ) });
-			parent.newonset( SystemClock.seconds, level, 1, plank );
-		//})
+		parent.newonset( localtime, level, 1, plank );
 	}
 
 	matchplank {arg data;
@@ -142,7 +141,7 @@ TxalaOnsetDetection{
 		});
 
 		plank = res.minIndex;
-		if (plank.isNil, { plank = 0 });
+		if (plank.isNil, { plank = 0 }); // there was no match
 		^plank
 	}
 }
