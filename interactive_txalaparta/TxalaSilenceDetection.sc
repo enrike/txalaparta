@@ -28,7 +28,7 @@ TxalaSilenceDetection{
 		compass = 0;
 		hutsunetimeout = nil;
 		hitflag = false;
-		resettime = 5; // how many secs to wait before reseting the system
+		resettime = 5; // how many secs to wait before reseting the system. TO DO: useful to expose in the GUI?
 		groupst = 0;
 
 		this.doAudio();

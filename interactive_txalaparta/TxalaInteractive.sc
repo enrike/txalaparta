@@ -255,8 +255,6 @@ TxalaInteractive{
 
 	answer {arg defertime;
 		if ( lastPattern.isNil.not, {
-			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
-
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
 			// tempocalc.lasttime is when the first hit of the last group happened
 			if (defertime.isNil, {
@@ -272,7 +270,11 @@ TxalaInteractive{
 					3, { this.next(defertime, lastPattern.size, 3) }, // MC 2
 					4, { this.next(defertime, lastPattern.size, 4) }  // MC 4
 				);
+				// TO DO: double check this is ok here!!!
+				{ txalasilence.hutsunetimeout = nil }.defer(defertime); // dont look for hutsune at this point
 			});
+
+			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
 		})
 	}
 
@@ -307,11 +309,11 @@ TxalaInteractive{
 
 		curhits.do({ arg index;
 			var hittime, amp;
-			hittime = defertime + (gap * index);// + rrand(swingrange.neg, swingrange);
+			hittime = defertime + (gap * index);// + rrand(swingrange.neg, swingrange); // Needs some swing to avoid the gaps being too mechanical?
 			amp = lastaverageamp * ~amp; // adapt amplitude to prev detected
 
 			if (this.getaccent, {
-				if ((index==0), { amp = amp + rand(0.02, 0.05) });// try to accent first
+				if ((index==0), { amp = amp + rand(0.02, 0.05) }); // try to accent first
 			}, {
 				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // try to accent last;
 			});
@@ -322,9 +324,6 @@ TxalaInteractive{
 			{
 				this.playhit( amp, 0, index, curhits, hitpattern.pattern[index].plank );
 				makilaanims.makilaF(index, 0.15); // prepare anim
-
-				// TO DO: double check this is ok here!!!
-				txalasilence.hutsunetimeout = nil; // no need to keep looking for hutsune at this point
 			}.defer(hittime);
 
 			drawingSet[1][index] = [0, hittime-defertime, false, amp]; // append each hit
