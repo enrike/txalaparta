@@ -82,7 +82,8 @@ TxalaSilenceDetection{
 
 	groupstart {
 		groupst = SystemClock.seconds;
-		parent.broadcastgroupstarted(); //
+		parent.broadcastgroupstarted();
+		["start from SILENCE", SystemClock.seconds].postln;
 		hitflag = true;
 		compass = compass + 1;
 		if ( (~hutsunelookup > 0) && (compass > 2), {
