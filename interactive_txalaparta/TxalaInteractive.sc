@@ -34,7 +34,7 @@ TxalaInteractive{
 	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons, makilaanims;
-	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode;
+	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode, lastgap;
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -80,6 +80,7 @@ TxalaInteractive{
 
 		lastPattern = nil;
 		phrasemode = 0; // make up a new phrase or imitate a stored one?
+		lastgap = 0;
 
 		sndpath = basepath ++ "/sounds/";
 		samples = (sndpath++"*").pathMatch;
@@ -296,6 +297,8 @@ TxalaInteractive{
 		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
 
 		if (curhits > 1, { gap = this.averagegap() });
+		if (lastPattern.size==0, { gap = lastgap });
+		lastgap = gap;
 
 		if (curhits==1 && [true, false].wchoose([0.05, 0.95]), { // sometimes play a two hit chord instead of single hit
 			gap = 0;
