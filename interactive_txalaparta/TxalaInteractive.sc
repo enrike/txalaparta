@@ -31,7 +31,7 @@ TxalaInteractive{
 	var loopF, intermakilagap, server, tempocalc;
 	var doGUI, label, win, scope, <scopesynth;
 	var <txalasilence, <txalaonset, lastPattern, patternbank;
-	var presetslisten, presetmatrix, basepath, sndpath, <samples,  guielements;
+	var presetslisten, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons, makilaanims;
 	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode, lastgap, lastamp;
@@ -63,7 +63,8 @@ TxalaInteractive{
 		~answerpriority = true; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
-		~hutsunelookup = 0.3;
+		~timedivision = 50; // %
+		~hutsunelookup = 0.4;
 		//~gapswing = 0;
 		~latencycorrection = 0.05;
 		~learning = true;
@@ -128,6 +129,7 @@ TxalaInteractive{
 			//~gapswing = data[\gapswing];
 			~answermode = data[\answermode];
 			~learning = data[\learning];
+			~timedivision = data[\timedivision];
 			phrasemode = data[\phrasemode];
 		})
 	}
@@ -140,6 +142,7 @@ TxalaInteractive{
 		//data.put(\gapswing, ~gapswing);
 		data.put(\answermode, ~answermode);
 		data.put(\latencycorrection, ~latencycorrection);
+		data.put(\timedivision, ~timedivision);
 		data.put(\learning, ~learning);
 		data.put(\phrasemode, phrasemode);
 
@@ -172,7 +175,7 @@ TxalaInteractive{
 			tempocalc.pushlasttime(); // empty hits also count for BPM calc
 
 			if (~txalascore.isNil.not, {
-				var last = SystemClock.seconds-((60/~bpm)/2);
+				var last = SystemClock.seconds-((60/~bpm)/(100/~timedivision));
 				~txalascore.hit(last, -1, 1, 0) ; // -1 for hutsune // detected hutsune on input
 			});
 			{hutsunebutton.value = 1}.defer; // flash button
@@ -226,7 +229,7 @@ TxalaInteractive{
 
 	// activates/deactivates answerpriority if to tight to answer with priority
 	doautoanswerpriority {
-		var defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds;
+		var defertime = tempocalc.lasttime + (60/~bpm/(100/~timedivision)) - SystemClock.seconds;
 		~answerpriority = defertime > 0;
 		{ prioritybutton.value = ~answerpriority.asInt }.defer;
 	}
@@ -260,7 +263,7 @@ TxalaInteractive{
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
 			// tempocalc.lasttime is when the first hit of the last group happened
 			if (defertime.isNil, {
-				defertime = tempocalc.lasttime + (60/~bpm/2) - SystemClock.seconds - ~latencycorrection;
+				defertime = tempocalc.lasttime + (60/~bpm/(100/~timedivision)) - SystemClock.seconds - ~latencycorrection;
 			});
 
 			if (defertime.isNaN.not, {
@@ -579,7 +582,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
-			ControlSpec(0, 1.5, \lin, 0.01, 1, ""),
+			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
@@ -612,6 +615,18 @@ TxalaInteractive{
 			initVal: ~latencycorrection,
 		));
 
+		yindex = yindex + 1;
+
+		guielements.add(\timedivision-> EZSlider( win,
+			Rect(0,yloc+(gap*yindex),350,20),
+			"time /",
+			ControlSpec(0, 100, \lin, 5, 0, ""),
+			{ arg ez;
+				~timedivision = ez.value.asFloat;
+			},
+			initVal: ~timedivision,
+		));
+
 		yindex = yindex + 1.5;
 
 		this.doCalibrationPresets(win, 7, yloc+(gap*yindex), guielements);
@@ -621,9 +636,7 @@ TxalaInteractive{
 		this.doPlanksSetGUI(win, 180, yloc+(gap*yindex));
 
 		// feedback area
-
 		circleanim = TxalaCircle.new(win, 450, 100, 200);
-
 		makilaanims = TxalaSliderAnim.new(win, 550, 10);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
@@ -786,8 +799,7 @@ TxalaInteractive{
 		PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_( this.updatepresetfiles("presets_matrix") )
 		.mouseDownAction_( { arg menu;
-			presetmatrix = this.updatepresetfiles("presets_matrix");
-			menu.items = presetmatrix;
+			menu.items = this.updatepresetfiles("presets_matrix");
 		} )
 		.action_({ arg menu;
 			var data;
@@ -928,8 +940,7 @@ TxalaInteractive{
 		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_( this.updatesamplesetpresetfiles() )
 		.mouseDownAction_( { arg menu;
-			presetmatrix = this.updatesamplesetpresetfiles();
-			menu.items = presetmatrix;
+			menu.items = this.updatesamplesetpresetfiles();
 		} )
 		.action_({ arg menu;
 			this.loadsampleset(menu.item);
