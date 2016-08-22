@@ -12,14 +12,15 @@ w.front;
 TxalaPlankControls {
 
 	var win, buttonxloc, <planksMenus, <planksChanceMenus, samples, xloc, yloc, width, gap, currentpath;
+	var numplanks;
 
-	*new { | awin, ax=10 ay=160, aw=400, agap=20, somesamples, path |
-		^super.new.initTxalaPlankControls(awin, ax, ay, aw, agap, somesamples, path);
+	*new { | awin, ax=10 ay=160, aw=400, agap=20, anumplanks=8, somesamples, path |
+		^super.new.initTxalaPlankControls(awin, ax, ay, aw, agap, anumplanks, somesamples, path);
 	}
 
-	initTxalaPlankControls { |awin, ax, ay, aw, agap, somesamples, apath|
+	initTxalaPlankControls { |awin, ax, ay, aw, agap, anumplanks, somesamples, apath|
 		var menuxloc = ax + 44;
-		var playxloc = menuxloc+250+2;
+		var playxloc = menuxloc;
 
 
 		//[awin, ax, ay, aw, agap, somesamples].postln;
@@ -29,30 +30,30 @@ TxalaPlankControls {
 		yloc = ay;
 		width = aw;
 		gap = agap;
+		numplanks = anumplanks;
 		samples = somesamples;
 		currentpath = apath;
 
 		// PLANKS - OHOLAK //////////////////////////////////
-		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
-		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";
-		StaticText(win, Rect(menuxloc, yloc-18, 200, 20)).string = "Oholak/Planks";
-		StaticText(win, Rect(menuxloc+280, yloc-16, 200, 20)).string = "% chance";
+/*		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
+		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";*/
+		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "Planks";
+		StaticText(win, Rect(xloc+70, yloc-16, 200, 20)).string = "% chance";
 
-		/*		if (~buffers.isNil, {
-		~buffers = Array.fill(8, {nil});
+		/*		if (~buffersATX.isNil, {
+		~buffersATX = Array.fill(8, {nil});
 		});*/
 
-		if (~plankchance.isNil, {
-			~plankchance = (Array.fill(~buffers.size, {1}));
-		});
+/*		if (~plankchance.isNil, {
+			~plankchance = Array.fill(numplanks, {1});
+		});*/
 
-		planksMenus = Array.fill(~buffers.size, {[nil,nil,nil]});
-		planksChanceMenus = Array.fill(~buffers.size, {nil});
+		planksMenus = Array.fill(numplanks, {[nil,nil,nil]});
+		planksChanceMenus = Array.fill(numplanks, {nil});
 
 
 		////////////////
-		~buffers.do({ arg buf, index;
-
+		numplanks.do({ arg index;
 			//txakun row buttons
 			planksMenus[index][0] = Button(win, Rect(xloc,yloc+(gap*index),20,20))
 			.states_([
@@ -61,7 +62,7 @@ TxalaPlankControls {
 			 ])
 			 .action_({ arg butt;
 			 	~buffersenabled[0][index] = butt.value.asBoolean;
-			 	this.updateTxalaScoreNumPlanks();
+			 	//this.updateTxalaScoreNumPlanks();
 			 });
 
 			// errena row buttons
@@ -72,7 +73,7 @@ TxalaPlankControls {
 			])
 			.action_({ arg butt;
 				~buffersenabled[1][index] = butt.value.asBoolean; // [[false...],[false...]]
-				this.updateTxalaScoreNumPlanks();
+				//this.updateTxalaScoreNumPlanks();
 			});
 
 
@@ -83,8 +84,8 @@ TxalaPlankControls {
 
 
 			// menus for each plank
-			planksMenus[index][2] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),250,20))
-			//.items_(samples)
+			// TO DO: this needs to be removed when ND sample system is active
+/*			planksMenus[index][2] = PopUpMenu(win,Rect(menuxloc,yloc+(gap*index),250,20))
 			.items_(samples)
 			.action_({ arg menu;
 				var item = nil;
@@ -99,11 +100,9 @@ TxalaPlankControls {
 				})
 			}).valueAction_(index);
 
-			{
-				//~buffers[index].postln;
-				if (~buffers[index].isNil.not, { planksMenus[index][2].valueAction_(index) });
-			}.defer(1);
-			//.valueAction_(index);
+			{ // updating value in the menu
+				if (~buffersATX[index].isNil.not, { planksMenus[index][2].valueAction_(index) });
+			}.defer(1);*/
 
 			// play buttons row
 			Button(win, Rect(playxloc,yloc+(gap*index),20,20))
@@ -111,20 +110,21 @@ TxalaPlankControls {
 				[">", Color.white, Color.black]
 			])
 			.action_({ arg butt;// play a single shot
-				if (~buffers[index].isNil.not, {
-					Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffers[index].bufnum])
+				if (~buffersATXND[index].isNil.not, {
+					// this should maybe take the items in the middle [index][mid][mid]
+					Synth(\playBuf, [\amp, 0.7, \freq, 1, \bufnum, ~buffersATXND[index][0][0].bufnum])
 				})
 			});
 
 			// chance sliders
-			planksChanceMenus[index] = Slider(win,Rect(menuxloc+275,yloc+(gap*index),75,20))
+			planksChanceMenus[index] = Slider(win,Rect(menuxloc+20,yloc+(gap*index),75,20))
 			.action_({arg sl;
 				~plankchance[index] = sl.value;
 			})
 			.orientation_(\horizontal)
 			.valueAction_(1);
 
-			Button(win, Rect(menuxloc+350,yloc+(gap*index),20,20))
+			Button(win, Rect(menuxloc+95,yloc+(gap*index),20,20))
 			.states_([
 				["P", Color.white, Color.black],
 			])
@@ -132,16 +132,10 @@ TxalaPlankControls {
 				ParamWin.new("~plankchance["++index++"]", ControlSpec(0.001, 1), planksChanceMenus[index], presetspath:currentpath);
 			});
 		});
-
 	}
 
-	updateTxalaScoreNumPlanks {
+/*	updateTxalaScoreNumPlanks {
 		var numactiveplanks = ~txalaparta.getnumactiveplanks();
 		~txalascoreAuto.updateNumPlanks( numactiveplanks );
-	}
-
-
-	updatemenus {
-
-	}
+	}*/
 }
