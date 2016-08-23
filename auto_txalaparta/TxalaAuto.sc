@@ -19,7 +19,7 @@ TxalaAuto{
 
 		currentpath = apath;
 
-		numplanks = 8; // should be 8 in the end
+		numplanks = 6;
 
 		~txalaparta = Txalaparta.new( server, currentpath, numplanks );
 		~txalaparta.loadsampleset("0salazar4");//????????????
@@ -33,7 +33,7 @@ TxalaAuto{
 		~txalascoreAuto = TxalaScoreGUI.new;
 
 
-		this.doWindow(430, 450, "Txalaparta. www.ixi-audio.net");
+		this.doWindow(430, 410, "Txalaparta. www.ixi-audio.net");
 
 		timecontrols = TxalaTimeControls.new(window, path:currentpath);
 		plankcontrols = TxalaPlankControls.new(window, 220, 280, 400, 20, numplanks,
@@ -283,7 +283,7 @@ TxalaAuto{
 			var data, sliders;
 			("loading..." + presetspath ++ menu.item).postln;
 			data = Object.readArchive(presetspath ++ menu.item);
-			data.asCompileString.postln;
+			//data.asCompileString.postln;
 
 			~tempo = data[\tempo];
 			~swing = data[\swing];
