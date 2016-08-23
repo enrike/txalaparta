@@ -419,11 +419,13 @@ TxalaInteractive{
 		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 }); // get rid of empty slots. this is not the best way
 
 		// chances of diferent areas depending on number of areas // ugly way to solve it
-		if (positions.size==1,{choices = [1]});
-		if (positions.size==2,{choices = [0.50, 0.50]});
-		if (positions.size==3,{choices = [0.2, 0.65, 0.15]});
-		if (positions.size==4,{choices = [0.15, 0.35, 0.35, 0.15]});
-		if (positions.size==5,{choices = [0.15, 0.15, 0.3, 0.3, 0.1]});
+/*				if (positions.size==1,{choices = [1]});
+				if (positions.size==2,{choices = [0.50, 0.50]});
+				if (positions.size==3,{choices = [0.2, 0.65, 0.15]});
+				if (positions.size==4,{choices = [0.15, 0.35, 0.35, 0.15]});
+				if (positions.size==5,{choices = [0.15, 0.15, 0.3, 0.3, 0.1]});*/
+
+				choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
 
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
 		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices);
@@ -582,7 +584,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
-			ControlSpec(0, 2, \lin, 0.01, 1, ""),
+			ControlSpec(0, 5, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
