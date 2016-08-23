@@ -33,15 +33,15 @@ TxalaAuto{
 		~txalascoreAuto = TxalaScoreGUI.new;
 
 
-		this.doWindow(430, 410, "Txalaparta. www.ixi-audio.net");
+		this.doWindow(390, 380, "Txalaparta. www.ixi-audio.net");
 
 		timecontrols = TxalaTimeControls.new(window, path:currentpath);
-		plankcontrols = TxalaPlankControls.new(window, 220, 280, 400, 20, numplanks,
+		plankcontrols = TxalaPlankControls.new(window, 220, 250, 400, 20, numplanks,
 			~txalaparta.samples.asArray.collect({arg item; PathName.new(item).fileName}), currentpath); // pass file names to GUI
 
-		this.doButtons(10, 150);
-		this.doPresets(10, 300);
-		this.doPlanksSetGUI(window, 10, 350);
+		this.doButtons(10, 130);
+		this.doPresets(10, 280);
+		this.doPlanksSetGUI(window, 10, 330);
 
 		if (~verbose>0, {currentEnvironment.postln});
 		if (~verbose>0, {~buffersATX});
