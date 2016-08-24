@@ -428,7 +428,7 @@ TxalaInteractive{
 				choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
 
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
-		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices);
+		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices[positions.size-1]);
 
 		// which sample corresponds to this amp. careful as each pos might have different num of hits inside
 		ranges = Array.fill(~buffersND[plank][plankpos].size, {arg num=0; (1/~buffersND[plank][plankpos].size)*(num+1) });
