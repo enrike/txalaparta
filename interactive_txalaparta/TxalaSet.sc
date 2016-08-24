@@ -28,7 +28,7 @@ TxalaSet{
 	var win, scope, namefield, namefieldstr, numhits;
 	var server, onsetsynth, silencesynth;
 	var respOSC, silOSC;
-	var onsets, silences;
+	var onsets, silences, recthis;
 
 
 	*new { | server, sndpath |
@@ -52,12 +52,12 @@ TxalaSet{
 
 		recbuf = Buffer.alloc(server, 44100 * bufflength, 1); // mono buffer
 
-		SynthDef(\recBuf,{ arg in=0, bufnum=0;
+		SynthDef(\tx_recBuf,{ arg in=0, bufnum=0;
 			RecordBuf.ar(SoundIn.ar(in), bufnum);
 		}).add;
 
 		// look for onsets
-		SynthDef(\listener, { arg in=0, thresh = 0.2, relaxtime = 1;
+		SynthDef(\tx_onset_listener, { arg in=0, thresh = 0.2, relaxtime = 1;
 			var sig = SoundIn.ar(in);
 			var loc = LocalBuf(1024, 1) ;
 			var chain = FFT(loc, sig);
@@ -65,7 +65,7 @@ TxalaSet{
 		}).add ;
 
 		// detect silences
-		SynthDef(\silence, { arg in=0, amp=0.005;
+		SynthDef(\tx_silence_detection, { arg in=0, amp=0.005;
 			SendTrig.kr(A2K.kr(DetectSilence.ar(SoundIn.ar(in), amp:amp)), 111, 0);
 		}).add ;
 
@@ -76,17 +76,17 @@ TxalaSet{
 
 	doGUI {
 
-		win = Window.new("", Rect(10, 100, 220, 260));
+		win = Window.new("Plank set manager", Rect(10, 100, 220, 260));
 		win.onClose_({
 			var destpath, filename, data;
 
-			respOSC.free ;
-			silOSC.free ;
+			respOSC.free;
+			silOSC.free;
 			onsetsynth.free;
 			silencesynth.free;
 			recsynth.free;
 
-			// save a file with the data from the chromagram into the directory with the new samples
+/*			// save a file with the data from the chromagram into the directory with the new samples
 			destpath = sndpath++namefieldstr++"/chromagram.preset";
 
 			destpath.postln;
@@ -97,7 +97,7 @@ TxalaSet{
 			 	data.writeArchive(destpath);
 			}{|error|
 				("did not create a new sample set").postln;
-			};
+			};*/
 
 		});
 
@@ -118,8 +118,8 @@ TxalaSet{
 				])
 				.action_({ arg butt;
 					if (butt.value.asBoolean, {
-						~recindex = [indexA, indexB];
-						~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT. to avoid appending more and more...
+						recthis = [indexA, indexB];
+						//~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT. to avoid appending more and more...
 						this.process(); // Task that processes the sound in realtime
 						{ butt.valueAction_(0) }.defer(bufflength); //auto go OFF
 					}, {
@@ -158,7 +158,6 @@ TxalaSet{
 			ww.front
 		});
 
-		// DetectSilence controls //
 		processbutton = Button(win, Rect(110,10, 70, 25))
 		.states_([
 			["procesing", Color.white, Color.black],
@@ -190,10 +189,9 @@ TxalaSet{
 		this.clean(); // just in case
 		recbuf.zero; // erase buffer
 
-		onsetsynth = Synth(\listener, [\in, ~listenparemeters.in]) ;
-		silencesynth = Synth.newPaused(\silence, [\in, ~listenparemeters.in]);
-
-		recsynth = Synth(\recBuf, [\in, ~listenparemeters.in, \bufnum, recbuf.bufnum]);
+		onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in]) ;
+		silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in]);
+		recsynth = Synth(\tx_recBuf, [\in, ~listenparemeters.in, \bufnum, recbuf.bufnum]);
 		sttime = thisThread.seconds ; // start time
 
 		// two responders
@@ -202,7 +200,7 @@ TxalaSet{
 				onsets = onsets.add(time-sttime) ;
 				silencesynth.run ;
 				onsetsynth.run(false) ;
-				("attack"+(time-sttime)).postln;
+				("attack detected"+(time-sttime)).postln;
 			}
 		},'/tr', Server.local.addr);
 
@@ -211,7 +209,7 @@ TxalaSet{
 				silences = silences.add(time-sttime) ;
 				onsetsynth.run ;
 				silencesynth.run(false) ;
-				("silence"+(time-sttime)).postln ;
+				("silence detected"+(time-sttime)).postln ;
 				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
 			}
 		},'/tr', Server.local.addr);
@@ -228,9 +226,8 @@ TxalaSet{
 
 		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
 			var sttime, endtime, length, tmpbuffer, filename;
-			//~recindex.postln;
-			filename = "plank"++~recindex[0].asString++~recindex[1].asString++index.asString++".wav";
-			//filename.postln;
+
+			filename = "plank"++recthis[0].asString++recthis[1].asString++index.asString++".wav";
 			sttime = (onsets[index] - attacktime) * recbuf.sampleRate;
 			endtime = silence * recbuf.sampleRate;
 			length = endtime - sttime;
@@ -242,12 +239,12 @@ TxalaSet{
 			tmpbuffer.write( (destpath ++ filename), "wav", 'int16' );
 		});
 
-		["onsets",onsets.size].postln;
-		["silences",silences.size].postln;
+		["detected onsets", onsets.size].postln;
+		["detected silences", silences.size].postln;
 
 		this.clean();
 
-		~recindex = nil;
+		recthis = nil;
 		numhits.string = "0";
 		["DONE PROCESSING"].postln;
 
