@@ -261,6 +261,7 @@ TxalaInteractive{
 
 	answer {arg defertime;
 		if ( lastPattern.isNil.not, {
+			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
 			// tempocalc.lasttime is when the first hit of the last group happened
 			if (defertime.isNil, {
@@ -277,23 +278,20 @@ TxalaInteractive{
 					4, { this.next(defertime, 4) }  // MC 4
 				);
 			});
-
-			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
 		})
 	}
 
 	imitation { arg defertime, pattern;
 		pattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp, 0, index, pattern.size, hit.plank);
+				this.playhit(hit.amp*~amp, 0, index, pattern.size, hit.plank);
 				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(defertime + hit.time);
 			drawingSet[1][index] = [0, hit.time, false, hit.amp]; // new blue hit
 		});
 
-		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue AFTER all hits have been scheduled
+		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue when they are about to play
 	}
-
 
 	makephrase { arg curhits, defertime;
 		var gap=0, hitpattern, lastaverageamp = this.averageamp(); //swingrange,
@@ -310,17 +308,15 @@ TxalaInteractive{
 
 		hitpattern = patternbank.getrandpattern(curhits); // just get any random corresponding to curhits num
 
-		//swingrange = (((60/~bpm)/4)*~gapswing)/100; // calc time from %. max value is half the space for the answer which is half a bar at max. thats why /4
-
 		curhits.do({ arg index;
 			var hittime, amp;
 			hittime = defertime + (gap * index);// + rrand(swingrange.neg, swingrange); // Needs some swing to avoid the gaps being too mechanical?
 			amp = lastaverageamp * ~amp; // adapt amplitude to prev detected
 
-			if (this.getaccent, {
-				if ((index==0), { amp = amp + rand(0.02, 0.05) }); // try to accent first
+			if (this.getaccent(), {
+				if (index==0, { amp = amp + rand(0.02, 0.05) }) // try to accent first
 			}, {
-				if ((index==(curhits-1)), { amp = amp + rand(0.02, 0.05) }) // try to accent last;
+				if (index==(curhits-1), { amp = amp + rand(0.02, 0.05) }) // try to accent last
 			});
 
 			if ( hittime.isNaN, { hittime = 0 } );
@@ -419,14 +415,7 @@ TxalaInteractive{
 
 		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 }); // get rid of empty slots. this is not the best way
 
-		// chances of diferent areas depending on number of areas // ugly way to solve it
-/*				if (positions.size==1,{choices = [1]});
-				if (positions.size==2,{choices = [0.50, 0.50]});
-				if (positions.size==3,{choices = [0.2, 0.65, 0.15]});
-				if (positions.size==4,{choices = [0.15, 0.35, 0.35, 0.15]});
-				if (positions.size==5,{choices = [0.15, 0.15, 0.3, 0.3, 0.1]});*/
-
-				choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
+		choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
 
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
 		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices[positions.size-1]);
@@ -585,7 +574,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
 			"volume",
-			ControlSpec(0, 5, \lin, 0.01, 1, ""),
+			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
