@@ -152,6 +152,7 @@ TxalaInteractive{
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
 		("load sampleset"+foldername).postln;
+		~buffersND = Array.fillND([numplanks, plankresolution], { [] }); // clean first
 		~buffersND.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
 				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp

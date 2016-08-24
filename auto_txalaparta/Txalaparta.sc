@@ -12,7 +12,7 @@ t.scheduleDraw= {"".postln};
 
 */
 Txalaparta{
-	var <samples, sndpath, numplanks, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing;
+	var <samples, sndpath, numplanks, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing, plankresolution;
 	var <scoreArray, <startTime, interstepcounter;
 
 	*new {| server, path = ".", numplanks |
@@ -29,11 +29,12 @@ Txalaparta{
 		//("available samples are" + samples).postln;
 
 		numplanks = anumplanks;
+		plankresolution = 5; // how many areas max in each plank for the sample sets
 
 		startTime = 0;
 		interstepcounter = 0;
 
-		~buffersATXND = Array.fillND([numplanks, 5], { [] }); // NDimensions sound space 6*5
+		~buffersATXND = Array.fillND([numplanks, plankresolution], { [] }); // NDimensions sound space 6*5
 
 		//netadd = NetAddr("127.0.0.1", 6666);// which port to use?
 
@@ -186,15 +187,10 @@ Txalaparta{
 		startTime = 0;
 	}
 
-	// TO DO: replace with ND sample system loadsampleset()
-	/*	load {arg filename, index;
-	["loading"+(sndpath ++ filename) ].postln;
-	~buffersATX[index] = Buffer.read(server, sndpath ++ filename);
-	}*/
-
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
 		("load sampleset"+foldername).postln;
+		~buffersATXND = Array.fillND([numplanks, plankresolution], { [] }); // clean first
 		~buffersATXND.do({arg plank, indexplank;
 			plank.do({ arg pos, indexpos;
 				10.do({ arg indexamp;// this needs to be dynamically calc from the num of samples for that amp
