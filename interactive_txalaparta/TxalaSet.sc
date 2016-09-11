@@ -153,18 +153,23 @@ TxalaSet{
 		])
 		.action_({ arg butt;
 			var ww;
-			ww = Window.new("Help", Rect(0, 0, 300, 200));
-			StaticText(ww, Rect(10, 10, 290, 150)).string = "Each row represents a plank. Each button in the row represents a position within the plank. Ideally those positions go left to right from the edge until the center of the plank. Select one of the positions by pressing its button, then you have 10 secs to hit several times in the same plank location with different amplitudes. Make sure you leave time for each hit so finish before hitting again. On timeout the program will process the recording and try to save each of the hits into a separated file. Repeat this procedure for each of the positions in each of the planks. You dont have to fill all positions, in fact one per plank is enough, but the more the richer the output will sound";
+			ww = Window.new("Help", Rect(0, 0, 305, 335));
+			StaticText(ww, Rect(10, 10, 290, 335)).string = "Each row represents a plank (1,2,3,4,5,6).
+Each button in the row represents a position within each plank (A,B,C,D,E).
+Ideally those positions go left to right from the edge until the center of each plank.
+Give a name to the set before recording the sounds or the set will be named after the date and time.
+Select one of the positions (eg 1A) by pressing the corresponding button, then you have 10 secs to hit several times in the same plank location with different amplitudes (low to high). Make sure you leave time for each hit's tile to finish before hitting again. Repeat this procedure for each of the positions in each of the planks. You dont have to fill the five positions, in fact one position per plank is enough, but the more hits the richer the output of the Interactive txalaparta will sound.
+After 10 secs the program will process the recordings and try to detect, cut, normalise and save each of the hits into a separated file. It is not a bad idea to open the files in a sound editor (eg. Audacity) to see if they are correct, the system is not perfect!";
 			ww.front
 		});
 
-		processbutton = Button(win, Rect(110,10, 70, 25))
+		processbutton = Button(win, Rect(125,10, 70, 25))
 		.states_([
 			["procesing", Color.white, Color.black],
 			["procesing", Color.white, Color.red]
 		]);
 
-		numhits = StaticText(win, Rect(190, 10, 30, 25)).string = "0";
+		numhits = StaticText(win, Rect(205, 10, 30, 25)).string = "0";
 
 		win.front;
 	}
