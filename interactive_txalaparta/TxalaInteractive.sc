@@ -670,7 +670,11 @@ TxalaInteractive{
 		var temp, names;
 		temp = (basepath++"/sounds/*").pathMatch; // update
 		names = temp.asArray.collect({arg item;
-			var ar = item.split($/);
+			var ar;
+			Platform.case(
+				\windows, {item = item("\\", "/")}
+			);
+			ar = item.split($/);
 			ar[ar.size-2]
 		});
 		names = names.insert(0, "---");
