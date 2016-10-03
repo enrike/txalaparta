@@ -277,7 +277,7 @@ Txalaparta{
 				});
 
 				amp = 1;// TO DO: this should not be 1??
-				positions = ~buffersATXND[plank].copy.takeThese({ arg item; item.size==0 }); // get rid of empty slots. this is not the best way
+				positions = ~buffersATXND[plank].copy.takeThese({ arg item; item.size==0 }); // Number of samples per table and position available. get rid of empty slots. this is not the best way.
 
 				// chances of diferent areas depending on number of areas // ugly way to solve it
 /*				if (positions.size==1,{choices = [1]});
@@ -289,7 +289,7 @@ Txalaparta{
 				choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
 
 				// the wchoose needs to be a distribution with more posibilites to happen on center and right
-				plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices[positions.size-1]);
+				plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices[positions.size-1]); // a num between 0 and positions.size
 
 				// which sample corresponds to this amp. careful as each pos might have different num of hits inside
 				ranges = Array.fill(~buffersATXND[plank][plankpos].size, {arg num=0; (1/~buffersATXND[plank][plankpos].size)*(num+1) });
@@ -302,17 +302,15 @@ Txalaparta{
 				hittime = delaytime + (localstep * index);
 				if (index > 0, { hittime = hittime + rand(intermakilaswing) });
 
+				~txalascoreAuto.hit(Main.elapsedTime + hittime , hitamp, (flagindex + 1), plank);
 				{ // deferred function
 					Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, actualplank.bufnum]);
 
 					if (~makilaanims.isNil.not, {
 						~makilaanims.makilaF(txakun.not.asInteger, index, 0.2);//slider animation
 					});
-
-					~txalascoreAuto.hit(Main.elapsedTime, hitamp, (flagindex + 1), (plank));
 					//~midiout.noteOn(txakun.not.asInteger, plank.bufnum, hitamp*127);
 					//{~midiout.noteOff(txakun.not.asInteger, plank.bufnum, hitamp*127) }.defer(0.2);
-
 					outarray = outarray.add([2, "plank" + actualplank]); // postln which plank this hit
 					outarray = outarray.add([2, ["hit", index, hittime, hitamp, hitfreq, hitswing]]);
 					this.postoutput(outarray); // finally
