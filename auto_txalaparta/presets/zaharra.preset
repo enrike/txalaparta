@@ -1,0 +1,54 @@
+var o, p;
+o = [
+	Dictionary.prNew,  Array.prNew(64),  Array.prNew(2),  Array.prNew(5),  
+	Array.prNew(5),  Array.prNew(2),  Array.prNew(6),  Array.prNew(2),  
+	Array.prNew(6),  Array.prNew(6),  Array.prNew(2),  Array.prNew(5)
+];
+p = [
+	// Dictionary
+	0, [ array: o[1],  size: 12 ],  
+	// Array
+	1, [ 'allowedbeats',  o[2],  'emphasis',  true,  
+		'autopilotrange',  o[5],  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		'amp',  0.620000,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		'gap',  0.293000,  'gapswing',  0.025000,  
+		'plankchance',  o[6],  'buffers',  o[7],  
+		nil,  nil,  'enabled',  o[10],  
+		'swing',  0.040000,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'beatchance',  o[11],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  'tempo',  55.000000,  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	2, [ o[3],  o[4] ],  
+	// Array
+	3, [ 0,  1,  2,  nil,  
+		nil ],  
+	// Array
+	4, [ 0,  1,  2,  nil,  
+		nil ],  
+	// Array
+	5, [ 5,  10 ],  
+	// Array
+	6, [ 1.000000,  1.000000,  1.000000,  1.000000,  
+		1.000000,  1.000000 ],  
+	// Array
+	7, [ o[8],  o[9] ],  
+	// Array
+	8, [ true,  false,  false,  false,  
+		false,  false ],  
+	// Array
+	9, [ true,  false,  false,  false,  
+		false,  false ],  
+	// Array
+	10, [ true,  true ],  
+	// Array
+	11, [ 0.150000,  0.250000,  0.350000,  0.150000,  
+		0.100000 ]
+];
+prUnarchive(o,p);
