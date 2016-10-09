@@ -9,24 +9,19 @@ TxalaSet.new(s, thisProcess.nowExecutingPath.dirname++"/sounds/")
 
 TxalaSet{
 
-	var attacktime = 0.01; // THIS IS A SAFE GAP ARTIFICIALLY ENTERED TO AVOID CHOPPING THE START OF THE SOUND
+	var attacktime = 0.01; // THIS IS A SAFE GAP ARTIFICIALLY ENTERED TO AVOID CHOPPING THE START OF THE HITS
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank 0-4
-	var ampresolution = 5; // max amps per position 0-4
 	var bufflength = 10; // secs
 	var planksamplebuttons;// Array.fillND([numplanks, plankresolution], { nil });
 	var names;// = ["A","B","C","D","E","F","G","H"];
 	var gridloc;// = Point.new(50,50);
-	var recsynth;
 	var sndpath;// = thisProcess.nowExecutingPath.dirname++"/sounds/";
-	var silentchannel=100; // channel to send/listen sound while processing
-	var processbufferF;
-	var endF;
 	var sttime;
-	var processbutton;
+	var processbutton, processflag=false, hit;
 	var recbuf;
 	var win, scope, namefield, numhits; //namefieldstr
-	var server, onsetsynth, silencesynth;
+	var server, onsetsynth, silencesynth, recsynth;
 	var respOSC, silOSC;
 	var onsets, silences, recthis;
 
@@ -71,6 +66,37 @@ TxalaSet{
 		}).add ;
 
 		this.doGUI();
+
+		// listens for hits
+		onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in]) ;
+		silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in]);
+
+		{
+
+		// two responders
+		respOSC = OSCFunc({ arg msg, time; //ATTACK
+			if (msg[2] == 999){
+				if (processflag, { onsets = onsets.add(time-sttime) }) ;
+				("attack detected").postln;
+				{processbutton.value = 2}.defer;// detected
+				silencesynth.run ; // now look for end of hit
+				onsetsynth.run(false) ;
+			}
+		},'/tr', Server.local.addr);
+
+		silOSC = OSCFunc({ arg msg, time; //RELEASE
+			if (msg[2] == 111){
+				if (processflag, {
+					silences = silences.add(time-sttime);
+					{ numhits.string =  (numhits.string.asInt + 1).asString }.defer; //counter++
+				});
+				{ processbutton.value = processflag.asInt }.defer; // back to state 0 or 1
+				("silence detected").postln ;
+				onsetsynth.run ; // now look for begging of a new hit
+				silencesynth.run(false) ;
+			}
+		},'/tr', Server.local.addr);
+		}.defer(1);// wait until synths are alive
 	}
 
 
@@ -80,26 +106,12 @@ TxalaSet{
 		win = Window.new("Plank set manager", Rect(10, 100, 220, 260));
 		win.onClose_({
 			var destpath, filename, data;
-
+			this.clean();
 			respOSC.free;
 			silOSC.free;
 			onsetsynth.free;
 			silencesynth.free;
 			recsynth.free;
-
-/*			// save a file with the data from the chromagram into the directory with the new samples
-			destpath = sndpath++namefieldstr++"/chromagram.preset";
-
-			destpath.postln;
-
-			data = Dictionary.new;
-			try {
-				data.put(\plankdata, ~plankdata);
-			 	data.writeArchive(destpath);
-			}{|error|
-				("did not create a new sample set").postln;
-			};*/
-
 		});
 
 		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 50, 25)).string = "Locs -->";
@@ -136,7 +148,6 @@ TxalaSet{
 		StaticText(win, Rect(10, 42, 100, 25)).string = "set name";
 
 		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
-		//namefieldstr = namefield.value; // this is required later when the window is closing.
 
 		Button(win, Rect(10,10, 40, 25))
 		.states_([
@@ -175,6 +186,7 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 		processbutton = Button(win, Rect(142,10, 57, 25))
 		.states_([
 			["procesing", Color.white, Color.grey],
+			["procesing", Color.red, Color.grey],
 			["procesing", Color.white, Color.red]
 		]);
 
@@ -197,36 +209,16 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 	}
 
 	process {
-		{processbutton.value = 1}.defer;
+		{processbutton.value = 1}.defer;//on
 		{ this.end() }.defer( bufflength ); // auto STOP on timeout
 
-		this.clean(); // just in case
+		onsets = [];
+		silences = [];
 		recbuf.zero; // erase buffer
 
-		onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in]) ;
-		silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in]);
 		recsynth = Synth(\tx_recBuf, [\in, ~listenparemeters.in, \bufnum, recbuf.bufnum]);
 		sttime = thisThread.seconds ; // start time
-
-		// two responders
-		respOSC = OSCFunc({ arg msg, time;
-			if (msg[2] == 999){
-				onsets = onsets.add(time-sttime) ;
-				silencesynth.run ; // now look for end of hit
-				onsetsynth.run(false) ;
-				("attack detected"+(time-sttime)).postln;
-			}
-		},'/tr', Server.local.addr);
-
-		silOSC = OSCFunc({ arg msg, time;
-			if (msg[2] == 111){
-				silences = silences.add(time-sttime) ;
-				onsetsynth.run ; // now look for begging of a new hit
-				silencesynth.run(false) ;
-				("silence detected"+(time-sttime)).postln ;
-				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
-			}
-		},'/tr', Server.local.addr);
+		processflag = true;
 	}
 
 
@@ -237,7 +229,6 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 
 		destpath = sndpath++namefield.value++"/";
 		if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
-		//namefieldstr = namefield.value; // this is required when the window is closing.
 
 		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
 			var sttime, endtime, length, tmpbuffer, filename;
@@ -255,12 +246,11 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 		["detected onsets", onsets.size].postln;
 		["detected silences", silences.size].postln;
 
-		this.clean();
-
 		recthis = nil;
 		numhits.string = "0";
 		["DONE PROCESSING"].postln;
+		processflag = false;
 
-		{processbutton.value = 0}.defer;
+		{processbutton.value = 0}.defer;//off
 	}
 }
