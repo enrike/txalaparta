@@ -25,7 +25,7 @@ TxalaSet{
 	var sttime;
 	var processbutton;
 	var recbuf;
-	var win, scope, namefield, namefieldstr, numhits;
+	var win, scope, namefield, numhits; //namefieldstr
 	var server, onsetsynth, silencesynth;
 	var respOSC, silOSC;
 	var onsets, silences, recthis;
@@ -52,6 +52,7 @@ TxalaSet{
 
 		recbuf = Buffer.alloc(server, 44100 * bufflength, 1); // mono buffer
 
+		// just dumps the sound in signal into the bufnum buffer for later processing at end()
 		SynthDef(\tx_recBuf,{ arg in=0, bufnum=0;
 			RecordBuf.ar(SoundIn.ar(in), bufnum);
 		}).add;
@@ -135,9 +136,9 @@ TxalaSet{
 		StaticText(win, Rect(10, 42, 100, 25)).string = "set name";
 
 		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
-		namefieldstr = namefield.value; // this is required later when the window is closing.
+		//namefieldstr = namefield.value; // this is required later when the window is closing.
 
-		Button(win, Rect(10,10, 50, 25))
+		Button(win, Rect(10,10, 40, 25))
 		.states_([
 			["reset", Color.white, Color.black]
 		])
@@ -147,7 +148,7 @@ TxalaSet{
 			})
 		});
 
-		Button(win, Rect(60,10, 50, 25))
+		Button(win, Rect(50,10, 40, 25))
 		.states_([
 			["HELP", Color.white, Color.black]
 		])
@@ -163,9 +164,17 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 			ww.front
 		});
 
-		processbutton = Button(win, Rect(125,10, 70, 25))
+		Button( win, Rect(90,10,40,25)) //Rect(140,30,70,25))
 		.states_([
-			["procesing", Color.white, Color.black],
+			["meter", Color.white, Color.black],
+		])
+		.action_({ arg but;
+			server.meter(1,1);
+		});
+
+		processbutton = Button(win, Rect(142,10, 57, 25))
+		.states_([
+			["procesing", Color.white, Color.grey],
 			["procesing", Color.white, Color.red]
 		]);
 
@@ -189,7 +198,7 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 
 	process {
 		{processbutton.value = 1}.defer;
-		{ this.end() }.defer( bufflength ); // STOP later
+		{ this.end() }.defer( bufflength ); // auto STOP on timeout
 
 		this.clean(); // just in case
 		recbuf.zero; // erase buffer
@@ -203,7 +212,7 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 		respOSC = OSCFunc({ arg msg, time;
 			if (msg[2] == 999){
 				onsets = onsets.add(time-sttime) ;
-				silencesynth.run ;
+				silencesynth.run ; // now look for end of hit
 				onsetsynth.run(false) ;
 				("attack detected"+(time-sttime)).postln;
 			}
@@ -212,7 +221,7 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 		silOSC = OSCFunc({ arg msg, time;
 			if (msg[2] == 111){
 				silences = silences.add(time-sttime) ;
-				onsetsynth.run ;
+				onsetsynth.run ; // now look for begging of a new hit
 				silencesynth.run(false) ;
 				("silence detected"+(time-sttime)).postln ;
 				{ numhits.string =  (numhits.string.asInt + 1).asString }.defer;
@@ -227,20 +236,19 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 		recbuf.plot;
 
 		destpath = sndpath++namefield.value++"/";
-		namefieldstr = namefield.value; // this is required later when the window is closing.
+		if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
+		//namefieldstr = namefield.value; // this is required when the window is closing.
 
 		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
 			var sttime, endtime, length, tmpbuffer, filename;
 
 			filename = "plank"++recthis[0].asString++recthis[1].asString++index.asString++".wav";
-			sttime = (onsets[index] - attacktime) * recbuf.sampleRate;
+			sttime = (onsets[index] - attacktime) * recbuf.sampleRate; // -attacktime to recover chopped attacks
 			endtime = silence * recbuf.sampleRate;
 			length = endtime - sttime;
 			tmpbuffer = Buffer.alloc(server, length, 1);
 			recbuf.copyData(tmpbuffer, srcStartAt:sttime, numSamples:length);
 			tmpbuffer.normalize();
-
-			if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
 			tmpbuffer.write( (destpath ++ filename), "wav", 'int16' );
 		});
 
