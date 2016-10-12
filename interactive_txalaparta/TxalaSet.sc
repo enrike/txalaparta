@@ -9,14 +9,14 @@ TxalaSet.new(s, thisProcess.nowExecutingPath.dirname++"/sounds/")
 
 TxalaSet{
 
-	var attacktime = 0.01; // THIS IS A SAFE GAP ARTIFICIALLY ENTERED TO AVOID CHOPPING THE START OF THE HITS
+	var attacktime = 0.005; // THIS IS A SAFE GAP ARTIFICIALLY ENTERED TO AVOID CHOPPING THE START OF THE HITS
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank 0-4
 	var bufflength = 10; // secs
 	var planksamplebuttons;// Array.fillND([numplanks, plankresolution], { nil });
-	var names;// = ["A","B","C","D","E","F","G","H"];
-	var gridloc;// = Point.new(50,50);
-	var sndpath;// = thisProcess.nowExecutingPath.dirname++"/sounds/";
+	var names; // = ["A","B","C","D","E","F","G","H"];
+	var gridloc; // = Point.new(50,50);
+	var sndpath; // = thisProcess.nowExecutingPath.dirname++"/sounds/";
 	var sttime;
 	var processbutton, processflag=false, hit;
 	var recbuf;
@@ -67,36 +67,34 @@ TxalaSet{
 
 		this.doGUI();
 
-		// listens for hits
-		onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in]) ;
-		silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in]);
-
 		{
+			// listens for hits. wait until synths are ready
+			onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in,\threshold, ~listenparemeters.onset.threshold]) ;
+			silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold]);
+			// two responders
+			respOSC = OSCFunc({ arg msg, time; //ATTACK
+				if (msg[2] == 999){
+					if (processflag, { onsets = onsets.add(time-sttime) }) ;
+					("attack detected").postln;
+					{processbutton.value = 2}.defer;// detected
+					silencesynth.run ; // now look for end of hit
+					onsetsynth.run(false) ;
+				}
+			},'/tr', Server.local.addr);
 
-		// two responders
-		respOSC = OSCFunc({ arg msg, time; //ATTACK
-			if (msg[2] == 999){
-				if (processflag, { onsets = onsets.add(time-sttime) }) ;
-				("attack detected").postln;
-				{processbutton.value = 2}.defer;// detected
-				silencesynth.run ; // now look for end of hit
-				onsetsynth.run(false) ;
-			}
-		},'/tr', Server.local.addr);
-
-		silOSC = OSCFunc({ arg msg, time; //RELEASE
-			if (msg[2] == 111){
-				if (processflag, {
-					silences = silences.add(time-sttime);
-					{ numhits.string =  (numhits.string.asInt + 1).asString }.defer; //counter++
-				});
-				{ processbutton.value = processflag.asInt }.defer; // back to state 0 or 1
-				("silence detected").postln ;
-				onsetsynth.run ; // now look for begging of a new hit
-				silencesynth.run(false) ;
-			}
-		},'/tr', Server.local.addr);
-		}.defer(1);// wait until synths are alive
+			silOSC = OSCFunc({ arg msg, time; //RELEASE
+				if (msg[2] == 111){
+					if (processflag, {
+						silences = silences.add(time-sttime);
+						{ numhits.string =  (numhits.string.asInt + 1).asString }.defer; //counter++
+					});
+					{ processbutton.value = processflag.asInt }.defer; // back to state 0 or 1
+					("silence detected").postln ;
+					onsetsynth.run ; // now look for begging of a new hit
+					silencesynth.run(false) ;
+				}
+			},'/tr', Server.local.addr);
+		}.defer(1);
 	}
 
 
@@ -132,7 +130,6 @@ TxalaSet{
 				.action_({ arg butt;
 					if (butt.value.asBoolean, {
 						recthis = [indexA, indexB];
-						//~plankdata[indexA][indexB] = []; // CLEAR THIS SLOT. to avoid appending more and more...
 						this.process(); // Task that processes the sound in realtime
 						{ butt.valueAction_(0) }.defer(bufflength); //auto go OFF
 					}, {
@@ -223,14 +220,12 @@ After 10 secs the program will process the recordings and try to detect, cut, no
 
 
 	end {
-		var destpath;
+		var destpath = sndpath ++ namefield.value ++ "/";
+		if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
 
 		recbuf.plot;
 
-		destpath = sndpath++namefield.value++"/";
-		if ( PathName.new(destpath).isFolder.not, { destpath.mkdir() } );
-
-		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly
+		silences.do({arg silence, index; // better loop silences in case there is an attack that hasnt been closed properly at the end
 			var sttime, endtime, length, tmpbuffer, filename;
 
 			filename = "plank"++recthis[0].asString++recthis[1].asString++index.asString++".wav";
