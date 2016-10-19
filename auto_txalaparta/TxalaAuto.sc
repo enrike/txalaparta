@@ -396,7 +396,7 @@ TxalaAuto{
 		names = temp.asArray.collect({arg item;
 			var ar;
 			Platform.case(
-				\windows, {item = item("\\", "/")}
+				\windows, {item = item.replace("\\", "/")}
 			);
 			ar = item.split($/);
 			ar[ar.size-2]

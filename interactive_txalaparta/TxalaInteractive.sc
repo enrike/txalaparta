@@ -185,7 +185,7 @@ TxalaInteractive{
 	}
 
 	updateGUIstrings {
-		{ label.string = "Compass:" + txalasilence.compass + "\nBPM:" + ~bpm }.defer
+		{ label.string = ~txl.do("Compass:") + txalasilence.compass + "\nBPM:" + ~bpm }.defer
 	}
 
 	broadcastgroupstarted { // silence detection calls this.
@@ -209,7 +209,7 @@ TxalaInteractive{
 			if (~txalascore.isNil.not, {
 				~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
 			});
-			{numbeatslabel.string = "Beats:" + lastPattern.size}.defer;
+			{numbeatslabel.string = ~txl.do("\nBeats:") + lastPattern.size}.defer;
 			{compassbutton.value = 0}.defer; // display now
 		});
 		this.updateGUIstrings();
@@ -445,7 +445,7 @@ TxalaInteractive{
 
 		guielements = ();// to later restore from preferences
 
-		win = Window("Interactive txalaparta by www.ixi-audio.net",  Rect(5, 5, 640, 380));
+		win = Window(~txl.do("Interactive txalaparta by www.ixi-audio.net"),  Rect(5, 5, 640, 380));
 		win.onClose = {
 			this.saveprefsauto();
 			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -461,8 +461,8 @@ TxalaInteractive{
 
 		Button( win, Rect(5,5,140,38))
 		.states_([
-			["listen", Color.white, Color.black],
-			["listen", Color.black, Color.green],
+			[~txl.do("listen"), Color.white, Color.black],
+			[~txl.do("listen"), Color.black, Color.green],
 		])
 		.action_({ arg but;
 			if (but.value.asBoolean, {
@@ -473,8 +473,8 @@ TxalaInteractive{
 		});
 		Button( win, Rect(5,yloc+3,140,38))
 		.states_([
-			["answer", Color.white, Color.black],
-			["answer", Color.black, Color.green],
+			[~txl.do("answer"), Color.white, Color.black],
+			[~txl.do("answer"), Color.black, Color.green],
 		])
 		.action_({ arg but;
 			~answer = but.value.asBoolean;
@@ -482,8 +482,8 @@ TxalaInteractive{
 
 		Button( win, Rect(180,5,80,25))
 		.states_([
-			["auto priority", Color.white, Color.black],
-			["auto priority", Color.black, Color.green]
+			[~txl.do("auto priority"), Color.white, Color.black],
+			[~txl.do("auto priority"), Color.black, Color.green]
 		])
 		.action_({ arg but;
 			~autoanswerpriority = but.value.asBoolean;
@@ -491,8 +491,8 @@ TxalaInteractive{
 
 		prioritybutton = Button( win, Rect(180,yloc-10,80,25))
 		.states_([
-			["priority", Color.white, Color.black],
-			["priority", Color.black, Color.green]
+			[~txl.do("priority"), Color.white, Color.black],
+			[~txl.do("priority"), Color.black, Color.green]
 		])
 		.action_({ arg but;
 			~answerpriority = but.value.asBoolean;
@@ -500,7 +500,7 @@ TxalaInteractive{
 
 		Button(win,  Rect(260,5,80,25))
 		.states_([
-			["show score", Color.white, Color.black],
+			[~txl.do("show score"), Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			var num = 1;
@@ -511,7 +511,7 @@ TxalaInteractive{
 
 		Button( win, Rect(260,yloc-10,40,25)) //Rect(140,30,70,25))
 		.states_([
-			["scope", Color.white, Color.black],
+			[~txl.do("scope"), Color.white, Color.black],
 		])
 		.action_({ arg but;
 			if (scopesynth.isNil, {
@@ -526,7 +526,7 @@ TxalaInteractive{
 
 		Button( win, Rect(300,yloc-10,40,25)) //Rect(140,30,70,25))
 		.states_([
-			["meter", Color.white, Color.black],
+			[~txl.do("meter"), Color.white, Color.black],
 		])
 		.action_({ arg but;
 			server.meter(1,1);
@@ -535,20 +535,20 @@ TxalaInteractive{
 		yindex = yindex + 2.3;
 
 				// mode menu
-		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 100, 25)).string = "Answer mode";
+		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 100, 25)).string = ~txl.do("Answer mode");
 		guielements.add(\answermode->
 			PopUpMenu(win,Rect(95,yloc+(gap*yindex), 100,20))
 			.items_([
-				"imitation", // copy exactly what the user does
-				"percentage", // just count all the hits and return a wchoose
-				"learning 1", // 1sr order markov chain
-				"learning 2", // 2nd order markov chain
-				"learning 4" // 4th order markov chain
+				~txl.do("imitation"), // copy exactly what the user does
+				~txl.do("percentage"), // just count all the hits and return a wchoose
+				~txl.do("learning 1"), // 1sr order markov chain
+				~txl.do("learning 2"), // 2nd order markov chain
+				~txl.do("learning 4") // 4th order markov chain
 			])
 			.action_({ arg menu;
 				try{ // bacwrds comp
 					~answermode = menu.value.asInt;
-					("changing to answer mode:" + menu.item + menu.value).postln;
+					~txl.do(("changing to answer mode:") + menu.item + menu.value).postln;
 				}{|err|
 					~answermode = 1;
 					menu.value = ~answermode;
@@ -559,8 +559,8 @@ TxalaInteractive{
 
 		guielements.add(\amp-> Button(win, Rect(200,yloc+(gap*yindex),125,20))
 			.states_([
-				["lick from memory", Color.white, Color.grey],
-				["lick from memory", Color.white, Color.green]
+				[~txl.do("lick from memory"), Color.white, Color.grey],
+				[~txl.do("lick from memory"), Color.white, Color.green]
 			])
 			.action_({ arg butt;
 				phrasemode = butt.value;
@@ -573,7 +573,7 @@ TxalaInteractive{
 		// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"volume",
+			~txl.do("volume"),
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
@@ -599,7 +599,7 @@ TxalaInteractive{
 
 		guielements.add(\latency-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"latency",
+			~txl.do("latency"),
 			ControlSpec(0, 0.2, \lin, 0.001, 0, ""),
 			{ arg ez;
 				~latencycorrection = ez.value.asFloat;
@@ -611,7 +611,7 @@ TxalaInteractive{
 
 		guielements.add(\timedivision-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"time /",
+			~txl.do("time /"),
 			ControlSpec(0, 100, \lin, 5, 0, ""),
 			{ arg ez;
 				~timedivision = ez.value.asFloat;
@@ -635,17 +635,17 @@ TxalaInteractive{
 		label.string = "Compass: --- \nBPM: ---";
 
 		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
-		numbeatslabel.string = "Beats: ---";
+		numbeatslabel.string = ~txl.do("Beats:");
 
 		hitbutton = Button( win, Rect(370,295,90,65))
 		.states_([
-			["HIT", Color.white, Color.grey],
-			["HIT", Color.white, Color.red]
+			[~txl.do("HIT"), Color.white, Color.grey],
+			[~txl.do("HIT"), Color.white, Color.red]
 		]);
 		compassbutton = Button( win, Rect(460,295,90,65))
 		.states_([
-			["PHRASE", Color.white, Color.grey],
-			["PHRASE", Color.white, Color.red]
+			[~txl.do("PHRASE"), Color.white, Color.grey],
+			[~txl.do("PHRASE"), Color.white, Color.red]
 		]);
 
 		hutsunebutton = Button( win, Rect(550,295,80,65))
@@ -672,7 +672,7 @@ TxalaInteractive{
 		names = temp.asArray.collect({arg item;
 			var ar;
 			Platform.case(
-				\windows, {item = item("\\", "/")}
+				\windows, {item = item.replace("\\", "/")}
 			);
 			ar = item.split($/);
 			ar[ar.size-2]
@@ -684,11 +684,11 @@ TxalaInteractive{
 	doCalibrationPresets { arg win, xloc, yloc, guielements;
 		var newpreset, popup;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Calibration manager";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Calibration manager");
 
 		Button(win,  Rect(xloc,yloc+20,80,25))
 		.states_([
-			["edit", Color.white, Color.grey],
+			[~txl.do("edit"), Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			txalacalibration = TxalaCalibration.new(this);
@@ -741,7 +741,7 @@ TxalaInteractive{
 		newpreset = TextField(win, Rect(xloc, yloc+70, 95, 25));
 		Button(win, Rect(xloc+100,yloc+70,70,25))
 		.states_([
-			["save", Color.white, Color.grey]
+			[~txl.do("save"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			var filename, data;
@@ -763,14 +763,14 @@ TxalaInteractive{
 	doMatrixGUI { arg win, xloc, yloc, guielements;
 		var newpreset;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Memory manager";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Memory manager");
 
 		yloc = yloc+20;
 
 		guielements.add(\learning, Button(win, Rect(xloc,yloc,85,25))
 		.states_([
-			["learn", Color.white, Color.grey],
-			["learn", Color.white, Color.green]
+				[~txl.do("learn"), Color.white, Color.grey],
+				[~txl.do("learn"), Color.white, Color.green]
 		])
 		.action_({ arg butt;
 			~learning = butt.value.asBoolean;
@@ -779,7 +779,7 @@ TxalaInteractive{
 
 		Button(win, Rect(xloc+85,yloc,85,25))
 		.states_([
-			["clear", Color.white, Color.grey]
+			[~txl.do("clear"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			if (~answermode > 0, {
@@ -815,7 +815,7 @@ TxalaInteractive{
 
 		Button(win, Rect(xloc+100,yloc,70,25))
 		.states_([
-			["save", Color.white, Color.grey]
+			[~txl.do("save"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			var filename, data;
@@ -841,7 +841,7 @@ TxalaInteractive{
 	doChromaGUI{arg win, xloc, yloc;
 		var newpreset, popup;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Chroma manager";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Chroma manager");
 
 		chromabuttons.size.do({arg index;
 			chromabuttons[index] = Button(win, Rect(xloc+(25*index), yloc+20, 25, 25))
@@ -898,7 +898,7 @@ TxalaInteractive{
 		newpreset = TextField(win, Rect(xloc, yloc+70, 95, 25));
 		Button(win, Rect(xloc+100,yloc+70,70,25))
 		.states_([
-			["save", Color.white, Color.grey]
+			[~txl.do("save"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			var filename, data;
@@ -919,13 +919,13 @@ TxalaInteractive{
 	doPlanksSetGUI { arg win, xloc, yloc;
 		var newpreset, popup;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Plank set manager";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Plank set manager");
 
 		yloc = yloc+20;
 
 		Button(win,  Rect(xloc, yloc,80,25))
 		.states_([
-			["sample new", Color.white, Color.grey],
+			[~txl.do("sample new"), Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			TxalaSet.new(server, sndpath)
