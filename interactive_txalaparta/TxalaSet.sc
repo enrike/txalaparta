@@ -101,7 +101,7 @@ TxalaSet{
 
 	doGUI {
 
-		win = Window.new("Plank set manager", Rect(10, 100, 220, 260));
+		win = Window.new(~txl.do("Plank set manager"), Rect(10, 100, 270, 260));
 		win.onClose_({
 			var destpath, filename, data;
 			this.clean();
@@ -112,17 +112,17 @@ TxalaSet{
 			recsynth.free;
 		});
 
-		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 50, 25)).string = "Locs -->";
+		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 80, 25)).string = ~txl.do("Locs >");
 		numplanks.do({arg indexA;
 
 			plankresolution.do({arg indexB;
 				var name = (indexA+1).asString++names[indexB];
 				if (indexA==0, {
-					StaticText(win, Rect(gridloc.x+10+(indexB*30), gridloc.y-25, 50, 25)).string = names[indexB];
+					StaticText(win, Rect(gridloc.x+35+(indexB*30), gridloc.y-25, 50, 25)).string = names[indexB];
 				});
-				StaticText(win, Rect(gridloc.x-50, (indexA*25)+gridloc.y, 50, 25)).string = "Plank"+(indexA+1).asString;
+				StaticText(win, Rect(gridloc.x-50, (indexA*25)+gridloc.y, 50, 25)).string = ~txl.do("Plank")+(indexA+1).asString;
 
-				planksamplebuttons[indexA][indexB] = Button(win, Rect((30*indexB)+gridloc.x, (indexA*25)+gridloc.y, 30, 25))
+				planksamplebuttons[indexA][indexB] = Button(win, Rect((30*indexB)+gridloc.x+25, (indexA*25)+gridloc.y, 30, 25))
 				.states_([
 					[name, Color.white, Color.black],
 					[name, Color.black, Color.red]
@@ -142,13 +142,13 @@ TxalaSet{
 		});
 
 
-		StaticText(win, Rect(10, 42, 100, 25)).string = "set name";
+		StaticText(win, Rect(10, 42, 100, 25)).string = ~txl.do("set name");
 
 		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
 
-		Button(win, Rect(10,10, 40, 25))
+		Button(win, Rect(10,10, 70, 25))
 		.states_([
-			["reset", Color.white, Color.black]
+			[~txl.do("reset"), Color.white, Color.black]
 		])
 		.action_({ arg butt;
 			planksamplebuttons.flat.do({ arg but;
@@ -156,38 +156,38 @@ TxalaSet{
 			})
 		});
 
-		Button(win, Rect(50,10, 40, 25))
+		Button(win, Rect(80,10, 70, 25))
 		.states_([
-			["HELP", Color.white, Color.black]
+			[~txl.do("HELP"), Color.white, Color.black]
 		])
 		.action_({ arg butt;
 			var ww;
-			ww = Window.new("Help", Rect(0, 0, 305, 335));
-			StaticText(ww, Rect(10, 10, 290, 335)).string = "Each row represents a plank (1,2,3,4,5,6).
+			ww = Window.new(~txl.do("Help"), Rect(0, 0, 335, 365));
+			StaticText(ww, Rect(10, 10, 325, 365)).string = ~txl.do("Each row represents a plank (1,2,3,4,5,6).
 Each button in the row represents a position within each plank (A,B,C,D,E).
 Ideally those positions go left to right from the edge until the center of each plank.
 Give a name to the set before recording the sounds or the set will be named after the date and time.
 Select one of the positions (eg 1A) by pressing the corresponding button, then you have 10 secs to hit several times in the same plank location with different amplitudes (low to high). Make sure you leave time for each hit's tile to finish before hitting again. Repeat this procedure for each of the positions in each of the planks. You dont have to fill the five positions, in fact one position per plank is enough, but the more hits the richer the output of the Interactive txalaparta will sound.
-After 10 secs the program will process the recordings and try to detect, cut, normalise and save each of the hits into a separated file. It is not a bad idea to open the files in a sound editor (eg. Audacity) to see if they are correct, the system is not perfect!";
+			After 10 secs the program will process the recordings and try to detect, cut, normalise and save each of the hits into a separated file. It is not a bad idea to open the files in a sound editor (eg. Audacity) to see if they are correct, the system is not perfect!");
 			ww.front
 		});
 
-		Button( win, Rect(90,10,40,25)) //Rect(140,30,70,25))
+		Button( win, Rect(150,10,50,25)) //Rect(140,30,70,25))
 		.states_([
-			["meter", Color.white, Color.black],
+			[~txl.do("meter"), Color.white, Color.black],
 		])
 		.action_({ arg but;
 			server.meter(1,1);
 		});
 
-		processbutton = Button(win, Rect(142,10, 57, 25))
+		processbutton = Button(win, Rect(200,10, 57, 25))
 		.states_([
-			["procesing", Color.white, Color.grey],
-			["procesing", Color.red, Color.grey],
-			["procesing", Color.white, Color.red]
+			[~txl.do("processing"), Color.white, Color.grey],
+			[~txl.do("processing"), Color.red, Color.grey],
+			[~txl.do("processing"), Color.white, Color.red]
 		]);
 
-		numhits = StaticText(win, Rect(205, 10, 30, 25)).string = "0";
+		numhits = StaticText(win, Rect(240, 45, 30, 25)).string = "0";
 
 		win.front;
 	}
