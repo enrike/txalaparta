@@ -480,7 +480,7 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-		Button( win, Rect(180,5,80,25))
+		Button( win, Rect(145,5,105,25))
 		.states_([
 			[~txl.do("auto priority"), Color.white, Color.black],
 			[~txl.do("auto priority"), Color.black, Color.green]
@@ -489,7 +489,7 @@ TxalaInteractive{
 			~autoanswerpriority = but.value.asBoolean;
 		}).valueAction_(~autoanswerpriority);
 
-		prioritybutton = Button( win, Rect(180,yloc-10,80,25))
+		prioritybutton = Button( win, Rect(145,yloc-10,105,25))
 		.states_([
 			[~txl.do("priority"), Color.white, Color.black],
 			[~txl.do("priority"), Color.black, Color.green]
@@ -498,7 +498,7 @@ TxalaInteractive{
 			~answerpriority = but.value.asBoolean;
 		}).valueAction_(~answerpriority);
 
-		Button(win,  Rect(260,5,80,25))
+		Button(win,  Rect(250,5,100,25))
 		.states_([
 			[~txl.do("show score"), Color.white, Color.black],
 		])
@@ -509,7 +509,7 @@ TxalaInteractive{
 			~txalascore.reset();
 		});
 
-		Button( win, Rect(260,yloc-10,40,25)) //Rect(140,30,70,25))
+		Button( win, Rect(250,yloc-10,50,25)) //Rect(140,30,70,25))
 		.states_([
 			[~txl.do("scope"), Color.white, Color.black],
 		])
@@ -524,7 +524,7 @@ TxalaInteractive{
 		});
 
 
-		Button( win, Rect(300,yloc-10,40,25)) //Rect(140,30,70,25))
+		Button( win, Rect(300,yloc-10,50,25)) //Rect(140,30,70,25))
 		.states_([
 			[~txl.do("meter"), Color.white, Color.black],
 		])
@@ -535,9 +535,9 @@ TxalaInteractive{
 		yindex = yindex + 2.3;
 
 				// mode menu
-		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 100, 25)).string = ~txl.do("Answer mode");
+		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 140, 25)).string = ~txl.do("Answer mode");
 		guielements.add(\answermode->
-			PopUpMenu(win,Rect(95,yloc+(gap*yindex), 100,20))
+			PopUpMenu(win,Rect(130,yloc+(gap*yindex), 90,20))
 			.items_([
 				~txl.do("imitation"), // copy exactly what the user does
 				~txl.do("percentage"), // just count all the hits and return a wchoose
@@ -557,7 +557,7 @@ TxalaInteractive{
 			.valueAction_(~answermode)
 		);
 
-		guielements.add(\amp-> Button(win, Rect(200,yloc+(gap*yindex),125,20))
+		guielements.add(\amp-> Button(win, Rect(225,yloc+(gap*yindex),125,20))
 			.states_([
 				[~txl.do("lick from memory"), Color.white, Color.grey],
 				[~txl.do("lick from memory"), Color.white, Color.green]
@@ -572,7 +572,7 @@ TxalaInteractive{
 
 		// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
+			Rect(10,yloc+(gap*yindex),340,20),
 			~txl.do("volume"),
 			ControlSpec(0, 2, \lin, 0.01, 1, ""),
 			{ arg ez;
@@ -584,21 +584,8 @@ TxalaInteractive{
 
 		yindex = yindex + 1;
 
-/*		guielements.add(\gapswing-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			"swing",
-			ControlSpec(0, 100, \lin, 1, 0, ""),
-			{ arg ez;
-				~gapswing = ez.value.asFloat;
-			},
-			initVal: ~gapswing,
-			labelWidth: 60;
-		));
-
-		yindex = yindex + 1;*/
-
 		guielements.add(\latency-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
+			Rect(10,yloc+(gap*yindex),340,20),
 			~txl.do("latency"),
 			ControlSpec(0, 0.2, \lin, 0.001, 0, ""),
 			{ arg ez;
@@ -607,7 +594,7 @@ TxalaInteractive{
 			initVal: ~latencycorrection,
 		));
 
-		yindex = yindex + 1;
+		/*yindex = yindex + 1;
 
 		guielements.add(\timedivision-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
@@ -617,7 +604,7 @@ TxalaInteractive{
 				~timedivision = ez.value.asFloat;
 			},
 			initVal: ~timedivision,
-		));
+		));*/
 
 		yindex = yindex + 1.5;
 
@@ -632,7 +619,8 @@ TxalaInteractive{
 		makilaanims = TxalaSliderAnim.new(win, 550, 10);
 
 		label = StaticText(win, Rect(370, 200, 250, 60)).font_(Font("Verdana", 25)) ;
-		label.string = "Compass: --- \nBPM: ---";
+		//label.string = "Compass: --- \nBPM: ---";
+		label.string = ~txl.do("Compass:") + "" + "\nBPM:" + "";
 
 		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
 		numbeatslabel.string = ~txl.do("Beats:");
@@ -923,7 +911,7 @@ TxalaInteractive{
 
 		yloc = yloc+20;
 
-		Button(win,  Rect(xloc, yloc,80,25))
+		Button(win,  Rect(xloc, yloc,100,25))
 		.states_([
 			[~txl.do("sample new"), Color.white, Color.grey],
 		])
