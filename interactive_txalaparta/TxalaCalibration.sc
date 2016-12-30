@@ -32,7 +32,7 @@ TxalaCalibration{
 
 	doGUI {
 		var yindex=0, yloc = 10, gap=20; //Array.fill(10, {nil});
-		win = Window("Input calibration",  Rect(10, 50, 360, 300));
+		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 360, 300));
 		win.onClose = {
 			parent.txalacalibration = nil
 /*			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -49,7 +49,7 @@ TxalaCalibration{
 		// ~gain
 		guielements.add(\gain-> EZSlider( win,
 			Rect(0,yloc+(gap*yindex),350,20),
-			"gain in",
+			~txl.do("gain in"),
 			ControlSpec(0, 5, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~listenparemeters.gain = ez.value.asFloat;
@@ -68,14 +68,14 @@ TxalaCalibration{
 		yindex = yindex + 1;
 
 		// DetectSilence controls //
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Tempo detection";
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Tempo detection");
 
 		yindex = yindex + 1;
 
 		guielements.add(\tempothreshold->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"threshold",// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
+				~txl.do("threshold"),// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
 				ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 				nil,
 				initVal: ~listenparemeters.tempo.threshold,
@@ -93,7 +93,7 @@ TxalaCalibration{
 		guielements.add(\falltime->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"falltime",
+				~txl.do("falltime"),
 				ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
 				{ arg ez;
 					if (parent.txalasilence.isNil.not, {
@@ -110,7 +110,7 @@ TxalaCalibration{
 		guielements.add(\checkrate->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"rate",
+				~txl.do("rate"),
 				ControlSpec(5, 60, \lin, 1, 30, ""),
 				{ arg ez;
 					if (parent.txalasilence.isNil.not, {
@@ -125,14 +125,14 @@ TxalaCalibration{
 		yindex = yindex + 1.5;
 
 		// hutsune timeout control
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hutsune detection timeout";
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Hutsune detection timeout");
 
 		yindex = yindex + 1;
 
 		guielements.add(\hutsunelookup ->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"lookup",
+				~txl.do("lookup"),
 				ControlSpec(0, 1, \lin, 0.01, 1, ""),
 				{ arg ez;
 					~hutsunelookup = ez.value.asFloat;
@@ -144,14 +144,14 @@ TxalaCalibration{
 		yindex = yindex + 1.5;
 
 		// Onset pattern detection controls //
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = "Hit onset detection";
+		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Hit onset detection");
 
 		yindex = yindex + 1;
 
 		guielements.add(\onsetthreshold->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"threshold",
+				~txl.do("threshold"),
 				ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
@@ -168,7 +168,7 @@ TxalaCalibration{
 		guielements.add(\relaxtime->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"relaxtime",
+				~txl.do("relaxtime"),
 				ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
@@ -185,7 +185,7 @@ TxalaCalibration{
 		guielements.add(\floor->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"floor",
+				~txl.do("floor"),
 				ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
@@ -202,7 +202,7 @@ TxalaCalibration{
 		guielements.add(\mingap->
 			EZSlider( win,
 				Rect(0,yloc+(gap*yindex),350,20),
-				"mingap",
+				~txl.do("mingap"),
 				ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
 				{ arg ez;
 					if (parent.txalaonset.isNil.not, {
