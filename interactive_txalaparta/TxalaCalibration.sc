@@ -31,8 +31,8 @@ TxalaCalibration{
 	}
 
 	doGUI {
-		var yindex=0, yloc = 10, gap=20; //Array.fill(10, {nil});
-		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 360, 300));
+		var yindex=0, yloc = 10, gap=20, labelwidth=70; //Array.fill(10, {nil});
+		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 300));
 		win.onClose = {
 			parent.txalacalibration = nil
 /*			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -42,13 +42,16 @@ TxalaCalibration{
 			scope.free;*/
 		};
 
+		if ( (~txl.lang==1), { labelwidth = 100 });//ES
+		if ( (~txl.lang==2), { labelwidth = 130 }); //EU
+
 		guielements = ();
 
 		// calibration //////////////////////////////////////////////
 
 		// ~gain
 		guielements.add(\gain-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
+			Rect(20,yloc+(gap*yindex),370,20),
 			~txl.do("gain in"),
 			ControlSpec(0, 5, \lin, 0.01, 1, ""),
 			{ arg ez;
@@ -62,7 +65,7 @@ TxalaCalibration{
 				});
 			},
 			initVal: ~listenparemeters.gain,
-			labelWidth: 60
+			labelWidth: labelwidth
 		));
 
 		yindex = yindex + 1;
@@ -74,12 +77,12 @@ TxalaCalibration{
 
 		guielements.add(\tempothreshold->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("threshold"),// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
 				ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
 				nil,
 				initVal: ~listenparemeters.tempo.threshold,
-				labelWidth: 60
+				labelWidth: labelwidth
 			).sliderView.mouseUpAction_({arg ez;
 				if (parent.txalasilence.isNil.not, {
 					parent.txalasilence.updatethreshold(ez.value.asFloat);
@@ -92,7 +95,7 @@ TxalaCalibration{
 
 		guielements.add(\falltime->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("falltime"),
 				ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
 				{ arg ez;
@@ -102,14 +105,14 @@ TxalaCalibration{
 					~listenparemeters.tempo.falltime = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.falltime,
-				labelWidth: 60
+				labelWidth: labelwidth
 		));
 
 		yindex = yindex + 1;
 
 		guielements.add(\checkrate->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("rate"),
 				ControlSpec(5, 60, \lin, 1, 30, ""),
 				{ arg ez;
@@ -119,26 +122,26 @@ TxalaCalibration{
 					~listenparemeters.tempo.checkrate = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.checkrate,
-				labelWidth: 60
+				labelWidth: labelwidth
 		));
 
 		yindex = yindex + 1.5;
 
 		// hutsune timeout control
-		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Hutsune detection timeout");
+		StaticText(win, Rect(5, yloc+(gap*yindex), 380, 25)).string = ~txl.do("Hutsune detection timeout");
 
 		yindex = yindex + 1;
 
 		guielements.add(\hutsunelookup ->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("lookup"),
 				ControlSpec(0, 1, \lin, 0.01, 1, ""),
 				{ arg ez;
 					~hutsunelookup = ez.value.asFloat;
 				},
 				initVal: ~hutsunelookup,
-				labelWidth: 60
+				labelWidth: labelwidth
 		));
 
 		yindex = yindex + 1.5;
@@ -150,7 +153,7 @@ TxalaCalibration{
 
 		guielements.add(\onsetthreshold->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("threshold"),
 				ControlSpec(0, 1, \lin, 0.01, 0.4, ""),
 				{ arg ez;
@@ -160,14 +163,14 @@ TxalaCalibration{
 					~listenparemeters.onset.threshold = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.threshold,
-				labelWidth: 60
+				labelWidth: labelwidth
 		));
 
 		yindex = yindex + 1;
 
 		guielements.add(\relaxtime->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("relaxtime"),
 				ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
 				{ arg ez;
@@ -177,14 +180,14 @@ TxalaCalibration{
 					~listenparemeters.onset.relaxtime = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.relaxtime,
-				labelWidth: 60
+				labelWidth: labelwidth
 		).round_(0.00001).numberView.maxDecimals_(5) );
 
 		yindex = yindex + 1;
 
 		guielements.add(\floor->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("floor"),
 				ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
 				{ arg ez;
@@ -194,14 +197,14 @@ TxalaCalibration{
 					~listenparemeters.onset.floor = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.floor,
-				labelWidth: 60
+				labelWidth: labelwidth
 		).round_(0.00001).numberView.maxDecimals_(5) );
 
 		yindex = yindex + 1;
 
 		guielements.add(\mingap->
 			EZSlider( win,
-				Rect(0,yloc+(gap*yindex),350,20),
+				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("mingap"),
 				ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
 				{ arg ez;
@@ -211,7 +214,7 @@ TxalaCalibration{
 					~listenparemeters.onset.mingap = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.onset.mingap,
-				labelWidth: 60
+				labelWidth: labelwidth
 		));
 
 		guielements.hutsunelookup.valueAction = ~hutsunelookup;

@@ -180,7 +180,7 @@ Select one of the positions (eg 1A) by pressing the corresponding button, then y
 			server.meter(1,1);
 		});
 
-		processbutton = Button(win, Rect(200,10, 57, 25))
+		processbutton = Button(win, Rect(200,10, 68, 25))
 		.states_([
 			[~txl.do("processing"), Color.white, Color.grey],
 			[~txl.do("processing"), Color.red, Color.grey],

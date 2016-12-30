@@ -59,7 +59,7 @@ TxalaLang{
 	["priority","proridad", "lehentasuna"],
 	["show score","linea de tiempo", "denbora-lerroa"],
 	["scope","scope", "scope"],
-	["meter","volumenes", "mailak"],
+	["meter","niveles", "mailak"],
 	["Answer mode","Modo de respuesta", "Erantzuteko modua"],
 	["imitation","imitacion", "kopiatu"],
 	["percentage","porcentage", "ehunekoa"],
