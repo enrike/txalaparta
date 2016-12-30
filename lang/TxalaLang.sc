@@ -31,6 +31,10 @@ TxalaLang{
 			trans=origin;
 			["LANG! could not find translation for:", origin].postln;
 		});
+		if (trans == "" , {// just dont translate it
+			trans=origin;
+			["LANG! translation to be done:", origin].postln;
+		});
 		^trans;
 	}
 
@@ -39,12 +43,14 @@ TxalaLang{
 			["Digital Txalaparta", "Txalaparta Digital", "Txalaparta Digitala"],
 			["About", "Info", "Honi buruz"],
 			["Interactive Txalaparta", "Txalaparta Interactiva", "Txalaparta Interaktiboa"],
+	["clear","borrar", "garbitu"],
 	["sndpath is","sndpath es", "sndpath da"],
 	["available samples are","los sonidos disponibles son", "eskuragarri dauden soinuak"],
 	["auto loading general preferences ...","cargando preferencias generales...", "hobespen orokorrak kargatzen…"],
 	["load sampleset","cargando sonidos", "soinuak kargatzen"],
-	["Compass:", "Compases:", "Bueltak:"],
-	["\nBeats:","\nGolpes:", "\nKolpeak:"],
+	["Compass:","Compases", "Bueltak"],
+	["\nBeats:","\nGolpes", "\nKolpeak"],
+	["Beats:","Golpes", "Kolpeak"],
 	["oops... too late to answer properly","demasiado tarde para responder a tiempo", "beranduegi garaiz erantzuteko"],
 	["Interactive txalaparta by www.ixi-audio.net","Txalaparta Interactiva por www.ixi-audio.net", "www.ixi-audio.net -en txalaparta Interaktiboa"],
 	["listen","escucha", "entzun"],
@@ -52,22 +58,23 @@ TxalaLang{
 	["auto priority","auto prioridad", "autolehentasuna"],
 	["priority","proridad", "lehentasuna"],
 	["show score","linea de tiempo", "denbora-lerroa"],
-	["scope in","", ""],
+	["scope","scope", "scope"],
+	["meter","volumenes", "mailak"],
 	["Answer mode","Modo de respuesta", "Erantzuteko modua"],
 	["imitation","imitacion", "kopiatu"],
 	["percentage","porcentage", "ehunekoa"],
 	["learning 1","aprendiendo 1", "ikasten 1"],
 	["learning 2","aprendiendo 2", "ikasten 2"],
-	["learning 3","aprendiendo 3", "ikasten 3"],
+	["learning 4","aprendiendo 4", "ikasten 4"],
 	["changing to answer mode:","cambiando modo de respuesta:", "erantzuteko modua aldatzen"],
-	["lick from memory","", ""],
+	["lick from memory","menoria", "memoriatik"],
 	["volume","volumen", "bolumena"],
 	["swing","variacion", "bariazioa"],
 	["latency","latencia", "latentzia"],
 	["HIT","GOLPE", "KOLPEA"],
 	["PHRASE","FRASE", "ESALDIA"],
 	["GAP","VACIO", "HUTSUNEA"],
-	["Calibration manager","Control de calibracion", "kalibrazio-kontrola"],
+	["Calibration manager","Control de calibracion", "Kalibrazio-kontrola"],
 	["edit","editar", "editatu"],
 	["could not set gain value","no he podido asignar el valor de gain", "ezin izan dut gain balioa esleitu"],
 	["no predefined listen preset to be loaded","no hay un preset de escucha predeterminado", "ez dago entzuteko aurrez zehaztutako preset-ik"],
@@ -103,7 +110,7 @@ TxalaLang{
 	["floor","suelo","lurra"],
 	["mingap","hueco minimo","gutxieneko hutsunea"],
 	["did not create a new sample set","no he creado un juego de samples nuevo","ez dut sanple-sorta berririk sortu"],
-	["Locs -->","Posiciones -->","Kokapenak"],
+	["Locs >","Posiciones >","Kokapenak >"],
 	["set name","nombre","izena"],
 	["HELP","AYUDA","LAGUNTZA"],
 	["Help","ayuda","laguntza"],
@@ -111,7 +118,21 @@ TxalaLang{
 	["processing","procesando","lanean"],
 	["DONE PROCESSING","HECHO","EGINDA"],
 	["0-0 detected","0-0 detectado","0-0 hauteman da"],
-]
+	// txalaset.sc
+	["Plank set manager", "Gestor de tablas", "Oholen kontrola"],
+	["Plank", "Tabla", "Ohola"],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	["", "", ""],
+	]
 
 	}
 }
