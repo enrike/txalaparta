@@ -67,7 +67,7 @@ Button(w, Rect(10,100,200,25))
 	"http://www.ixi-audio.net/txalaparta".postln;
 });
 
-PopUpMenu(w,Rect(10,130, 70,20))
+PopUpMenu(w,Rect(10,130, 90,20))
 .items_(["English","Castellano", "Euskera"])
 .action_({ arg menu;
 	~txl.lang = menu.value;
