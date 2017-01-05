@@ -121,18 +121,28 @@ TxalaLang{
 	// txalaset.sc
 	["Plank set manager", "Gestor de tablas", "Oholen kontrola"],
 	["Plank", "Tabla", "Ohola"],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	["", "", ""],
-	]
+		// autotxalaparta
+	["show score", "abre score", "ireki scorea"],
+	["show animation", "abre animacion", "ireki animazioa"],
+	["Hits", "Golpes", "Kolpeak"],
+	["% chance", "% ", ""],
+	["play", "play", "jo"],
+	["Plank set", "", ""],
+	["Presets", "", ""],
+	["last emphasis", "enfasis ultimo", "indartu azkena"],
+			// score
+	["Planks", "Tablas", "Oholak"],
+
+	["zoom", "aumento", "zooma"],
+	["save MIDI", "guarda MIDI", "gorde MIDI"],
+	["mode", "modo", "modua"],
+	["draw group", "dibuja grupo", "margoztu taldea"],
+	["Timeline", "Linea tiempo", "Debora marra"],
+			// param win
+			["Control", "Control", "Kontrola"],
+			["Duration", "Duracion", "Iraupena"],
+			["play/pause", "play/pause", "jo/gelditu"],
+		]
 
 	}
 }

@@ -120,7 +120,7 @@ TxalaAuto{
 		// txakascore timeline
 		Button(window, Rect(xloc,yloc,100,30))
 		.states_([
-			["show score", Color.white, Color.black],
+			[~txl.do("show score"), Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			//var num;
@@ -132,7 +132,7 @@ TxalaAuto{
 		// txakascore timeline
 		Button(window, Rect(xloc+100,yloc,100,30))
 		.states_([
-			["show animation", Color.white, Color.black],
+			[~txl.do("show animation"), Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			if (~makilaanims.isNil, {
@@ -163,8 +163,8 @@ TxalaAuto{
 
 
 		// BEATS
-		StaticText(window, Rect(beatsxloc+210, yloc-20, 200, 20)).string = "Hits";
-		StaticText(window, Rect(beatsxloc+260, yloc-20, 200, 20)).string = "% chance";
+		StaticText(window, Rect(beatsxloc+210, yloc-20, 200, 20)).string = ~txl.do("Hits");
+		StaticText(window, Rect(beatsxloc+260, yloc-20, 200, 20)).string = ~txl.do("% chance");
 
 		~allowedbeats[0].size.do({arg subindex;
 			2.do({arg index; // two players
@@ -241,8 +241,8 @@ TxalaAuto{
 		// AUTO PLAY
 		autoplayBut = Button(window, Rect(xloc,yloc+64,200,35))
 		.states_([
-			["play", Color.white, Color.black],
-			["play", Color.black, Color.green],
+			[~txl.do("play"), Color.white, Color.black],
+			[~txl.do("play"), Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			if ( butt.value.asBoolean,
@@ -253,8 +253,8 @@ TxalaAuto{
 		// EMPHASIS
 		emphasisBut = Button(window, Rect(xloc,yloc+105,100,25))
 		.states_([
-			["last emphasis", Color.white, Color.black],
-			["last emphasis", Color.black, Color.green],
+			[~txl.do("last emphasis"), Color.white, Color.black],
+			[~txl.do("last emphasis"), Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			~lastemphasis = butt.value.asBoolean;
@@ -268,7 +268,7 @@ TxalaAuto{
 	doPresets { arg xloc, yloc;
 		var popupmenu, newpreset;
 
-		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = "Presets";
+		StaticText(window, Rect(xloc, yloc-18, 200, 20)).string = ~txl.do("Presets");
 
 		PopUpMenu(window,Rect(xloc,yloc,200,20))
 		.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
@@ -359,7 +359,7 @@ TxalaAuto{
 
 		Button(window, Rect(xloc+130,yloc+22,70,25))
 		.states_([
-			["save", Color.white, Color.grey]
+			[~txl.do("save"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			var filename, data;
@@ -409,7 +409,7 @@ TxalaAuto{
 	doPlanksSetGUI { arg win, xloc, yloc;
 		var newpreset, popup;
 
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = "Plank set";
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Plank set");
 
 		yloc = yloc+20;
 /*

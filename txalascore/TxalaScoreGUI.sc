@@ -99,7 +99,7 @@ TxalaScoreGUI{
 	doTxalaScore { arg xloc=0, yloc=400, width=1020, height=350, timeframe=4, numactiveplanks=1;
 		var view, xstep=0, drawspeed=1;
 		if (timelinewin.isNil, {
-			timelinewin = Window("Timeline", Rect(xloc, yloc, width, height));
+			timelinewin = Window(~txl.do("Timeline"), Rect(xloc, yloc, width, height));
 
 		    txalascoresttime = Main.elapsedTime;
 			txalascore = nil;
@@ -112,7 +112,7 @@ TxalaScoreGUI{
 
 			EZSlider( timelinewin,         // parent
 				Rect(-40,timelinewin.bounds.height-22,200,20),    // bounds
-				"zoom",  // label
+				~txl.do("zoom"),  // label
 				ControlSpec(20, 1, \lin, 0.001, 10, "ms"),     // controlSpec
 				{ arg ez;
 					txalascore.timeframe = ez.value;
@@ -123,7 +123,7 @@ TxalaScoreGUI{
 
 			Button(timelinewin, Rect(200,timelinewin.bounds.height-22,75,20))
 			.states_([
-				["save MIDI", Color.white, Color.black]
+				[~txl.do("save MIDI"), Color.white, Color.black]
 			])
 			.action_({ arg butt;
 				var midifile;
@@ -151,8 +151,8 @@ TxalaScoreGUI{
 
 			Button(timelinewin, Rect(280,timelinewin.bounds.height-22,75,20))
 			.states_([
-				["mode", Color.white, Color.black],
-				["mode", Color.white, Color.green]
+				[~txl.do("mode"), Color.white, Color.black],
+					[~txl.do("mode"), Color.white, Color.green]
 			])
 			.action_({ arg butt;
 				var group, tframe, planks;
@@ -168,8 +168,8 @@ TxalaScoreGUI{
 
 			Button(timelinewin, Rect(360,timelinewin.bounds.height-22,75,20))
 			.states_([
-				["planks", Color.white, Color.black],
-				["planks", Color.white, Color.green]
+				[~txl.do("planks"), Color.white, Color.black],
+				[~txl.do("planks"), Color.white, Color.green]
 			])
 			.action_({ arg butt;
 				txalascore.drawplanks = butt.value.asBoolean;
@@ -177,8 +177,8 @@ TxalaScoreGUI{
 
 			Button(timelinewin, Rect(440,timelinewin.bounds.height-22,75,20))
 			.states_([
-				["draw group", Color.white, Color.black],
-				["draw group", Color.white, Color.green]
+				[~txl.do("draw group"), Color.white, Color.black],
+					[~txl.do("draw group"), Color.white, Color.green]
 			])
 			.action_({ arg butt;
 				txalascore.drawgroup = butt.value.asBoolean;

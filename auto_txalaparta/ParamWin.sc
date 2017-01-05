@@ -30,7 +30,7 @@ ParamWin {
 		index = 0;
 
 		size = width / 6;
-		lwin = Window("Control" + varStr,  Rect(0, 0, width, height))
+		lwin = Window(~txl.do("Control") + varStr,  Rect(0, 0, width, height))
 		.onClose_({
 			lloopf.stop;
 		});
@@ -55,7 +55,7 @@ ParamWin {
 		lmsl.gap_(4);
 		lmsl.showIndex_(true); // cursor mode
 
-		StaticText(lwin, Rect(3, height-55, 100, 20)).string = "Duration";
+		StaticText(lwin, Rect(3, height-55, 100, 20)).string = ~txl.do("Duration");
 		lfield = TextField(lwin, Rect(60, height-55, 40, 20)).string = "10";
 
 		lloopf = Task {
@@ -75,8 +75,8 @@ ParamWin {
 
 		lpbut = Button(lwin, Rect(110,height-60,80,25))
 		.states_([
-			["play/pause", Color.white, Color.black],
-			["play/pause", Color.black, Color.green],
+				[~txl.do("play/pause"), Color.white, Color.black],
+				[~txl.do("play/pause"), Color.black, Color.green],
 		])
 		.action_({ arg butt;
 			playing = butt.value.asBoolean;
@@ -84,7 +84,7 @@ ParamWin {
 
 		Button(lwin,  Rect(190,height-60,80,25))
 		.states_([
-			["reset", Color.white, Color.black],
+			[~txl.do("reset"), Color.white, Color.black],
 		])
 		.action_({ arg butt;
 			{lloopf.reset}.defer(0.2);  // otherwise wont stop
@@ -102,7 +102,7 @@ ParamWin {
 	doPresets { arg xloc, yloc;
 		var popupmenu, newpreset;
 
-		StaticText(lwin, Rect(xloc, yloc-16, 200, 20)).string = "Presets";
+		StaticText(lwin, Rect(xloc, yloc-16, 200, 20)).string = ~txl.do("Presets");
 
 		PopUpMenu(lwin,Rect(xloc,yloc,200,20))
 		.items_(presets.asArray.collect({arg item; PathName.new(item).fileName}))
@@ -129,7 +129,7 @@ ParamWin {
 
 		Button(lwin, Rect(xloc+130,yloc+22,70,25))
 		.states_([
-			["save", Color.white, Color.grey]
+				[~txl.do("save"), Color.white, Color.grey]
 		])
 		.action_({ arg butt;
 			var filename, data;
