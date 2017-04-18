@@ -48,7 +48,7 @@ TxalaTimeControls {
 		yloc = yloc+gap;
 		sliders[1][0] = EZSlider( win,
 			Rect(xloc,yloc,width,20),
-			"tempo swing",
+			~txl.do("tempo swing"),
 			ControlSpec(0.01, 1, \lin, 0.01, ~swing, "ms"),
 			{ arg ez;
 				~swing = ez.value;
@@ -69,7 +69,7 @@ TxalaTimeControls {
 		yloc = yloc+gap;
 		sliders[2][0] = EZSlider( win,
 			Rect(xloc,yloc,width,20),
-			"gap",
+			~txl.do("gap"),
 			ControlSpec(0.001, 1, \lin, 0.001, ~gap, "ms"),
 			{ arg ez;
 				~gap = ez.value;
@@ -90,7 +90,7 @@ TxalaTimeControls {
 		yloc = yloc+gap;
 		sliders[3][0] = EZSlider( win,
 			Rect(xloc,yloc,width,20),
-			"gap swing",
+			~txl.do("gap swing"),
 			ControlSpec(0.001, 1, \lin, 0.001, ~gapswing, "ms"),
 			{ arg ez;
 				~gapswing = ez.value;
@@ -111,7 +111,7 @@ TxalaTimeControls {
 		yloc = yloc+gap;
 		ampbut = EZSlider( win,
 			Rect(xloc,yloc,width,20),
-			"amp",
+			~txl.do("amp"),
 			ControlSpec(0, 1, \lin, 0.01, ~amp, "ms"), //\amp,
 			{ arg ez;
 				~amp = ez.value;

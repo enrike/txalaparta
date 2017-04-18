@@ -37,8 +37,8 @@ TxalaPlankControls {
 		// PLANKS - OHOLAK //////////////////////////////////
 /*		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "TX";
 		StaticText(win, Rect(xloc+22, yloc-18, 200, 20)).string = "ER";*/
-		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = "Planks";
-		StaticText(win, Rect(xloc+70, yloc-16, 200, 20)).string = "% chance";
+		StaticText(win, Rect(xloc, yloc-18, 200, 20)).string = ~txl.do("Planks");
+		StaticText(win, Rect(xloc+70, yloc-16, 200, 20)).string = ~txl.do("% chance");
 
 		/*		if (~buffersATX.isNil, {
 		~buffersATX = Array.fill(8, {nil});

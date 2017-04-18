@@ -548,7 +548,7 @@ TxalaInteractive{
 			.action_({ arg menu;
 				try{ // bacwrds comp
 					~answermode = menu.value.asInt;
-					~txl.do(("changing to answer mode:") + menu.item + menu.value).postln;
+					(~txl.do("changing to answer mode:") + menu.item + menu.value).postln;
 				}{|err|
 					~answermode = 1;
 					menu.value = ~answermode;
