@@ -91,8 +91,9 @@ TxalaCalibration{
 			});
 		);
 
-		yindex = yindex + 1;
 
+/*
+		yindex = yindex + 1;
 		guielements.add(\falltime->
 			EZSlider( win,
 				Rect(20,yloc+(gap*yindex),370,20),
@@ -106,7 +107,7 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.tempo.falltime,
 				labelWidth: labelwidth
-		));
+		));*/
 
 				yindex = yindex + 1;
 
@@ -118,6 +119,7 @@ TxalaCalibration{
 				ControlSpec(0.01, 1, \lin, 0.01, 0.2, "RMS"),
 				{ arg ez;
 					if (parent.txalasilence.isNil.not, {
+						ez.value.asFloat.postln;
 						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
 					});
 					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
@@ -167,22 +169,22 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));
 
-		yindex = yindex + 1;
-
-		guielements.add(\relaxtime->
-			EZSlider( win,
-				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("relaxtime"),
-				ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
-				{ arg ez;
-					if (parent.txalaonset.isNil.not, {
-						parent.txalaonset.synth.set(\relaxtime, ez.value.asFloat);
-					});
-					~listenparemeters.onset.relaxtime = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.relaxtime,
-				labelWidth: labelwidth
-		).round_(0.00001).numberView.maxDecimals_(5) );
+		// yindex = yindex + 1;
+		//
+		// guielements.add(\relaxtime->
+		// 	EZSlider( win,
+		// 		Rect(20,yloc+(gap*yindex),370,20),
+		// 		~txl.do("relaxtime"),
+		// 		ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
+		// 		{ arg ez;
+		// 			if (parent.txalaonset.isNil.not, {
+		// 				parent.txalaonset.synth.set(\relaxtime, ez.value.asFloat);
+		// 			});
+		// 			~listenparemeters.onset.relaxtime = ez.value.asFloat;
+		// 		},
+		// 		initVal: ~listenparemeters.onset.relaxtime,
+		// 		labelWidth: labelwidth
+		// ).round_(0.00001).numberView.maxDecimals_(5) );
 
 		// yindex = yindex + 1;
 		//
@@ -256,12 +258,12 @@ yindex = yindex + 1.5;
 		} ;
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+		//guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
 		guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
 
 		//guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
 		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
-		guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+		//guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
 		//guielements.floor.valueAction = ~listenparemeters.onset.floor;
 		//guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
 

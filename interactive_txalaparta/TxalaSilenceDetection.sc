@@ -56,6 +56,7 @@ TxalaSilenceDetection{
 			);
 			detected = DetectSilence.ar( signal, amp:threshold, time:falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
+			Out.ar(3, signal); // for monitoring
 		}).add;
 
 		{
