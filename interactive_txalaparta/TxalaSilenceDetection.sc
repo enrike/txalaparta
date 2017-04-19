@@ -44,9 +44,17 @@ TxalaSilenceDetection{
 	doAudio {
 		this.kill(); // force
 
-		SynthDef(\txalatempo, {| in=0, gain=1, threshold=0.5, falltime=0.1, checkrate=20 | //thres=0,1
-			var detected;
-			detected = DetectSilence.ar( SoundIn.ar(in)*gain, amp:threshold, time:falltime );
+		SynthDef(\txalatempo, {| in=0, gain=1, threshold=0.5, falltime=0.1, checkrate=20, comp_thres=0.3 |
+			var detected, signal;
+			signal = SoundIn.ar(in)*gain;
+			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
+				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
+				slopeBelow: 1.9, // almost noise gate
+				slopeAbove: 1.1, // >1 to get expansion
+				clampTime: 0.005,
+				relaxTime: 0.01
+			);
+			detected = DetectSilence.ar( signal, amp:threshold, time:falltime );
 			SendReply.kr(Impulse.kr(checkrate), '/txalasil', detected); // collect somewhere else
 		}).add;
 
@@ -57,6 +65,7 @@ TxalaSilenceDetection{
 				\threshold, ~listenparemeters.tempo.threshold,
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
+				\comp_thres, ~listenparemeters.tempo.comp_thres,
 			]);
 		}.defer(0.5);// to make sure the SynthDef is ready to instantiate
 
@@ -83,9 +92,10 @@ TxalaSilenceDetection{
 	groupstart {
 		groupst = SystemClock.seconds;
 		parent.broadcastgroupstarted();
-		if ( (~hutsunelookup > 0) && (compass > 2), {
+		//if ( (~hutsunelookup > 0) && (compass > 2), {
+		if ( (~hutsunelookup == 1) && (compass > 2), {
 			// TO DO: fix false positives
-			hutsunetimeout = groupst + (60/~bpm) + ((60/~bpm) * ~hutsunelookup); // next expected hit should happen before hutsunetimeout
+			hutsunetimeout = groupst + (60/~bpm) + ((60/~bpm) * 0.45);//* ~hutsunelookup); // next expected hit should happen before hutsunetimeout
 		});
 		hitflag = true;
 		compass = compass + 1;

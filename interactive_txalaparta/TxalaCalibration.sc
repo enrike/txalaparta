@@ -32,7 +32,7 @@ TxalaCalibration{
 
 	doGUI {
 		var yindex=0, yloc = 10, gap=20, labelwidth=70; //Array.fill(10, {nil});
-		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 300));
+		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 230));
 		win.onClose = {
 			parent.txalacalibration = nil
 /*			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -108,6 +108,25 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));
 
+				yindex = yindex + 1;
+
+
+		guielements.add(\comp_thres->
+			EZSlider( win,
+				Rect(20,yloc+(gap*yindex),370,20),
+				~txl.do("comp_thres"),
+				ControlSpec(0.01, 1, \lin, 0.01, 0.2, "RMS"),
+				{ arg ez;
+					if (parent.txalasilence.isNil.not, {
+						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
+					});
+					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
+				},
+				initVal: ~listenparemeters.tempo.comp_thres,
+				labelWidth: labelwidth
+		));
+
+		/*
 		yindex = yindex + 1;
 
 		guielements.add(\checkrate->
@@ -123,28 +142,10 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.tempo.checkrate,
 				labelWidth: labelwidth
-		));
+		));*/
 
 		yindex = yindex + 1.5;
 
-		// hutsune timeout control
-		StaticText(win, Rect(5, yloc+(gap*yindex), 380, 25)).string = ~txl.do("Hutsune detection timeout");
-
-		yindex = yindex + 1;
-
-		guielements.add(\hutsunelookup ->
-			EZSlider( win,
-				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("lookup"),
-				ControlSpec(0, 1, \lin, 0.01, 1, ""),
-				{ arg ez;
-					~hutsunelookup = ez.value.asFloat;
-				},
-				initVal: ~hutsunelookup,
-				labelWidth: labelwidth
-		));
-
-		yindex = yindex + 1.5;
 
 		// Onset pattern detection controls //
 		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Hit onset detection");
@@ -183,49 +184,86 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		).round_(0.00001).numberView.maxDecimals_(5) );
 
-		yindex = yindex + 1;
+		// yindex = yindex + 1;
+		//
+		// guielements.add(\floor->
+		// 	EZSlider( win,
+		// 		Rect(20,yloc+(gap*yindex),370,20),
+		// 		~txl.do("floor"),
+		// 		ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
+		// 		{ arg ez;
+		// 			if (parent.txalaonset.isNil.not, {
+		// 				parent.txalaonset.synth.set(\floor, ez.value.asFloat);
+		// 			});
+		// 			~listenparemeters.onset.floor = ez.value.asFloat;
+		// 		},
+		// 		initVal: ~listenparemeters.onset.floor,
+		// 		labelWidth: labelwidth
+		// ).round_(0.00001).numberView.maxDecimals_(5) );
+		//
+		// yindex = yindex + 1;
+		//
+		// guielements.add(\mingap->
+		// 	EZSlider( win,
+		// 		Rect(20,yloc+(gap*yindex),370,20),
+		// 		~txl.do("mingap"),
+		// 		ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
+		// 		{ arg ez;
+		// 			if (parent.txalaonset.isNil.not, {
+		// 				parent.txalaonset.synth.set(\mingap, ez.value.asFloat);
+		// 			});
+		// 			~listenparemeters.onset.mingap = ez.value.asFloat;
+		// 		},
+		// 		initVal: ~listenparemeters.onset.mingap,
+		// 		labelWidth: labelwidth
+		// ));
 
-		guielements.add(\floor->
+yindex = yindex + 1.5;
+
+			// hutsune timeout control
+		//StaticText(win, Rect(5, yloc+(gap*yindex), 380, 25)).string = ~txl.do("Hutsune detection timeout");
+
+		// yindex = yindex + 1;
+
+		/*guielements.add(\hutsunelookup ->
 			EZSlider( win,
 				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("floor"),
-				ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
+				~txl.do("lookup"),
+				ControlSpec(0, 1, \lin, 0.01, 1, ""),
 				{ arg ez;
-					if (parent.txalaonset.isNil.not, {
-						parent.txalaonset.synth.set(\floor, ez.value.asFloat);
-					});
-					~listenparemeters.onset.floor = ez.value.asFloat;
+					~hutsunelookup = ez.value.asFloat;
 				},
-				initVal: ~listenparemeters.onset.floor,
+				initVal: ~hutsunelookup,
 				labelWidth: labelwidth
-		).round_(0.00001).numberView.maxDecimals_(5) );
+		));*/
 
-		yindex = yindex + 1;
+		guielements.add(\hutsunelookup ->
+			Button(win, Rect(20,yloc+(gap*yindex),170,30))
+			.states_([
+				[~txl.do("Hutsune detection timeout"), Color.white, Color.black],
+				[~txl.do("Hutsune detection timeout"), Color.black, Color.green],
+			])
+			.action_({ arg butt;
+				~hutsunelookup = butt.value;
+			})
+		);
 
-		guielements.add(\mingap->
-			EZSlider( win,
-				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("mingap"),
-				ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
-				{ arg ez;
-					if (parent.txalaonset.isNil.not, {
-						parent.txalaonset.synth.set(\mingap, ez.value.asFloat);
-					});
-					~listenparemeters.onset.mingap = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.onset.mingap,
-				labelWidth: labelwidth
-		));
 
-		guielements.hutsunelookup.valueAction = ~hutsunelookup;
+		try {
+			guielements.hutsunelookup.valueAction = ~hutsunelookup;
+		}{|err|
+			"could not set hutsune button value".postln;
+		} ;
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-		guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+		guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
+
+		//guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
 		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
 		guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-		guielements.floor.valueAction = ~listenparemeters.onset.floor;
-		guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+		//guielements.floor.valueAction = ~listenparemeters.onset.floor;
+		//guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
 
 		win.front;
 	}
