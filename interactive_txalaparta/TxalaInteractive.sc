@@ -201,7 +201,7 @@ TxalaInteractive{
 
 		if (lastPattern.isNil.not, {
 			if( (~answer && ~answerpriority), { this.answer() }); // schedule AFTER new group ends
-			if (~autoanswerpriority, { this.doautoanswerpriority() });
+			//if (~autoanswerpriority, { this.doautoanswerpriority() });
 
 			{circleanim.scheduleDraw(drawingSet[0], 0)}.defer; // render red asap
 			patternbank.addpattern(lastPattern); // store into bank in case it wasnt there);

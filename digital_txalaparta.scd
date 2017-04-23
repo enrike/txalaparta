@@ -6,10 +6,7 @@ license: GNU GPL
 https://en.wikipedia.org/wiki/Txalaparta
 
 to do:
-
-- translate GUI (ask SC list)
 - create tutorials
-- package into a standalone (ask SC list)
 
 ATX
 - auto prefs?
