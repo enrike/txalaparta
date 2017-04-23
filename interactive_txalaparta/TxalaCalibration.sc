@@ -109,8 +109,8 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));*/
 
+		/*
 				yindex = yindex + 1;
-
 
 		guielements.add(\comp_thres->
 			EZSlider( win,
@@ -128,7 +128,7 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));
 
-		/*
+
 		yindex = yindex + 1;
 
 		guielements.add(\checkrate->
@@ -259,7 +259,7 @@ yindex = yindex + 1.5;
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 		//guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-		guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
+		//guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
 
 		//guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
 		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;

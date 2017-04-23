@@ -60,11 +60,11 @@ TxalaInteractive{
 		~bpm = 60;
 		~amp = 1;
 		~answer = false;
-		~answerpriority = true; // true if answer on group end (sooner), false if answer from group start (later)
+		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~timedivision = 50; // %
-		~hutsunelookup = 0.4;
+		~hutsunelookup = 1; //0.4;
 		//~gapswing = 0;
 		~latencycorrection = 0.05;
 		~learning = true;
@@ -76,7 +76,7 @@ TxalaInteractive{
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\gain->1);
-		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->20);
+		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->30).add(\comp_thres->0.3);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
 
 		lastPattern = nil;
@@ -480,7 +480,7 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-		Button( win, Rect(145,5,105,25))
+/*		Button( win, Rect(145,5,105,25))
 		.states_([
 			[~txl.do("auto priority"), Color.white, Color.black],
 			[~txl.do("auto priority"), Color.black, Color.green]
@@ -496,7 +496,7 @@ TxalaInteractive{
 		])
 		.action_({ arg but;
 			~answerpriority = but.value.asBoolean;
-		}).valueAction_(~answerpriority);
+		}).valueAction_(~answerpriority);*/
 
 		Button(win,  Rect(250,5,100,25))
 		.states_([
@@ -509,22 +509,22 @@ TxalaInteractive{
 			~txalascore.reset();
 		});
 
-		Button( win, Rect(250,yloc-10,50,25)) //Rect(140,30,70,25))
-		.states_([
-			[~txl.do("scope"), Color.white, Color.black],
-		])
-		.action_({ arg but;
-			if (scopesynth.isNil, {
-				SynthDef(\test, { |in=0, gain=1, out=25|
-					Out.ar(out, SoundIn.ar(in)*gain);
-				}).add;
-				{ scopesynth = Synth(\test) }.defer(0.5);
-			});
-			server.scope(1,25);//bus 25 from the txalaonset synth
-		});
+		// Button( win, Rect(250,yloc-10,50,25)) //Rect(140,30,70,25))
+		// .states_([
+		// 	[~txl.do("scope"), Color.white, Color.black],
+		// ])
+		// .action_({ arg but;
+		// 	if (scopesynth.isNil, {
+		// 		SynthDef(\test, { |in=0, gain=1, out=25|
+		// 			Out.ar(out, SoundIn.ar(in)*gain);
+		// 		}).add;
+		// 		{ scopesynth = Synth(\test) }.defer(0.5);
+		// 	});
+		// 	server.scope(1,25);//bus 25 from the txalaonset synth
+		// });
 
 
-		Button( win, Rect(300,yloc-10,50,25)) //Rect(140,30,70,25))
+		Button( win, Rect(250,yloc-10,100,25)) //Rect(140,30,70,25))
 		.states_([
 			[~txl.do("meter"), Color.white, Color.black],
 		])
@@ -699,7 +699,11 @@ TxalaInteractive{
 				~listenparemeters = data[\listenparemeters];
 
 				if (txalacalibration.isNil.not, {
-					txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
+					try {
+						txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
+					}{|err|
+						"could not set hutsune value".postln;
+					} ;
 
 					try {
 						txalacalibration.guielements.gain.valueAction = ~listenparemeters.gain
@@ -708,12 +712,17 @@ TxalaInteractive{
 					} ;
 
 					txalacalibration.guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
-					txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
-					txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					//txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
+					//txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					/*try {
+						txalacalibration.guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
+					}{|err|
+						"could not set comp_thres value".postln;
+					} ;*/
 					txalacalibration.guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
-					txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
-					txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
-					txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
+					//txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
+					//txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
+					//txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
 				});
 			});
 		});
