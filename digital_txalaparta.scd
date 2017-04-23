@@ -29,6 +29,8 @@ ITX
 (
 var dir = thisProcess.nowExecutingPath.dirname, ti, ta, lang;
 
+dir.postln;
+
 lang = Object.readArchive(dir ++ "/" ++ "prefs.preset")[\lang];
 ~txl = TxalaLang.new(lang); // 0 eng, 1 es, 2 eu
 
@@ -84,7 +86,7 @@ w.onClose = {
 	AppClock.clear;
 	SystemClock.clear;
 	s.quit;
-	//0.exit; //quits the lang for standalone. is it posible to only trigger on standalone?
+	if (dir.find("xalaparta").isNil.not, {0.exit}); //quits the lang when standalone
 };
 w.userCanClose = False;
 s.boot;
