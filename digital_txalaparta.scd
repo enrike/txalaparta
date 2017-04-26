@@ -83,7 +83,7 @@ w.onClose = {
 	AppClock.clear;
 	SystemClock.clear;
 	s.quit;
-	if (dir.find("xalaparta").isNil.not, {0.exit}); //quits the lang when standalone
+	if (dir.find("collider").isNil, {0.exit}); //should quit the lang ONLY when standalone
 };
 w.userCanClose = False;
 s.boot;
