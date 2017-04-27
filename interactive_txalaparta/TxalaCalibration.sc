@@ -14,15 +14,16 @@ g.widgets.do{|x| if(x.isKindOf(EZSlider), {x.round= 0.00001; x.numberView.maxDec
 
 TxalaCalibration{
 
-	var win, parent, <>guielements;
+	var win, parent, <>guielements, basepath;
 
 
-	*new { |parent|
-		^super.new.initTxalaCalibration(parent);
+	*new { |parent, basepath|
+		^super.new.initTxalaCalibration(parent, basepath);
 	}
 
-	initTxalaCalibration { |aparent|
+	initTxalaCalibration { |aparent, abasepath|
 		parent = aparent;
+		basepath = abasepath;
 		this.doGUI();
 	}
 
@@ -32,14 +33,15 @@ TxalaCalibration{
 
 	doGUI {
 		var yindex=0, yloc = 10, gap=20, labelwidth=70; //Array.fill(10, {nil});
-		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 230));
+		var newpreset, popup, presetslisten;
+		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 330));
 		win.onClose = {
-			parent.txalacalibration = nil
-/*			if (txalasilence.isNil.not, {txalasilence.kill()});
-			if (txalaonset.isNil.not, {txalaonset.kill()});
-			if (~txalascore.isNil.not, {~txalascore.close});
-			scopesynth.free;
-			scope.free;*/
+			parent.txalacalibration = nil;
+			//if (txalasilence.isNil.not, {txalasilence.kill()});
+			//if (txalaonset.isNil.not, {txalaonset.kill()});
+			//if (~txalascore.isNil.not, {~txalascore.close});
+			//scopesynth.free;
+			//scope.free;
 		};
 
 		if ( (~txl.lang==1), { labelwidth = 100 });//ES
@@ -92,7 +94,7 @@ TxalaCalibration{
 		);
 
 
-/*
+
 		yindex = yindex + 1;
 		guielements.add(\falltime->
 			EZSlider( win,
@@ -107,9 +109,9 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.tempo.falltime,
 				labelWidth: labelwidth
-		));*/
+		));
 
-		/*
+
 				yindex = yindex + 1;
 
 		guielements.add(\comp_thres->
@@ -144,7 +146,7 @@ TxalaCalibration{
 				},
 				initVal: ~listenparemeters.tempo.checkrate,
 				labelWidth: labelwidth
-		));*/
+		));
 
 		yindex = yindex + 1.5;
 
@@ -169,56 +171,56 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));
 
-		// yindex = yindex + 1;
-		//
-		// guielements.add(\relaxtime->
-		// 	EZSlider( win,
-		// 		Rect(20,yloc+(gap*yindex),370,20),
-		// 		~txl.do("relaxtime"),
-		// 		ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
-		// 		{ arg ez;
-		// 			if (parent.txalaonset.isNil.not, {
-		// 				parent.txalaonset.synth.set(\relaxtime, ez.value.asFloat);
-		// 			});
-		// 			~listenparemeters.onset.relaxtime = ez.value.asFloat;
-		// 		},
-		// 		initVal: ~listenparemeters.onset.relaxtime,
-		// 		labelWidth: labelwidth
-		// ).round_(0.00001).numberView.maxDecimals_(5) );
+		 yindex = yindex + 1;
 
-		// yindex = yindex + 1;
-		//
-		// guielements.add(\floor->
-		// 	EZSlider( win,
-		// 		Rect(20,yloc+(gap*yindex),370,20),
-		// 		~txl.do("floor"),
-		// 		ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
-		// 		{ arg ez;
-		// 			if (parent.txalaonset.isNil.not, {
-		// 				parent.txalaonset.synth.set(\floor, ez.value.asFloat);
-		// 			});
-		// 			~listenparemeters.onset.floor = ez.value.asFloat;
-		// 		},
-		// 		initVal: ~listenparemeters.onset.floor,
-		// 		labelWidth: labelwidth
-		// ).round_(0.00001).numberView.maxDecimals_(5) );
-		//
-		// yindex = yindex + 1;
-		//
-		// guielements.add(\mingap->
-		// 	EZSlider( win,
-		// 		Rect(20,yloc+(gap*yindex),370,20),
-		// 		~txl.do("mingap"),
-		// 		ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
-		// 		{ arg ez;
-		// 			if (parent.txalaonset.isNil.not, {
-		// 				parent.txalaonset.synth.set(\mingap, ez.value.asFloat);
-		// 			});
-		// 			~listenparemeters.onset.mingap = ez.value.asFloat;
-		// 		},
-		// 		initVal: ~listenparemeters.onset.mingap,
-		// 		labelWidth: labelwidth
-		// ));
+		 guielements.add(\relaxtime->
+		 	EZSlider( win,
+		 		Rect(20,yloc+(gap*yindex),370,20),
+		 		~txl.do("relaxtime"),
+		 		ControlSpec(0.0001, 0.5, \lin, 0.0001, 0.05, "ms"),
+		 		{ arg ez;
+		 			if (parent.txalaonset.isNil.not, {
+		 				parent.txalaonset.synth.set(\relaxtime, ez.value.asFloat);
+		 			});
+		 			~listenparemeters.onset.relaxtime = ez.value.asFloat;
+		 		},
+		 		initVal: ~listenparemeters.onset.relaxtime,
+		 		labelWidth: labelwidth
+		 ).round_(0.00001).numberView.maxDecimals_(5) );
+
+		 yindex = yindex + 1;
+
+		 guielements.add(\floor->
+		 	EZSlider( win,
+		 		Rect(20,yloc+(gap*yindex),370,20),
+		 		~txl.do("floor"),
+		 		ControlSpec(0.001, 5, \lin, 0.001, 0.1, "Ms"),
+		 		{ arg ez;
+		 			if (parent.txalaonset.isNil.not, {
+		 				parent.txalaonset.synth.set(\floor, ez.value.asFloat);
+		 			});
+		 			~listenparemeters.onset.floor = ez.value.asFloat;
+		 		},
+		 		initVal: ~listenparemeters.onset.floor,
+		 		labelWidth: labelwidth
+		 ).round_(0.00001).numberView.maxDecimals_(5) );
+
+		 yindex = yindex + 1;
+
+		 guielements.add(\mingap->
+		 	EZSlider( win,
+		 		Rect(20,yloc+(gap*yindex),370,20),
+		 		~txl.do("mingap"),
+		 		ControlSpec(1, 128, \lin, 1, 1, "FFT frames"),
+		 		{ arg ez;
+		 			if (parent.txalaonset.isNil.not, {
+		 				parent.txalaonset.synth.set(\mingap, ez.value.asFloat);
+		 			});
+		 			~listenparemeters.onset.mingap = ez.value.asFloat;
+		 		},
+		 		initVal: ~listenparemeters.onset.mingap,
+		 		labelWidth: labelwidth
+		 ));
 
 yindex = yindex + 1.5;
 
@@ -237,7 +239,7 @@ yindex = yindex + 1.5;
 				},
 				initVal: ~hutsunelookup,
 				labelWidth: labelwidth
-		));*/
+		));
 
 		guielements.add(\hutsunelookup ->
 			Button(win, Rect(20,yloc+(gap*yindex),170,30))
@@ -248,24 +250,106 @@ yindex = yindex + 1.5;
 			.action_({ arg butt;
 				~hutsunelookup = butt.value;
 			})
-		);
+		);*/
 
 
-		try {
+
+		/*try {
 			guielements.hutsunelookup.valueAction = ~hutsunelookup;
 		}{|err|
 			"could not set hutsune button value".postln;
-		} ;
+		} ;*/
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-		//guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
-		//guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
+		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
+		guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
 
-		//guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+		guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
 		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
-		//guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-		//guielements.floor.valueAction = ~listenparemeters.onset.floor;
-		//guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+		guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
+		guielements.floor.valueAction = ~listenparemeters.onset.floor;
+		guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
+
+
+
+		StaticText(win, Rect(5, yloc+(gap*yindex), 170, 20)).string = ~txl.do("Calibration manager");
+
+		yindex = yindex + 1;
+
+		popup = PopUpMenu(win,Rect(5,yloc+(gap*yindex),170,20))
+		.items_( parent.updatepresetfiles("presets_listen") )
+		.mouseDownAction_( {arg menu;
+			presetslisten = parent.updatepresetfiles("presets_listen");
+			menu.items = presetslisten;
+		} )
+		.action_({ arg menu;
+			var data;
+			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
+			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
+
+			if (data.isNil.not, {
+
+				~hutsunelookup = data[\hutsunelookup];
+				~listenparemeters = data[\listenparemeters];
+
+				//if (parent.txalacalibration.isNil.not, {
+					try {
+						guielements.hutsunelookup.valueAction = ~hutsunelookup;
+					}{|err|
+						"could not set hutsune value".postln;
+					} ;
+
+					try {
+						guielements.gain.valueAction = ~listenparemeters.gain
+					}{|err|
+						"could not set gain value".postln;
+					} ;
+
+					guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
+					//txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
+					//txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					/*try {
+						txalacalibration.guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
+					}{|err|
+						"could not set comp_thres value".postln;
+					} ;*/
+					guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
+					//txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
+					//txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
+					//txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
+				//});
+			});
+		});
+
+		yindex = yindex + 1;
+
+		popup.mouseDown;// force creating the menu list
+		try{ // AUTO load first preset
+			popup.valueAction_(1);
+		}{ |error|
+			"no predefined listen preset to be loaded".postln;
+			error.postln;
+		};
+
+		newpreset = TextField(win, Rect(5, yloc+(gap*yindex), 95, 25));
+		Button(win, Rect(105,yloc+(gap*yindex),70,25))
+		.states_([
+			[~txl.do("save"), Color.white, Color.grey]
+		])
+		.action_({ arg butt;
+			var filename, data;
+			if (newpreset.string == "",
+				{filename = Date.getDate.stamp++".preset"},
+				{filename = newpreset.string++".preset"}
+			);
+
+			data = Dictionary.new;
+			data.put(\listenparemeters, ~listenparemeters);
+			data.put(\hutsunelookup, ~hutsunelookup);
+			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
+
+			newpreset.string = ""; //clean field
+		});
 
 		win.front;
 	}

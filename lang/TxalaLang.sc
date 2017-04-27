@@ -1,10 +1,11 @@
+
+
+
 /* TxalaLang. translation set for txalaparta supercollider GUIs
 t = TxalaLang.new
 t.lang = 2
 t.do("sndpath is").postln
 */
-
-
 
 
 TxalaLang{
@@ -56,25 +57,25 @@ TxalaLang{
 	["listen","escucha", "entzun"],
 	["answer","responde", "erantzun"],
 	["auto priority","auto prioridad", "autolehentasuna"],
-	["priority","proridad", "lehentasuna"],
+	["priority","prioridad", "lehentasuna"],
 	["show score","linea de tiempo", "denbora-lerroa"],
 	["scope","scope", "scope"],
 	["meter","niveles", "mailak"],
 	["Answer mode","Modo de respuesta", "Erantzuteko modua"],
-	["imitation","imitacion", "kopiatu"],
-	["percentage","porcentage", "ehunekoa"],
+	["imitation","imitación", "kopiatu"],
+	["percentage","porcentaje", "ehunekoa"],
 	["learning 1","aprende 1", "ikasten 1"],
 	["learning 2","aprende 2", "ikasten 2"],
 	["learning 4","aprende 4", "ikasten 4"],
 	["changing to answer mode:","cambiando modo de respuesta:", "erantzuteko modua aldatzen"],
-	["lick from memory","menoria", "memoriatik"],
+	["lick from memory","memoria", "memoriatik"],
 	["volume","volumen", "bolumena"],
-	["swing","variacion", "bariazioa"],
+	["swing","variación", "bariazioa"],
 	["latency","latencia", "latentzia"],
 	["HIT","GOLPE", "KOLPEA"],
 	["PHRASE","FRASE", "ESALDIA"],
 	["GAP","VACIO", "HUTSUNEA"],
-	["Calibration manager","Control de calibracion", "Kalibrazio-kontrola"],
+	["Calibration manager","Control de calibración", "Kalibrazio-kontrola"],
 	["edit","editar", "editatu"],
 	["could not set gain value","no he podido asignar el valor de gain", "ezin izan dut gain balioa esleitu"],
 	["no predefined listen preset to be loaded","no hay un preset de escucha predeterminado", "ez dago entzuteko aurrez zehaztutako preset-ik"],
@@ -82,9 +83,9 @@ TxalaLang{
 	["Memory manager","Control de memorias", "Memorien kontrola"],
 	["learn","aprende", "ikasi"],
 	["reset","resetear", "egin reset"],
-	["imitation mode has no memory to reset","modo de imitacion no tiene memoria que resetear", "imitazio-moduak ez du memoriarik reset egiteko"],
+	["imitation mode has no memory to reset","modo de imitación no tiene memoria que resetear", "imitazio-moduak ez du memoriarik reset egiteko"],
 	["trying to load...","intentando cargar...", "kargatzeko saiakera…"],
-	["imitation mode cannot load memory","modo de imitacion no puede cargar en memoria", "imitazio-moduak ezin du memorian kargatu"],
+	["imitation mode cannot load memory","modo de imitación no puede cargar en memoria", "imitazio-moduak ezin du memorian kargatu"],
 	["Chroma manager","Control de chroma", "Chromaren kontrola"],
 	["chromagram data cleared","info de chroma borrada", "Chromaren informazioa ezabatu da"],
 	["loading...","cargando...", "kargatzen"],
@@ -94,17 +95,17 @@ TxalaLang{
 	["no predefined plank preset to be loaded","no hay un preset de tablas predefinido", "ez dago aurrez zehaztutako taulen presetik"],
 	["active planks are","las tablas activas son", "aktibatuta dauden oholak"],
 	["curPattern is NIL!!","curPattern es NIL!!","curPattern NIL da!!"],
-	["storing hit data","guardado informacion de los golpes","kolpeen informazioa gordetzen"],
+	["storing hit data","guardado información de los golpes","kolpeen informazioa gordetzen"],
 	["reseting Markov Chain states","reseteando estados de cadenas de Markov","Markoven kateen egoeren reset egiten"],
-	["cannot load memory file beause it does not match current answer system","",""],
-	["Input calibration","Calibracion","Kalibrazioa"],
-	["gain in","entrada","sarrera"],
-	["Tempo detection","Deteccion de tempo","Tempoa hautematen"],
+	["cannot load memory file beause it does not match current answer system","archivo no valido","artxiboak ez du balio"],
+	["Input calibration","Calibración","Kalibrazioa"],
+	["gain in","vol. entrada","sarrera bol."],
+	["Tempo detection","Detección de tempo","Tempoa hautematen"],
 	["falltime","tiempo de caida","erortzeko denbora"],
 	["rate","frecuencia","maiztasuna"],
-	["Hutsune detection timeout","Tiempo limite de deteccion de hutsunes","Hutsuneak hautemateko gehieneko denbora"],
+	["detect hutsune","detectar hutsunes","hutsuneak hauteman"],
 	["lookup","adelanto","aurrerapena"],
-	["Hit onset detection","Deteccion de golpes","Kolpeak hautematea"],
+	["Hit onset detection","Detección de golpes","Kolpeak hautematea"],
 	["threshold","limite","muga"],
 	["relaxtime","tiempo de relax","relax-aldia"],
 	["floor","suelo","lurra"],
@@ -129,7 +130,7 @@ TxalaLang{
 	["amp","vol","bolumena"],
 	//
 	["show score", "abre score", "ireki scorea"],
-	["show animation", "abre animacion", "ireki animazioa"],
+	["show animation", "abre animación", "ireki animazioa"],
 	["Hits", "Golpes", "Kolpeak"],
 	["% chance", "% ", "% aukera"],
 	["play", "play", "jo"],
@@ -146,7 +147,7 @@ TxalaLang{
 	["Timeline", "Linea tiempo", "Debora marra"],
 			// param win
 			["Control", "Control", "Kontrola"],
-			["Duration", "Duracion", "Iraupena"],
+			["Duration", "Duración", "Iraupena"],
 			["play/pause", "play/pause", "jo/gelditu"],
 		]
 

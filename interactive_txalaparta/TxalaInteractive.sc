@@ -445,7 +445,7 @@ TxalaInteractive{
 
 		guielements = ();// to later restore from preferences
 
-		win = Window(~txl.do("Interactive txalaparta by www.ixi-audio.net"),  Rect(5, 5, 640, 380));
+		win = Window(~txl.do("Interactive txalaparta by www.ixi-audio.net"),  Rect(5, 5, 640, 430));
 		win.onClose = {
 			this.saveprefsauto();
 			if (txalasilence.isNil.not, {txalasilence.kill()});
@@ -459,7 +459,7 @@ TxalaInteractive{
 
 		// row of buttons on top side
 
-		Button( win, Rect(5,5,140,38))
+		Button( win, Rect(5,5,160,38))
 		.states_([
 			[~txl.do("listen"), Color.white, Color.black],
 			[~txl.do("listen"), Color.black, Color.green],
@@ -471,7 +471,7 @@ TxalaInteractive{
 				this.stop();
 			})
 		});
-		Button( win, Rect(5,yloc+3,140,38))
+		Button( win, Rect(5,yloc+3,160,38))
 		.states_([
 			[~txl.do("answer"), Color.white, Color.black],
 			[~txl.do("answer"), Color.black, Color.green],
@@ -480,25 +480,9 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
-/*		Button( win, Rect(145,5,105,25))
-		.states_([
-			[~txl.do("auto priority"), Color.white, Color.black],
-			[~txl.do("auto priority"), Color.black, Color.green]
-		])
-		.action_({ arg but;
-			~autoanswerpriority = but.value.asBoolean;
-		}).valueAction_(~autoanswerpriority);
 
-		prioritybutton = Button( win, Rect(145,yloc-10,105,25))
-		.states_([
-			[~txl.do("priority"), Color.white, Color.black],
-			[~txl.do("priority"), Color.black, Color.green]
-		])
-		.action_({ arg but;
-			~answerpriority = but.value.asBoolean;
-		}).valueAction_(~answerpriority);*/
 
-		Button(win,  Rect(250,5,100,25))
+		Button(win,  Rect(225,5,115,38))
 		.states_([
 			[~txl.do("show score"), Color.white, Color.black],
 		])
@@ -509,27 +493,12 @@ TxalaInteractive{
 			~txalascore.reset();
 		});
 
-		// Button( win, Rect(250,yloc-10,50,25)) //Rect(140,30,70,25))
-		// .states_([
-		// 	[~txl.do("scope"), Color.white, Color.black],
-		// ])
-		// .action_({ arg but;
-		// 	if (scopesynth.isNil, {
-		// 		SynthDef(\test, { |in=0, gain=1, out=25|
-		// 			Out.ar(out, SoundIn.ar(in)*gain);
-		// 		}).add;
-		// 		{ scopesynth = Synth(\test) }.defer(0.5);
-		// 	});
-		// 	server.scope(1,25);//bus 25 from the txalaonset synth
-		// });
-
-
-		Button( win, Rect(250,yloc-10,100,25)) //Rect(140,30,70,25))
+		Button(win,  Rect(225,yloc+3,115,38))
 		.states_([
-			[~txl.do("meter"), Color.white, Color.black],
+			[~txl.do("calibration"), Color.white, Color.black],
 		])
-		.action_({ arg but;
-			server.meter(1,1);
+		.action_({ arg butt;
+			txalacalibration = TxalaCalibration.new(this, basepath);
 		});
 
 		yindex = yindex + 2.3;
@@ -594,25 +563,29 @@ TxalaInteractive{
 			initVal: ~latencycorrection,
 		));
 
-		/*yindex = yindex + 1;
-
-		guielements.add(\timedivision-> EZSlider( win,
-			Rect(0,yloc+(gap*yindex),350,20),
-			~txl.do("time /"),
-			ControlSpec(0, 100, \lin, 5, 0, ""),
-			{ arg ez;
-				~timedivision = ez.value.asFloat;
-			},
-			initVal: ~timedivision,
-		));*/
-
 		yindex = yindex + 1.5;
 
-		this.doCalibrationPresets(win, 7, yloc+(gap*yindex), guielements);
-		this.doMatrixGUI(win, 180, yloc+(gap*yindex));
+
+		Button(win, Rect(10,160,130,35))
+			.states_([
+				[~txl.do("detect hutsune"), Color.white, Color.black],
+				[~txl.do("detect hutsune"), Color.black, Color.green],
+			])
+			.action_({ arg butt;
+				~hutsunelookup = butt.value;
+			});
+
+
+
+		ServerMeterView(server, win, 10@200, 2, 2); // IN/OUT METERS
+
+		this.doMatrixGUI(win, 165, yloc+(gap*yindex));
 		yindex = yindex + 5;
-		this.doChromaGUI(win, 7, yloc+(gap*yindex));
-		this.doPlanksSetGUI(win, 180, yloc+(gap*yindex));
+		this.doChromaGUI(win, 165, yloc+(gap*yindex));
+
+		yindex = yindex + 5;
+
+		this.doPlanksSetGUI(win, 165, yloc+(gap*yindex));
 
 		// feedback area
 		circleanim = TxalaCircle.new(win, 450, 100, 200);
@@ -667,94 +640,6 @@ TxalaInteractive{
 		});
 		names = names.insert(0, "---");
 		^names;
-	}
-
-	doCalibrationPresets { arg win, xloc, yloc, guielements;
-		var newpreset, popup;
-
-		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Calibration manager");
-
-		Button(win,  Rect(xloc,yloc+20,80,25))
-		.states_([
-			[~txl.do("edit"), Color.white, Color.grey],
-		])
-		.action_({ arg butt;
-			txalacalibration = TxalaCalibration.new(this);
-		});
-
-		popup = PopUpMenu(win,Rect(xloc,yloc+47,170,20))
-		.items_( this.updatepresetfiles("presets_listen") )
-		.mouseDownAction_( {arg menu;
-			presetslisten = this.updatepresetfiles("presets_listen");
-			menu.items = presetslisten;
-		} )
-		.action_({ arg menu;
-			var data;
-			("loading..." + basepath ++ "/presets_listen/" ++ menu.item).postln;
-			data = Object.readArchive(basepath ++ "/presets_listen/" ++ menu.item);
-
-			if (data.isNil.not, {
-
-				~hutsunelookup = data[\hutsunelookup];
-				~listenparemeters = data[\listenparemeters];
-
-				if (txalacalibration.isNil.not, {
-					try {
-						txalacalibration.guielements.hutsunelookup.valueAction = ~hutsunelookup;
-					}{|err|
-						"could not set hutsune value".postln;
-					} ;
-
-					try {
-						txalacalibration.guielements.gain.valueAction = ~listenparemeters.gain
-					}{|err|
-						"could not set gain value".postln;
-					} ;
-
-					txalacalibration.guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
-					//txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
-					//txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
-					/*try {
-						txalacalibration.guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
-					}{|err|
-						"could not set comp_thres value".postln;
-					} ;*/
-					txalacalibration.guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
-					//txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
-					//txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
-					//txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
-				});
-			});
-		});
-
-		popup.mouseDown;// force creating the menu list
-		try{ // AUTO load first preset
-			popup.valueAction_(1);
-		}{ |error|
-			"no predefined listen preset to be loaded".postln;
-			error.postln;
-		};
-
-		newpreset = TextField(win, Rect(xloc, yloc+70, 95, 25));
-		Button(win, Rect(xloc+100,yloc+70,70,25))
-		.states_([
-			[~txl.do("save"), Color.white, Color.grey]
-		])
-		.action_({ arg butt;
-			var filename, data;
-			if (newpreset.string == "",
-				{filename = Date.getDate.stamp++".preset"},
-				{filename = newpreset.string++".preset"}
-			);
-
-			data = Dictionary.new;
-			data.put(\listenparemeters, ~listenparemeters);
-			data.put(\hutsunelookup, ~hutsunelookup);
-			data.writeArchive(basepath ++ "/presets_listen/" ++ filename);
-
-			newpreset.string = ""; //clean field
-		});
-
 	}
 
 	doMatrixGUI { arg win, xloc, yloc, guielements;

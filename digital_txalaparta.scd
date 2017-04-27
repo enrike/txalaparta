@@ -26,14 +26,16 @@ ITX
 (
 var dir = thisProcess.nowExecutingPath.dirname, ti, ta, lang;
 
-dir.postln;
-
 lang = Object.readArchive(dir ++ "/" ++ "prefs.preset")[\lang];
 ~txl = TxalaLang.new(lang); // 0 eng, 1 es, 2 eu
 
+o = Server.local.options;
+o.numOutputBusChannels = 2;
+o.numInputBusChannels = 2;
+
 /////
 
-w = Window.new (~txl.do("Digital Txalaparta"), Rect(100, 100 , 300, 200));
+w = Window.new (~txl.do("Digital Txalaparta"), Rect(100, 100 , 300, 220));
 
 Button(w, Rect(10,50,200,25))
 .states_([
