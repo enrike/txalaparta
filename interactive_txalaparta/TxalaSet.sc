@@ -53,24 +53,40 @@ TxalaSet{
 		}).add;
 
 		// look for onsets
-		SynthDef(\tx_onset_listener, { arg in=0, thresh = 0.2, relaxtime = 1;
-			var sig = SoundIn.ar(in);
-			var loc = LocalBuf(1024, 1) ;
-			var chain = FFT(loc, sig);
+		SynthDef(\tx_onset_listener, { arg in=0, thresh = 0.2, relaxtime = 1, comp_thres=0.3;
+			var loc,chain, signal;
+			signal = SoundIn.ar(in);
+			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
+				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
+				slopeBelow: 1.9, // almost noise gate
+				slopeAbove: 1.1, // >1 to get expansion
+				clampTime: 0.005,
+				relaxTime: 0.01
+			);
+			loc = LocalBuf(1024, 1) ;
+			chain = FFT(loc, signal);
 			SendTrig.kr(Onsets.kr(chain, thresh, relaxtime:relaxtime), 999, Loudness.kr(chain));
 		}).add ;
 
 		// detect silences
-		SynthDef(\tx_silence_detection, { arg in=0, amp=0.005;
-			SendTrig.kr(A2K.kr(DetectSilence.ar(SoundIn.ar(in), amp:amp)), 111, 0);
+		SynthDef(\tx_silence_detection, { arg in=0, amp=0.005, comp_thres=0.3;
+			var signal = SoundIn.ar(in);
+			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
+				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
+				slopeBelow: 1.9, // almost noise gate
+				slopeAbove: 1.1, // >1 to get expansion
+				clampTime: 0.005,
+				relaxTime: 0.01
+			);
+			SendTrig.kr(A2K.kr(DetectSilence.ar(signal, amp:amp)), 111, 0);
 		}).add ;
 
 		this.doGUI();
 
 		{
 			// listens for hits. wait until synths are ready
-			onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in,\threshold, ~listenparemeters.onset.threshold]) ;
-			silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold]);
+			onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in,\threshold, ~listenparemeters.onset.threshold, \comp_thres, ~listenparemeters.tempo.comp_thres]) ;
+			silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold, \comp_thres, ~listenparemeters.tempo.comp_thres]);
 			// two responders
 			respOSC = OSCFunc({ arg msg, time; //ATTACK
 				if (msg[2] == 999){
