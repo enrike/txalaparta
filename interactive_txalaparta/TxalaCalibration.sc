@@ -293,11 +293,11 @@ yindex = yindex + 1.5;
 				~listenparemeters = data[\listenparemeters];
 
 				//if (parent.txalacalibration.isNil.not, {
-					try {
+					/*try {
 						guielements.hutsunelookup.valueAction = ~hutsunelookup;
 					}{|err|
 						"could not set hutsune value".postln;
-					} ;
+					} ;*/
 
 					try {
 						guielements.gain.valueAction = ~listenparemeters.gain
@@ -306,17 +306,17 @@ yindex = yindex + 1.5;
 					} ;
 
 					guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
-					//txalacalibration.guielements.falltime.value = ~listenparemeters.tempo.falltime;
-					//txalacalibration.guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
-					/*try {
-						txalacalibration.guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
+					guielements.falltime.value = ~listenparemeters.tempo.falltime;
+					guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					try {
+						guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
 					}{|err|
 						"could not set comp_thres value".postln;
-					} ;*/
+					} ;
 					guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
-					//txalacalibration.guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
-					//txalacalibration.guielements.floor.value = ~listenparemeters.onset.floor;
-					//txalacalibration.guielements.mingap.value = ~listenparemeters.onset.mingap;
+					guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
+					guielements.floor.value = ~listenparemeters.onset.floor;
+					guielements.mingap.value = ~listenparemeters.onset.mingap;
 				//});
 			});
 		});
