@@ -7,7 +7,7 @@ p = [
 	0, [ array: o[1],  size: 1 ],  
 	// Array
 	1, [ nil,  nil,  nil,  nil,  
-		'lang',  1,  nil,  nil,  
+		'lang',  2,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
