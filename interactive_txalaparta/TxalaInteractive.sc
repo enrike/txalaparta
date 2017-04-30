@@ -76,8 +76,8 @@ TxalaInteractive{
 
 		// this is to keep all the values of the listening synths in one place
 		~listenparemeters = ().add(\in->0).add(\gain->1);
-		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.1).add(\checkrate->30).add(\comp_thres->0.3);
-		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.1).add(\mingap->1);
+		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.18).add(\checkrate->30).add(\comp_thres->0.3);
+		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
 
 		lastPattern = nil;
 		phrasemode = 0; // make up a new phrase or imitate a stored one?
@@ -126,7 +126,7 @@ TxalaInteractive{
 		if (data.isNil.not, {
 			~latencycorrection = data[\latencycorrection];
 			~amp = data[\amp];
-			//~gapswing = data[\gapswing];
+			~hutsunelookup = data[\hutsune];
 			~answermode = data[\answermode];
 			~learning = data[\learning];
 			~timedivision = data[\timedivision];
@@ -139,7 +139,7 @@ TxalaInteractive{
 		data = Dictionary.new;
 
 		data.put(\amp, ~amp);
-		//data.put(\gapswing, ~gapswing);
+		data.put(\hutsune, ~hutsunelookup);
 		data.put(\answermode, ~answermode);
 		data.put(\latencycorrection, ~latencycorrection);
 		data.put(\timedivision, ~timedivision);

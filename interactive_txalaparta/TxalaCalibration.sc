@@ -2,12 +2,7 @@
 // by www.ixi-audio.net
 
 /*
-TxalaCalibration.new()
-
-estimatedControlStep.decimalStrings(precision)
-
-numberbox.minDecimals
-g.widgets.do{|x| if(x.isKindOf(EZSlider), {x.round= 0.00001; x.numberView.maxDecimals= 5})}
+TxalaCalibration.new(awindow, apath)
 */
 
 
@@ -37,11 +32,6 @@ TxalaCalibration{
 		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 330));
 		win.onClose = {
 			parent.txalacalibration = nil;
-			//if (txalasilence.isNil.not, {txalasilence.kill()});
-			//if (txalaonset.isNil.not, {txalaonset.kill()});
-			//if (~txalascore.isNil.not, {~txalascore.close});
-			//scopesynth.free;
-			//scope.free;
 		};
 
 		if ( (~txl.lang==1), { labelwidth = 100 });//ES
@@ -93,9 +83,8 @@ TxalaCalibration{
 			});
 		);
 
-
-
 		yindex = yindex + 1;
+
 		guielements.add(\falltime->
 			EZSlider( win,
 				Rect(20,yloc+(gap*yindex),370,20),
@@ -111,8 +100,7 @@ TxalaCalibration{
 				labelWidth: labelwidth
 		));
 
-
-				yindex = yindex + 1;
+		yindex = yindex + 1;
 
 		guielements.add(\comp_thres->
 			EZSlider( win,
@@ -224,41 +212,6 @@ TxalaCalibration{
 
 yindex = yindex + 1.5;
 
-			// hutsune timeout control
-		//StaticText(win, Rect(5, yloc+(gap*yindex), 380, 25)).string = ~txl.do("Hutsune detection timeout");
-
-		// yindex = yindex + 1;
-
-		/*guielements.add(\hutsunelookup ->
-			EZSlider( win,
-				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("lookup"),
-				ControlSpec(0, 1, \lin, 0.01, 1, ""),
-				{ arg ez;
-					~hutsunelookup = ez.value.asFloat;
-				},
-				initVal: ~hutsunelookup,
-				labelWidth: labelwidth
-		));
-
-		guielements.add(\hutsunelookup ->
-			Button(win, Rect(20,yloc+(gap*yindex),170,30))
-			.states_([
-				[~txl.do("Hutsune detection timeout"), Color.white, Color.black],
-				[~txl.do("Hutsune detection timeout"), Color.black, Color.green],
-			])
-			.action_({ arg butt;
-				~hutsunelookup = butt.value;
-			})
-		);*/
-
-
-
-		/*try {
-			guielements.hutsunelookup.valueAction = ~hutsunelookup;
-		}{|err|
-			"could not set hutsune button value".postln;
-		} ;*/
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
