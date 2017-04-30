@@ -42,7 +42,7 @@ TxalaLang{
 	loadst {
 		strings = [
 			["Digital Txalaparta", "Txalaparta Digital", "Txalaparta Digitala"],
-			["About", "Info", "Honi buruz"],
+			["About / Help", "Info / Ayuda", "Honi buruz / Laguntza"],
 			["Interactive Txalaparta", "Txalaparta Interactiva", "Txalaparta Interaktiboa"],
 	["clear","borrar", "garbitu"],
 	["sndpath is","sndpath es", "sndpath da"],
@@ -76,7 +76,7 @@ TxalaLang{
 	["PHRASE","FRASE", "ESALDIA"],
 	["GAP","VACIO", "HUTSUNEA"],
 	["Calibration manager","Control de calibración", "Kalibrazio-kontrola"],
-	["Calibration","Calibración", "Kalibrazioa"],
+	["calibration","calibración", "kalibrazioa"],
 	["edit","editar", "editatu"],
 	["could not set gain value","no he podido asignar el valor de gain", "ezin izan dut gain balioa esleitu"],
 	["no predefined listen preset to be loaded","no hay un preset de escucha predeterminado", "ez dago entzuteko aurrez zehaztutako preset-ik"],
