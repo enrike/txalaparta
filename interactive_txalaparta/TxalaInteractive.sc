@@ -209,7 +209,7 @@ TxalaInteractive{
 			if (~txalascore.isNil.not, {
 				~txalascore.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
 			});
-			{numbeatslabel.string = ~txl.do("\nBeats:") + lastPattern.size}.defer;
+			{numbeatslabel.string = ~txl.do("Beats:") + lastPattern.size}.defer;
 			{compassbutton.value = 0}.defer; // display now
 		});
 		this.updateGUIstrings();
@@ -282,6 +282,8 @@ TxalaInteractive{
 	}
 
 	imitation { arg defertime, pattern;
+		// saved patters should be streched or compressed to accomodate to
+		// current txakun openess
 		pattern.do({arg hit, index;
 			{
 				this.playhit(hit.amp*~amp, 0, index, pattern.size, hit.plank);
@@ -537,7 +539,7 @@ TxalaInteractive{
 
 		);
 
-		yindex = yindex + 1;
+		yindex = yindex + 1.2;
 
 		// ~amplitude
 		guielements.add(\amp-> EZSlider( win,
@@ -566,7 +568,7 @@ TxalaInteractive{
 		yindex = yindex + 1.5;
 
 
-		guielements.add(\hutsune-> Button(win, Rect(10,160,130,35))
+		guielements.add(\hutsune-> Button(win, Rect(10,160,135,35))
 			.states_([
 				[~txl.do("detect hutsune"), Color.white, Color.black],
 				[~txl.do("detect hutsune"), Color.black, Color.green],
@@ -596,21 +598,21 @@ TxalaInteractive{
 		//label.string = "Compass: --- \nBPM: ---";
 		label.string = ~txl.do("Compass:") + "" + "\nBPM:" + "";
 
-		numbeatslabel = StaticText(win, Rect(370, 265, 250, 25)).font_(Font("Verdana", 25));
+		numbeatslabel = StaticText(win, Rect(370, 265, 250, 30)).font_(Font("Verdana", 25));
 		numbeatslabel.string = ~txl.do("Beats:");
 
-		hitbutton = Button( win, Rect(370,295,90,65))
+		hitbutton = Button( win, Rect(370,300,90,65))
 		.states_([
 			[~txl.do("HIT"), Color.white, Color.grey],
 			[~txl.do("HIT"), Color.white, Color.red]
 		]);
-		compassbutton = Button( win, Rect(460,295,90,65))
+		compassbutton = Button( win, Rect(460,300,90,65))
 		.states_([
 			[~txl.do("PHRASE"), Color.white, Color.grey],
 			[~txl.do("PHRASE"), Color.white, Color.red]
 		]);
 
-		hutsunebutton = Button( win, Rect(550,295,80,65))
+		hutsunebutton = Button( win, Rect(550,300,80,65))
 		.states_([
 			["HUTSUN", Color.white, Color.grey],
 			["HUTSUN", Color.white, Color.green]
