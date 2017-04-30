@@ -35,9 +35,9 @@ o.numInputBusChannels = 2;
 
 /////
 
-w = Window.new (~txl.do("Digital Txalaparta"), Rect(100, 100 , 300, 220));
+w = Window.new (~txl.do("Digital Txalaparta"), Rect(100, 100 , 300, 170));
 
-Button(w, Rect(10,50,200,25))
+Button(w, Rect(10,10,280,50))
 .states_([
 	[~txl.do("Interactive Txalaparta"), Color.white, Color.black],
 ])
@@ -48,7 +48,7 @@ Button(w, Rect(10,50,200,25))
 	};
 });
 
-Button(w, Rect(10,75,200,25))
+Button(w, Rect(10,60,280,50))
 .states_([
 	["AutoTxalaparta", Color.white, Color.black],
 ])
@@ -60,15 +60,7 @@ Button(w, Rect(10,75,200,25))
 });
 
 
-Button(w, Rect(10,100,200,25))
-.states_([
-	[~txl.do("About"), Color.white, Color.grey],
-])
-.action_({ arg butt;
-	"http://www.ixi-audio.net/txalaparta".postln;
-});
-
-PopUpMenu(w,Rect(10,130, 90,20))
+PopUpMenu(w,Rect(10,120, 90,20))
 .items_(["English","Castellano", "Euskera"])
 .action_({ arg menu;
 	~txl.lang = menu.value;
@@ -87,6 +79,18 @@ w.onClose = {
 	s.quit;
 	if (dir.find("collider").isNil, {0.exit}); //should quit the lang ONLY when standalone
 };
+
+
+
+Button(w, Rect(140,140, 150,25))
+.states_([
+	[~txl.do("About / Help"), Color.white, Color.grey],
+])
+.action_({ arg butt;
+	"http://www.ixi-audio.net/txalaparta".postln;
+});
+
+
 w.userCanClose = False;
 s.boot;
 w.front;
