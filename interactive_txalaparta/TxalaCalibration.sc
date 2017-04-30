@@ -29,7 +29,7 @@ TxalaCalibration{
 	doGUI {
 		var yindex=0, yloc = 10, gap=20, labelwidth=70; //Array.fill(10, {nil});
 		var newpreset, popup, presetslisten;
-		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 330));
+		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 260));
 		win.onClose = {
 			parent.txalacalibration = nil;
 		};
@@ -308,7 +308,7 @@ yindex = yindex + 1.5;
 		});
 
 
-		Button( win, Rect(200,yloc+(gap*yindex),120,25))
+		Button( win, Rect(190,yloc+(gap*yindex),120,25))
 		.states_([
 			[~txl.do("lauko"), Color.white, Color.black],
 			[~txl.do("lauko"), Color.black, Color.green],
@@ -320,6 +320,15 @@ yindex = yindex + 1.5;
 				~listenparemeters.tempo.threshold = 0.6;
 			});
 			guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+		});
+
+
+		Button( win, Rect(320,yloc+(gap*yindex),70,25))
+		.states_([
+			[~txl.do("help"), Color.white, Color.black],
+		])
+		.action_({ arg but;
+			"should open a broser with the help file".postln;
 		});
 
 		win.front; // Finally
