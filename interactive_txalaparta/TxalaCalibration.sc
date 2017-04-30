@@ -62,6 +62,26 @@ TxalaCalibration{
 
 		yindex = yindex + 1;
 
+	guielements.add(\comp_thres->
+			EZSlider( win,
+				Rect(20,yloc+(gap*yindex),370,20),
+				~txl.do("comp_thres"),
+				ControlSpec(0.01, 1, \lin, 0.01, 0.2, "RMS"),
+				{ arg ez;
+					if (parent.txalasilence.isNil.not, {
+						ez.value.asFloat.postln;
+						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
+					});
+					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
+				},
+				initVal: ~listenparemeters.tempo.comp_thres,
+				labelWidth: labelwidth
+		));
+
+
+		yindex = yindex + 1;
+
+
 		// DetectSilence controls //
 		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Tempo detection");
 
@@ -75,7 +95,8 @@ TxalaCalibration{
 				nil,
 				initVal: ~listenparemeters.tempo.threshold,
 				labelWidth: labelwidth
-			).sliderView.mouseUpAction_({arg ez;
+			).action_({arg ez;
+				//[~listenparemeters.tempo.threshold, ez.value.asFloat].postln;
 				if (parent.txalasilence.isNil.not, {
 					parent.txalasilence.updatethreshold(ez.value.asFloat);
 				});
@@ -102,25 +123,8 @@ TxalaCalibration{
 
 		yindex = yindex + 1;
 
-		guielements.add(\comp_thres->
-			EZSlider( win,
-				Rect(20,yloc+(gap*yindex),370,20),
-				~txl.do("comp_thres"),
-				ControlSpec(0.01, 1, \lin, 0.01, 0.2, "RMS"),
-				{ arg ez;
-					if (parent.txalasilence.isNil.not, {
-						ez.value.asFloat.postln;
-						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
-					});
-					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
-				},
-				initVal: ~listenparemeters.tempo.comp_thres,
-				labelWidth: labelwidth
-		));
 
-
-		yindex = yindex + 1;
-
+/*
 		guielements.add(\checkrate->
 			EZSlider( win,
 				Rect(20,yloc+(gap*yindex),370,20),
@@ -137,7 +141,7 @@ TxalaCalibration{
 		));
 
 		yindex = yindex + 1.5;
-
+*/
 
 		// Onset pattern detection controls //
 		StaticText(win, Rect(5, yloc+(gap*yindex), 180, 25)).string = ~txl.do("Hit onset detection");
@@ -176,8 +180,8 @@ TxalaCalibration{
 		 		labelWidth: labelwidth
 		 ).round_(0.00001).numberView.maxDecimals_(5) );
 
-		 yindex = yindex + 1;
-
+		 yindex = yindex + 1.5;
+/*
 		 guielements.add(\floor->
 		 	EZSlider( win,
 		 		Rect(20,yloc+(gap*yindex),370,20),
@@ -211,18 +215,17 @@ TxalaCalibration{
 		 ));
 
 yindex = yindex + 1.5;
-
+*/
 		guielements.gain.valueAction = ~listenparemeters.gain;
 		guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
 		guielements.falltime.valueAction = ~listenparemeters.tempo.falltime;
 		guielements.comp_thres.valueAction = ~listenparemeters.tempo.comp_thres;
 
-		guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
+		//guielements.checkrate.valueAction = ~listenparemeters.tempo.checkrate;
 		guielements.onsetthreshold.valueAction = ~listenparemeters.onset.threshold;
 		guielements.relaxtime.valueAction = ~listenparemeters.onset.relaxtime;
-		guielements.floor.valueAction = ~listenparemeters.onset.floor;
-		guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
-
+		//guielements.floor.valueAction = ~listenparemeters.onset.floor;
+		//guielements.mingap.valueAction = ~listenparemeters.onset.mingap;
 
 
 		StaticText(win, Rect(5, yloc+(gap*yindex), 170, 20)).string = ~txl.do("Calibration manager");
@@ -260,7 +263,7 @@ yindex = yindex + 1.5;
 
 					guielements.tempothreshold.value = ~listenparemeters.tempo.threshold;
 					guielements.falltime.value = ~listenparemeters.tempo.falltime;
-					guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
+					//guielements.checkrate.value = ~listenparemeters.tempo.checkrate;
 					try {
 						guielements.comp_thres.value = ~listenparemeters.tempo.comp_thres;
 					}{|err|
@@ -268,8 +271,8 @@ yindex = yindex + 1.5;
 					} ;
 					guielements.onsetthreshold.value = ~listenparemeters.onset.threshold;
 					guielements.relaxtime.value = ~listenparemeters.onset.relaxtime;
-					guielements.floor.value = ~listenparemeters.onset.floor;
-					guielements.mingap.value = ~listenparemeters.onset.mingap;
+					//guielements.floor.value = ~listenparemeters.onset.floor;
+					//guielements.mingap.value = ~listenparemeters.onset.mingap;
 				//});
 			});
 		});
@@ -304,6 +307,21 @@ yindex = yindex + 1.5;
 			newpreset.string = ""; //clean field
 		});
 
-		win.front;
+
+		Button( win, Rect(200,yloc+(gap*yindex),120,25))
+		.states_([
+			[~txl.do("lauko"), Color.white, Color.black],
+			[~txl.do("lauko"), Color.black, Color.green],
+		])
+		.action_({ arg but;
+			if (but.value.asBoolean, {
+				~listenparemeters.tempo.threshold = 0.3;
+			},{
+				~listenparemeters.tempo.threshold = 0.6;
+			});
+			guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
+		});
+
+		win.front; // Finally
 	}
 }
