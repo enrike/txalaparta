@@ -526,7 +526,7 @@ TxalaInteractive{
 			.valueAction_(~answermode)
 		);
 
-		guielements.add(\amp-> Button(win, Rect(225,yloc+(gap*yindex),125,20))
+		guielements.add(\lick-> Button(win, Rect(225,yloc+(gap*yindex),125,20))
 			.states_([
 				[~txl.do("lick from memory"), Color.white, Color.grey],
 				[~txl.do("lick from memory"), Color.white, Color.green]
@@ -566,15 +566,16 @@ TxalaInteractive{
 		yindex = yindex + 1.5;
 
 
-		Button(win, Rect(10,160,130,35))
+		guielements.add(\hutsune-> Button(win, Rect(10,160,130,35))
 			.states_([
 				[~txl.do("detect hutsune"), Color.white, Color.black],
 				[~txl.do("detect hutsune"), Color.black, Color.green],
 			])
 			.action_({ arg butt;
 				~hutsunelookup = butt.value;
-			});
-
+			})
+			.valueAction_(~hutsunelookup);
+		);
 
 
 		ServerMeterView(server, win, 10@200, 2, 2); // IN/OUT METERS
