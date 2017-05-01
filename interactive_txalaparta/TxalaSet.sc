@@ -24,16 +24,18 @@ TxalaSet{
 	var server, onsetsynth, silencesynth, recsynth;
 	var respOSC, silOSC;
 	var onsets, silences, recthis;
+	var params;
 
 
-	*new { | server, sndpath |
-		^super.new.initTxalaSet(server, sndpath);
+	*new { | server, sndpath, params |
+		^super.new.initTxalaSet(server, sndpath, params);
 	}
 
-	initTxalaSet { |aserver, asndpath|
+	initTxalaSet { |aserver, asndpath, someparams|
 
 		server = aserver;
 		sndpath = asndpath;
+		params = someparams;
 
 		if (win.isNil.not, {win.close});
 
@@ -85,8 +87,8 @@ TxalaSet{
 
 		{
 			// listens for hits. wait until synths are ready
-			onsetsynth = Synth(\tx_onset_listener, [\in, ~listenparemeters.in,\threshold, ~listenparemeters.onset.threshold, \comp_thres, ~listenparemeters.tempo.comp_thres]) ;
-			silencesynth = Synth.newPaused(\tx_silence_detection, [\in, ~listenparemeters.in, \amp, ~listenparemeters.tempo.threshold, \comp_thres, ~listenparemeters.tempo.comp_thres]);
+			onsetsynth = Synth(\tx_onset_listener, [\in, params.in,\threshold, params.onset.threshold, \comp_thres, params.tempo.comp_thres]) ;
+			silencesynth = Synth.newPaused(\tx_silence_detection, [\in, params.in, \amp, params.tempo.threshold, \comp_thres, params.tempo.comp_thres]);
 			// two responders
 			respOSC = OSCFunc({ arg msg, time; //ATTACK
 				if (msg[2] == 999){
@@ -229,7 +231,7 @@ Select one of the positions (eg 1A) by pressing the corresponding button, then y
 		silences = [];
 		recbuf.zero; // erase buffer
 
-		recsynth = Synth(\tx_recBuf, [\in, ~listenparemeters.in, \bufnum, recbuf.bufnum]);
+		recsynth = Synth(\tx_recBuf, [\in, params.in, \bufnum, recbuf.bufnum]);
 		sttime = thisThread.seconds ; // start time
 		processflag = true;
 	}

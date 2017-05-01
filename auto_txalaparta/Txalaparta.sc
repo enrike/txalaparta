@@ -12,7 +12,7 @@ t.scheduleDraw= {"".postln};
 
 */
 Txalaparta{
-	var <samples, sndpath, numplanks, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing, plankresolution;
+	var <samples, <sndpath, numplanks, netadd, server, autoplayRoutine, interactivePlayRoutine, currenttemposwing, plankresolution;
 	var <scoreArray, <startTime, interstepcounter;
 
 	*new {| server, path = ".", numplanks |

@@ -813,7 +813,7 @@ TxalaInteractive{
 			[~txl.do("sample new"), Color.white, Color.grey],
 		])
 		.action_({ arg butt;
-			TxalaSet.new(server, sndpath)
+			TxalaSet.new(server, sndpath, ~listenparemeters)
 		});
 
 		yloc = yloc+27;

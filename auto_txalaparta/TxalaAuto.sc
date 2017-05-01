@@ -33,7 +33,7 @@ TxalaAuto{
 		~txalascoreAuto = TxalaScoreGUI.new;
 
 
-		this.doWindow(390, 380, "Txalaparta. www.ixi-audio.net");
+		this.doWindow(390, 430, "Txalaparta. www.ixi-audio.net");
 
 		timecontrols = TxalaTimeControls.new(window, path:currentpath);
 		plankcontrols = TxalaPlankControls.new(window, 220, 250, 400, 20, numplanks,
@@ -405,21 +405,63 @@ TxalaAuto{
 		^names;
 	}
 
-
 	doPlanksSetGUI { arg win, xloc, yloc;
+		var newpreset, popup;
+
+		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Plank set manager");
+
+		yloc = yloc+20;
+
+		Button(win,  Rect(xloc, yloc,100,25))
+		.states_([
+			[~txl.do("sample new"), Color.white, Color.grey],
+		])
+		.action_({ arg butt;
+			var params;
+			if (~listenparemeters.isNil, { //default values in case none has been defined.
+				params = ().add(\in->0).add(\gain->1);
+				params.tempo = ().add(\threshold->0.5).add(\falltime->0.18).add(\checkrate->30).add(\comp_thres->0.3);
+				params.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
+			} , {
+				params = ~listenparemeters;
+			});
+			TxalaSet.new(server, ~txalaparta.sndpath, params)
+		});
+
+		yloc = yloc+27;
+
+		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
+		.items_( this.updatesamplesetpresetfiles() )
+		.mouseDownAction_( { arg menu;
+			menu.items = this.updatesamplesetpresetfiles();
+		} )
+		.action_({ arg menu;
+			~txalaparta.loadsampleset(menu.item);
+		});
+
+		popup.mouseDown;// force creating the menu list
+		try{ // AUTO load first preset **
+			popup.valueAction_(1);
+		}{ |error|
+			"no predefined plank preset to be loaded".postln;
+			error.postln;
+		};
+	}
+
+/*	doPlanksSetGUI { arg win, xloc, yloc;
 		var newpreset, popup;
 
 		StaticText(win, Rect(xloc, yloc, 170, 20)).string = ~txl.do("Plank set");
 
 		yloc = yloc+20;
-/*
+
 		Button(win,  Rect(xloc, yloc,80,25))
 		.states_([
 			["sample new", Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			TxalaSet.new(server, ~txalaparta.sndpath)
-		});*/
+		});
 
 		//yloc = yloc+27;
 
@@ -439,5 +481,5 @@ TxalaAuto{
 			"no predefined plank preset to be loaded".postln;
 			error.postln;
 		};
-	}
+	}*/
 }
