@@ -119,7 +119,7 @@ TxalaSet{
 
 	doGUI {
 
-		win = Window.new(~txl.do("Plank set manager"), Rect(10, 100, 270, 260));
+		win = Window.new(~txl.do("Plank set manager"), Rect(10, 100, 310, 260));
 		win.onClose_({
 			var destpath, filename, data;
 			this.clean();
@@ -162,7 +162,7 @@ TxalaSet{
 
 		StaticText(win, Rect(10, 42, 100, 25)).string = ~txl.do("set name");
 
-		namefield = TextField(win, Rect(75, 42, 140, 25)).value = Date.getDate.stamp;
+		namefield = TextField(win, Rect(60, 42, 140, 25)).value = Date.getDate.stamp;
 
 		Button(win, Rect(10,10, 70, 25))
 		.states_([
@@ -205,7 +205,9 @@ Select one of the positions (eg 1A) by pressing the corresponding button, then y
 			[~txl.do("processing"), Color.white, Color.red]
 		]);
 
-		numhits = StaticText(win, Rect(240, 45, 30, 25)).string = "0";
+		numhits = StaticText(win, Rect(290, 10, 30, 25)).string = "0";
+
+		ServerMeterView(server, win, 240@40, 2, 2); // IN/OUT METERS
 
 		win.front;
 	}

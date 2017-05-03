@@ -248,10 +248,12 @@ TxalaInteractive{
 
 	start {
 		this.stop();
-		txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
-		txalaonset = TxalaOnsetDetection.new(this, server);
-		~txalascore.reset();
-		tempocalc.reset();
+		{
+			txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
+			txalaonset = TxalaOnsetDetection.new(this, server);
+			~txalascore.reset();
+			tempocalc.reset();
+		}.defer(0.1); // just in case. givin the server some time for reseting
 	}
 
 	reset  {
@@ -298,9 +300,6 @@ TxalaInteractive{
 	makephrase { arg curhits, defertime;
 		var gap=0, hitpattern, lastaverageamp = this.averageamp(); //swingrange,
 
-		// TO DO: should we shorten the gap according to num of curhits?? ******
-		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
-
 		gap = this.averagegap();
 
 		if (curhits==1 && [true, false].wchoose([0.05, 0.95]), { // sometimes play a two hit chord instead of single hit
@@ -312,7 +311,7 @@ TxalaInteractive{
 
 		curhits.do({ arg index;
 			var hittime, amp;
-			hittime = defertime + (gap * index);// + rrand(swingrange.neg, swingrange); // Needs some swing to avoid the gaps being too mechanical?
+			hittime = defertime + (gap * index);
 			amp = lastaverageamp * ~amp; // adapt amplitude to prev detected
 
 			if (this.getaccent(), {
