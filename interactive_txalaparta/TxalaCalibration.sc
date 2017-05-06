@@ -9,7 +9,7 @@ TxalaCalibration.new(awindow, apath)
 
 TxalaCalibration{
 
-	var win, parent, <>guielements, basepath;
+	var win, parent, <>guielements, basepath, helpwin;
 
 
 	*new { |parent, basepath|
@@ -32,6 +32,7 @@ TxalaCalibration{
 		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 260));
 		win.onClose = {
 			parent.txalacalibration = nil;
+			helpwin.close;
 		};
 
 		if ( (~txl.lang==1), { labelwidth = 100 });//ES
@@ -328,7 +329,13 @@ yindex = yindex + 1.5;
 			[~txl.do("help"), Color.white, Color.black],
 		])
 		.action_({ arg but;
-			"should open a broser with the help file".postln;
+			var langst = "", path, file; // eu
+			path = basepath[..basepath.findBackwards(Platform.pathSeparator.asString)]; // get rid of last folder
+			if (~txl.lang==0, {langst = "_en"});
+			if (~txl.lang==1, {langst = "_es"});
+			file = path++"documentation/index"++langst++".html";
+			[file, path].postln;
+			helpwin = WebView().front.url_(file)
 		});
 
 		win.front; // Finally

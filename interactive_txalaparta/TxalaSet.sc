@@ -25,17 +25,20 @@ TxalaSet{
 	var respOSC, silOSC;
 	var onsets, silences, recthis;
 	var params;
+	var meter, meterOSC, metersynth;
+	var helpwin, basepath;
 
 
-	*new { | server, sndpath, params |
-		^super.new.initTxalaSet(server, sndpath, params);
+	*new { | server, sndpath, params, basepath |
+		^super.new.initTxalaSet(server, sndpath, params, basepath);
 	}
 
-	initTxalaSet { |aserver, asndpath, someparams|
+	initTxalaSet { |aserver, asndpath, someparams, apath|
 
 		server = aserver;
 		sndpath = asndpath;
 		params = someparams;
+		basepath = apath;
 
 		if (win.isNil.not, {win.close});
 
@@ -46,8 +49,20 @@ TxalaSet{
 
 		respOSC.free ;
 		silOSC.free ;
+		meterOSC.free;
+		metersynth.free;
 
 		recbuf = Buffer.alloc(server, 44100 * bufflength, 1); // mono buffer
+
+		SynthDef(\meterdisplay, {
+			var delimp, in;
+			//in = SoundIn.ar(0);
+			// delimp = Delay1.kr(in);
+			// measure rms and Peak
+			SendPeakRMS.kr(SoundIn.ar(0), 10, 0, "/levels")
+			//SendReply.kr(Impulse.kr(10), '/levels',
+				//[Amplitude.kr(in), K2A.ar(Peak.ar(in, delimp).lag(0, 3))]);
+		}).add;
 
 		// just dumps the sound in signal into the bufnum buffer for later processing at end()
 		SynthDef(\tx_recBuf,{ arg in=0, bufnum=0;
@@ -93,7 +108,7 @@ TxalaSet{
 			respOSC = OSCFunc({ arg msg, time; //ATTACK
 				if (msg[2] == 999){
 					if (processflag, { onsets = onsets.add(time-sttime) }) ;
-					("attack detected").postln;
+					//("attack detected").postln;
 					{processbutton.value = 2}.defer;// detected
 					silencesynth.run ; // now look for end of hit
 					onsetsynth.run(false) ;
@@ -107,11 +122,21 @@ TxalaSet{
 						{ numhits.string =  (numhits.string.asInt + 1).asString }.defer; //counter++
 					});
 					{ processbutton.value = processflag.asInt }.defer; // back to state 0 or 1
-					("silence detected").postln ;
+					//("silence detected").postln ;
 					onsetsynth.run ; // now look for begging of a new hit
 					silencesynth.run(false) ;
 				}
 			},'/tr', Server.local.addr);
+
+			metersynth = Synth(\meterdisplay);
+			meterOSC = OSCFunc({arg msg;
+				{
+					if (meter.isNil.not, {
+						meter.peakLevel = msg[3].ampdb.linlin(-80, 0, 0, 1);
+						meter.value = msg[4].ampdb.linlin(-80, 0, 0, 1);
+					});
+				}.defer;
+			}, '/levels', server.addr);
 		}.defer(1);
 	}
 
@@ -119,15 +144,17 @@ TxalaSet{
 
 	doGUI {
 
-		win = Window.new(~txl.do("Plank set manager"), Rect(10, 100, 310, 260));
+		win = Window.new(~txl.do("Plank set manager"), Rect(10, 100, 270, 260));
 		win.onClose_({
 			var destpath, filename, data;
 			this.clean();
 			respOSC.free;
 			silOSC.free;
+			meterOSC.free;
 			onsetsynth.free;
 			silencesynth.free;
 			recsynth.free;
+			metersynth.free;
 		});
 
 		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 80, 25)).string = ~txl.do("Locs >");
@@ -174,7 +201,7 @@ TxalaSet{
 			})
 		});
 
-		Button(win, Rect(80,10, 70, 25))
+/*		Button(win, Rect(80,10, 70, 25))
 		.states_([
 			[~txl.do("HELP"), Color.white, Color.black]
 		])
@@ -189,25 +216,32 @@ Select one of the positions (eg 1A) by pressing the corresponding button, then y
 			After 10 secs the program will process the recordings and try to detect, cut, normalise and save each of the hits into a separated file. It is not a bad idea to open the files in a sound editor (eg. Audacity) to see if they are correct, the system is not perfect!");
 			ww.front
 		});
+		*/
 
-		Button( win, Rect(150,10,50,25)) //Rect(140,30,70,25))
+		Button( win, Rect(80,10, 70, 25))
 		.states_([
-			[~txl.do("meter"), Color.white, Color.black],
+			[~txl.do("help"), Color.white, Color.black],
 		])
 		.action_({ arg but;
-			server.meter(1,1);
+			var langst = "", path, file; // eu
+			path = basepath[..basepath.findBackwards(Platform.pathSeparator.asString)]; // get rid of last folder
+			if (~txl.lang==0, {langst = "_en"});
+			if (~txl.lang==1, {langst = "_es"});
+			file = path++"documentation/index"++langst++".html";
+			[file, path].postln;
+			helpwin = WebView().front.url_(file)
 		});
 
-		processbutton = Button(win, Rect(200,10, 68, 25))
+		processbutton = Button(win, Rect(150,10, 68, 25))
 		.states_([
 			[~txl.do("processing"), Color.white, Color.grey],
 			[~txl.do("processing"), Color.red, Color.grey],
 			[~txl.do("processing"), Color.white, Color.red]
 		]);
 
-		numhits = StaticText(win, Rect(290, 10, 30, 25)).string = "0";
+		numhits = StaticText(win, Rect(220, 10, 30, 25)).string = "0";
 
-		ServerMeterView(server, win, 240@40, 2, 2); // IN/OUT METERS
+		meter = LevelIndicator(win, Rect(250, 110, 8, 140)).drawsPeak_(true);
 
 		win.front;
 	}
