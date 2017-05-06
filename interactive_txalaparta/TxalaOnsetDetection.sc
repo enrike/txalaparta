@@ -111,7 +111,6 @@ TxalaOnsetDetection{
 		if (curPattern.isNil, { // this is the first hit of a new pattern
 			hittime = 0; // start counting on first one
 			patternsttime = localtime; //  abs start time of the new group
-			//parent.broadcastgroupstarted(); // needed by onset detector to close pattern groups. should this be called from here or from onset detection??
 		},{
 			hittime = localtime - patternsttime; // distance from first hit of this group
 		});

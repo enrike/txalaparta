@@ -54,15 +54,7 @@ TxalaSet{
 
 		recbuf = Buffer.alloc(server, 44100 * bufflength, 1); // mono buffer
 
-		SynthDef(\meterdisplay, {
-			var delimp, in;
-			//in = SoundIn.ar(0);
-			// delimp = Delay1.kr(in);
-			// measure rms and Peak
-			SendPeakRMS.kr(SoundIn.ar(0), 10, 0, "/levels")
-			//SendReply.kr(Impulse.kr(10), '/levels',
-				//[Amplitude.kr(in), K2A.ar(Peak.ar(in, delimp).lag(0, 3))]);
-		}).add;
+		SynthDef(\meterdisplay, { SendPeakRMS.kr(SoundIn.ar(0), 10, 0, "/levels") }).add;
 
 		// just dumps the sound in signal into the bufnum buffer for later processing at end()
 		SynthDef(\tx_recBuf,{ arg in=0, bufnum=0;
@@ -155,6 +147,7 @@ TxalaSet{
 			silencesynth.free;
 			recsynth.free;
 			metersynth.free;
+			if (helpwin.isNil.not, {helpwin.close});
 		});
 
 		StaticText(win, Rect(gridloc.x-50, gridloc.y-25, 80, 25)).string = ~txl.do("Locs >");
