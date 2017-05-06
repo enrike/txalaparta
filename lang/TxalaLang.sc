@@ -64,9 +64,9 @@ TxalaLang{
 	["Answer mode","Modo de respuesta", "Erantzuteko modua"],
 	["imitation","imitación", "kopiatu"],
 	["percentage","porcentaje", "ehunekoa"],
-	["learning 1","aprende 1", "ikasten 1"],
-	["learning 2","aprende 2", "ikasten 2"],
-	["learning 4","aprende 4", "ikasten 4"],
+	["memory","memoria", "memoria"],
+	["memory 1 bar","memoria 1 compas", "memoria buelta 1"],
+	["memory 2 bars","memoria 2 compases", "memoria buelta 2"],
 	["changing to answer mode:","cambiando modo de respuesta:", "erantzuteko modua aldatzen"],
 	["lick from memory","memoria", "memoriatik"],
 	["volume","volumen", "bolumena"],
@@ -115,9 +115,10 @@ TxalaLang{
 	["Locs >","Posiciones >","Kokapenak >"],
 	["set name","nombre","izena"],
 	["HELP","AYUDA","LAGUNTZA"],
-	["Help","ayuda","laguntza"],
+	["help","ayuda","laguntza"],
 	["Each row represents a plank. Each button in the row is a position in the plank. Ideally left to right from the edge to the center. Select one of the positions by pressing the button and you have 10 secs to hit several times in the same plank location. On timeout the program processes the recording and tries to save each of the hits to a separated file. Repeat this for each of the positions in each of the planks. You don't have to fill all positions, one per plank is enough but the more the richer it will sound","",""],
 	["processing","procesando","lanean"],
+	["lauko", "lauko", "lauko"],
 	["DONE PROCESSING","HECHO","EGINDA"],
 	["0-0 detected","0-0 detectado","0-0 hauteman da"],
 	// txalaset.sc
@@ -139,7 +140,7 @@ TxalaLang{
 	["Presets", "Configuraciones", ""],
 	["last emphasis", "énfasis ultimo", "indartu azkena"],
 			// score
-	["Planks", "Tablas", "Oholak"],
+	["planks", "tablas", "oholak"],
 
 	["zoom", "zoom", "zooma"],
 	["save MIDI", "guarda MIDI", "gorde MIDI"],
