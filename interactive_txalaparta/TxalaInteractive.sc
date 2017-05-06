@@ -34,7 +34,7 @@ TxalaInteractive{
 	var presetslisten, basepath, sndpath, <samples,  guielements;
 	var planksMenus, hitbutton, compassbutton, prioritybutton, hutsunebutton, numbeatslabel;//, selfcancelation=false;
 	var <pitchbuttons, circleanim, drawingSet, >txalacalibration, >txalachroma, <>chromabuttons, makilaanims;
-	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, phrasemode, lastgap, lastamp;
+	var answersystems, wchoose, tmarkov, tmarkov2, tmarkov, lastgap, lastamp; //phrasemode
 
 	var numplanks = 6; // max planks
 	var plankresolution = 5; // max positions per plank
@@ -80,7 +80,7 @@ TxalaInteractive{
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
 
 		lastPattern = nil;
-		phrasemode = 0; // make up a new phrase or imitate a stored one?
+		//phrasemode = 0; // make up a new phrase or imitate a stored one?
 		lastgap = 0;
 		lastamp = 0;
 
@@ -130,7 +130,7 @@ TxalaInteractive{
 			~answermode = data[\answermode];
 			~learning = data[\learning];
 			~timedivision = data[\timedivision];
-			phrasemode = data[\phrasemode];
+			//phrasemode = data[\phrasemode];
 		})
 	}
 
@@ -144,7 +144,7 @@ TxalaInteractive{
 		data.put(\latencycorrection, ~latencycorrection);
 		data.put(\timedivision, ~timedivision);
 		data.put(\learning, ~learning);
-		data.put(\phrasemode, phrasemode);
+		//data.put(\phrasemode, phrasemode);
 
 		data.writeArchive(basepath ++ "/" ++ filename);
 	}
@@ -283,18 +283,28 @@ TxalaInteractive{
 		})
 	}
 
-	imitation { arg defertime, pattern;
-		// saved patters should be streched or compressed to accomodate to
-		// current txakun openess
+	// exact imitation
+	imitation { arg defertime, pattern, strech = 1;
 		pattern.do({arg hit, index;
 			{
 				this.playhit(hit.amp*~amp, 0, index, pattern.size, hit.plank);
 				makilaanims.makilaF(index, 0.15); // prepare anim
-			}.defer(defertime + hit.time);
-			drawingSet[1][index] = [0, hit.time, false, hit.amp]; // new blue hit
+			}.defer(defertime + (hit.time*strech));
+			drawingSet[1][index] = [0, hit.time*strech, false, hit.amp]; // new blue hit
 		});
 
 		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue when they are about to play
+	}
+
+	// imitates adapting to current gap size
+	reproduce {arg defertime, pattern;
+		var gap, mygap, strech = 1;
+		if (pattern.size>1, { // strech pattern according to current gap
+			gap = this.averagegap();
+			mygap = pattern.last.time / (pattern.size-1);
+			strech = gap / mygap;
+		});
+		this.imitation(defertime, pattern, strech);
 	}
 
 	makephrase { arg curhits, defertime;
@@ -378,15 +388,7 @@ TxalaInteractive{
 
 	next {arg defertime=0, mode=0;
 		var curhits = answersystems[mode-1].next(lastPattern.size); // decide number of hits in answer
-
-/*		// should we shorten the gap according to num of curhits?? ******
-		// if input is 2 but answer is 4 we cannot use the same gap. needs to be shorter *****
-		if (curhits > 1, { gap = this.averagegap() });
-
-		if (curhits==1 && [true, false].wchoose([0.2, 0.8]), { // sometimes play a two hit chord instead of single hit
-			gap = 0;
-			curhits = 2;
-		});*/
+		var pat;
 
 		if (curhits == 0, { //  we have produced an hutsune
 			{
@@ -401,12 +403,12 @@ TxalaInteractive{
 		}, {
 			if ( defertime < 0, { "answering late!".postln});
 
-			if (phrasemode.asBoolean.not, { // create the answer "synthetically"
-				this.makephrase(curhits, defertime)
-			},{ // answer with a lick from memory
-				var pat = patternbank.getrandpattern(curhits); // just get a previously played pattern
-				this.imitation(defertime, pat.pattern); // and imitate it
-			});
+			//if (phrasemode.asBoolean.not, { // create the answer "synthetically"
+			//	this.makephrase(curhits, defertime)
+			//},{ // answer with a lick from memory
+				pat = patternbank.getrandpattern(curhits); // just get a previously played pattern
+				this.reproduce(defertime, pat.pattern); // and imitate it
+			//});
 		});
 	}
 
@@ -504,16 +506,16 @@ TxalaInteractive{
 
 		yindex = yindex + 2.3;
 
-				// mode menu
+		// mode menu
 		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 140, 25)).string = ~txl.do("Answer mode");
 		guielements.add(\answermode->
-			PopUpMenu(win,Rect(130,yloc+(gap*yindex), 90,20))
+			PopUpMenu(win,Rect(130,yloc+(gap*yindex), 160,20))
 			.items_([
 				~txl.do("imitation"), // copy exactly what the user does
 				~txl.do("percentage"), // just count all the hits and return a wchoose
-				~txl.do("learning 1"), // 1sr order markov chain
-				~txl.do("learning 2"), // 2nd order markov chain
-				~txl.do("learning 4") // 4th order markov chain
+				~txl.do("memory"), // 1sr order markov chain
+				~txl.do("memory 1 bar"), // 2nd order markov chain
+				~txl.do("memory 2 bars") // 4th order markov chain
 			])
 			.action_({ arg menu;
 				try{ // bacwrds comp
@@ -526,7 +528,7 @@ TxalaInteractive{
 			})
 			.valueAction_(~answermode)
 		);
-
+		/*
 		guielements.add(\lick-> Button(win, Rect(225,yloc+(gap*yindex),125,20))
 			.states_([
 				[~txl.do("lick from memory"), Color.white, Color.grey],
@@ -536,7 +538,7 @@ TxalaInteractive{
 				phrasemode = butt.value;
 			}).value_(phrasemode);
 
-		);
+		);*/
 
 		yindex = yindex + 1.2;
 
