@@ -24,6 +24,7 @@ TxalaCalibration{
 
 	close {
 		win.close();
+		if (helpwin.isNil.not, {helpwin.close});
 	}
 
 	doGUI {
@@ -32,7 +33,7 @@ TxalaCalibration{
 		win = Window(~txl.do("Input calibration"),  Rect(10, 50, 400, 260));
 		win.onClose = {
 			parent.txalacalibration = nil;
-			helpwin.close;
+			if (helpwin.isNil.not, {helpwin.close});
 		};
 
 		if ( (~txl.lang==1), { labelwidth = 100 });//ES
