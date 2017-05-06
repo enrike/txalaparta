@@ -271,13 +271,12 @@ TxalaInteractive{
 			});
 
 			if (defertime.isNaN.not, {
-				// this is a bit ridiculous. ~answermode is 1,2,3,4 anyway. no?
 				switch (~answermode,
 					0, { this.imitation(defertime, lastPattern) },
-					1, { this.next(defertime, 1) },
-					2, { this.next(defertime, 2) }, // MC 1
-					3, { this.next(defertime, 3) }, // MC 2
-					4, { this.next(defertime, 4) }  // MC 4
+				//	1, { this.next(defertime, 1) },
+					1, { this.next(defertime, 2) }, // MC 1
+					2, { this.next(defertime, 3) }, // MC 2
+					3, { this.next(defertime, 4) }  // MC 4
 				);
 			});
 		})
@@ -512,7 +511,7 @@ TxalaInteractive{
 			PopUpMenu(win,Rect(130,yloc+(gap*yindex), 160,20))
 			.items_([
 				~txl.do("imitation"), // copy exactly what the user does
-				~txl.do("percentage"), // just count all the hits and return a wchoose
+				//~txl.do("percentage"), // just count all the hits and return a wchoose
 				~txl.do("memory"), // 1sr order markov chain
 				~txl.do("memory 1 bar"), // 2nd order markov chain
 				~txl.do("memory 2 bars") // 4th order markov chain
@@ -809,16 +808,6 @@ TxalaInteractive{
 
 		yloc = yloc+20;
 
-		Button(win,  Rect(xloc, yloc,100,25))
-		.states_([
-			[~txl.do("sample new"), Color.white, Color.grey],
-		])
-		.action_({ arg butt;
-			TxalaSet.new(server, sndpath, ~listenparemeters, basepath)
-		});
-
-		yloc = yloc+27;
-
 		popup = PopUpMenu(win,Rect(xloc,yloc,170,20))
 		.items_( this.updatesamplesetpresetfiles() )
 		.mouseDownAction_( { arg menu;
@@ -835,6 +824,16 @@ TxalaInteractive{
 			"no predefined plank preset to be loaded".postln;
 			error.postln;
 		};
+
+		yloc = yloc+23;
+
+		Button(win,  Rect(xloc, yloc,100,25))
+		.states_([
+			[~txl.do("sample new"), Color.white, Color.grey],
+		])
+		.action_({ arg butt;
+			TxalaSet.new(server, sndpath, ~listenparemeters, basepath)
+		});
 	}
 
 	updateTxalaScoreNumPlanks {
