@@ -5,26 +5,12 @@ license: GNU GPL
 
 https://en.wikipedia.org/wiki/Txalaparta
 
-to do:
-- create tutorials
-
-ATX
-- auto prefs?
-- implement markov chains and feed with data from ITX?
-
-ITX
-- find a better way to deal with the hutsune. disabling answer prority would solve this?
-- non sync compasses time division control implement. can this be automatic somehow?
-- test Markov chains
-- double hutsunes! find out why does this happen
-- timeline does not update number of planks when changing txalaset and chorma. need to close and open the timeline to update.
-- sometimes many instances of the synths or the OSC responders stay in memory duplicating the detected events in the txalaparta input, this is very random.
-- memory manager for licks (separated from MC memory)
-- save buttons to open saveas dialogue? (no need to add then the field next to it)
+Txalaparta video tutorial
+https://www.youtube.com/playlist?list=PLauBVgFtMcLDCSNNLCngm0BtBas2SsFB7
 */
 
 (
-var dir = thisProcess.nowExecutingPath.dirname, ti, ta, lang;
+var dir = thisProcess.nowExecutingPath.dirname, ti, ta, lang, helpwin;
 
 lang = Object.readArchive(dir ++ "/" ++ "prefs.preset")[\lang];
 ~txl = TxalaLang.new(lang); // 0 eng, 1 es, 2 eu
@@ -39,6 +25,7 @@ w = Window.new (~txl.do("Digital Txalaparta"), Rect(100, 100 , 300, 170));
 
 Button(w, Rect(10,10,280,50))
 .states_([
+
 	[~txl.do("Interactive Txalaparta"), Color.white, Color.black],
 ])
 .action_({ arg butt;
@@ -60,6 +47,7 @@ Button(w, Rect(10,60,280,50))
 });
 
 
+
 PopUpMenu(w,Rect(10,120, 90,20))
 .items_(["English","Castellano", "Euskera"])
 .action_({ arg menu;
@@ -71,6 +59,8 @@ w.onClose = {
 	data = Dictionary.new;
 	data.put(\lang, ~txl.lang);
 	data.writeArchive(dir ++ "/" ++ filename);
+
+	helpwin.close;
 
 	if (ti.isNil.not, {ti.kill});
 	if (ta.isNil.not, {ta.kill});
@@ -87,7 +77,12 @@ Button(w, Rect(140,140, 150,25))
 	[~txl.do("About / Help"), Color.white, Color.grey],
 ])
 .action_({ arg butt;
-	"http://www.ixi-audio.net/txalaparta".postln;
+	var langst = "", file; // eu
+	if (~txl.lang==0, {langst = "_en"});
+	if (~txl.lang==1, {langst = "_es"});
+	file = dir++"/documentation/index"++langst++".html";
+	file.postln;
+	helpwin = WebView().front.url_(file)
 });
 
 
