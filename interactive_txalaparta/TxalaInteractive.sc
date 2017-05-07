@@ -40,6 +40,8 @@ TxalaInteractive{
 	var plankresolution = 5; // max positions per plank
 	var ampresolution = 5; // max amps per position. is this num dynamically set?
 
+	var listeningDisplay;
+
 	*new {| aserver, apath="" |
 		^super.new.initTxalaInteractive(aserver, apath);
 	}
@@ -115,6 +117,7 @@ TxalaInteractive{
 		}).add;
 
 		this.loadprefsauto();
+		{ this.reset() }.defer(0.2); //start listening
 	}
 
 
@@ -236,6 +239,7 @@ TxalaInteractive{
 	}
 
 	stop {
+		{listeningDisplay.string = ~txl.do("stoping...")}.defer;
 		if (txalasilence.isNil.not, {
 			txalasilence.kill();
 			txalasilence=nil;
@@ -248,6 +252,7 @@ TxalaInteractive{
 
 	start {
 		this.stop();
+		{listeningDisplay.string = ~txl.do("listening...")}.defer;
 		{
 			txalasilence = TxalaSilenceDetection.new(this, server); // parent, server, mode, answermode
 			txalaonset = TxalaOnsetDetection.new(this, server);
@@ -257,6 +262,7 @@ TxalaInteractive{
 	}
 
 	reset  {
+		"reseting".postln;
 		this.stop();
 		this.start();
 	}
@@ -306,6 +312,7 @@ TxalaInteractive{
 		this.imitation(defertime, pattern, strech);
 	}
 
+	/*
 	makephrase { arg curhits, defertime;
 		var gap=0, hitpattern, lastaverageamp = this.averageamp(); //swingrange,
 
@@ -341,7 +348,7 @@ TxalaInteractive{
 		});
 
 		{ circleanim.scheduleDraw(drawingSet[1], 1) }.defer(defertime); // render blue
-	}
+	}*/
 
 	// analysing of lastPattern
 	averageamp { // returns average amp from hits in last group
@@ -463,18 +470,6 @@ TxalaInteractive{
 
 		Button( win, Rect(5,5,160,38))
 		.states_([
-			[~txl.do("listen"), Color.white, Color.black],
-			[~txl.do("listen"), Color.black, Color.green],
-		])
-		.action_({ arg but;
-			if (but.value.asBoolean, {
-				this.start();
-			},{
-				this.stop();
-			})
-		});
-		Button( win, Rect(5,yloc+3,160,38))
-		.states_([
 			[~txl.do("answer"), Color.white, Color.black],
 			[~txl.do("answer"), Color.black, Color.green],
 		])
@@ -482,11 +477,20 @@ TxalaInteractive{
 			~answer = but.value.asBoolean;
 		});
 
+		{listeningDisplay = StaticText(win, Rect(5, yloc+10, 80, 25)).string = ~txl.do("listening...")}.defer;
 
+
+		Button( win, Rect(85,yloc+3,80,38))
+		.states_([
+			[~txl.do("reset"), Color.white, Color.grey]
+		])
+		.action_({ arg but;
+			this.reset();
+		});
 
 		Button(win,  Rect(225,5,115,38))
 		.states_([
-			[~txl.do("show score"), Color.white, Color.black],
+			[~txl.do("show score"), Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			var num = 1;
@@ -497,7 +501,7 @@ TxalaInteractive{
 
 		Button(win,  Rect(225,yloc+3,115,38))
 		.states_([
-			[~txl.do("calibration"), Color.white, Color.black],
+			[~txl.do("calibration"), Color.white, Color.grey],
 		])
 		.action_({ arg butt;
 			txalacalibration = TxalaCalibration.new(this, basepath);
@@ -527,17 +531,6 @@ TxalaInteractive{
 			})
 			.valueAction_(~answermode)
 		);
-		/*
-		guielements.add(\lick-> Button(win, Rect(225,yloc+(gap*yindex),125,20))
-			.states_([
-				[~txl.do("lick from memory"), Color.white, Color.grey],
-				[~txl.do("lick from memory"), Color.white, Color.green]
-			])
-			.action_({ arg butt;
-				phrasemode = butt.value;
-			}).value_(phrasemode);
-
-		);*/
 
 		yindex = yindex + 1.2;
 
@@ -710,7 +703,6 @@ TxalaInteractive{
 			);
 
 			data = Dictionary.new;
-			//try {
 			if (~answermode > 0, {
 				data.put(\beatdata, answersystems[~answermode-1].beatdata);
 				data.put(\patterndata, patternbank.bank);
