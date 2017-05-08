@@ -310,7 +310,7 @@ yindex = yindex + 1.5;
 		});
 
 
-		Button( win, Rect(190,yloc+(gap*yindex),120,25))
+		/*Button( win, Rect(190,yloc+(gap*yindex),120,25))
 		.states_([
 			[~txl.do("lauko"), Color.white, Color.black],
 			[~txl.do("lauko"), Color.black, Color.green],
@@ -322,7 +322,7 @@ yindex = yindex + 1.5;
 				~listenparemeters.tempo.threshold = 0.6;
 			});
 			guielements.tempothreshold.valueAction = ~listenparemeters.tempo.threshold;
-		});
+		});*/
 
 
 		Button( win, Rect(320,yloc+(gap*yindex),70,25))
