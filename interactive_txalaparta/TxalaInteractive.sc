@@ -271,15 +271,14 @@ TxalaInteractive{
 		if ( lastPattern.isNil.not, {
 			drawingSet = [drawingSet[0], Array.fill(8, {[-1, 0, false, 10]})]; // prepare blue for new data
 			// calc when in future should answer be. start from last detected hit and use tempo to calculate
-			// tempocalc.lasttime is when the first hit of the last group happened
 			if (defertime.isNil, {
 				defertime = tempocalc.lasttime + (60/~bpm/(100/~timedivision)) - SystemClock.seconds - ~latencycorrection;
 			});
 
 			if (defertime.isNaN.not, {
 				switch (~answermode,
-					0, { this.imitation(defertime, lastPattern) },
-				//	1, { this.next(defertime, 1) },
+					0, { this.imitation(defertime, lastPattern) }, // imitation
+				//	1, { this.next(defertime, 1) }, // average. not used any longer
 					1, { this.next(defertime, 2) }, // MC 1
 					2, { this.next(defertime, 3) }, // MC 2
 					3, { this.next(defertime, 4) }  // MC 4
@@ -289,10 +288,10 @@ TxalaInteractive{
 	}
 
 	// exact imitation
-	imitation { arg defertime, pattern, strech = 1;
+	imitation { arg defertime, pattern, strech = 1, amp=1;
 		pattern.do({arg hit, index;
 			{
-				this.playhit(hit.amp*~amp, 0, index, pattern.size, hit.plank);
+				this.playhit(hit.amp*amp, 0, index, pattern.size, hit.plank);
 				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(defertime + (hit.time*strech));
 			drawingSet[1][index] = [0, hit.time*strech, false, hit.amp]; // new blue hit
@@ -301,15 +300,23 @@ TxalaInteractive{
 		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue when they are about to play
 	}
 
-	// imitates adapting to current gap size
+	// imitates adapting to current gap size and amp
 	reproduce {arg defertime, pattern;
-		var gap, mygap, strech = 1;
+		var strech = 1, amp = 1;
+
+		amp = this.averageamp() * ~amp; // adapt amplitude to prev detected
+
 		if (pattern.size>1, { // strech pattern according to current gap
-			gap = this.averagegap();
+			var gap, mygap;
+			if (lastPattern.size == 1, { // when answering to a single hit be careful with strech
+				gap = this.calcgap(pattern.size);
+			},{
+				gap = this.averagegap();
+			});
 			mygap = pattern.last.time / (pattern.size-1);
 			strech = gap / mygap;
 		});
-		this.imitation(defertime, pattern, strech);
+		this.imitation(defertime, pattern, strech, amp);
 	}
 
 	/*
@@ -367,6 +374,7 @@ TxalaInteractive{
 
 	averagegap { // returns average gap time between hits in last group
 		var val=0;
+		//lastPattern.size.postln;
 		if (lastPattern.size > 1, {
 			lastPattern.do({ arg hit, index;
 				if (index > 0, { //sum all gaps
@@ -379,6 +387,14 @@ TxalaInteractive{
 		});
 		if (val < 0.007, {val = 0.007}); //lower limit
 		lastgap = val;
+		^val;
+	}
+
+	// manually calculate how long should be the gap between hits for the current situation
+	calcgap { arg numhits;
+		var val;
+		val = (( 60 / ~bpm ) / 2 ) / numhits;
+		val.postln;
 		^val;
 	}
 
@@ -510,7 +526,7 @@ TxalaInteractive{
 		yindex = yindex + 2.3;
 
 		// mode menu
-		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 140, 25)).string = ~txl.do("Answer mode");
+		StaticText(win, Rect(7, yloc+(gap*yindex)-3, 140, 25)).string = ~txl.do("answer mode");
 		guielements.add(\answermode->
 			PopUpMenu(win,Rect(130,yloc+(gap*yindex), 160,20))
 			.items_([
