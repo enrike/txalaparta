@@ -315,6 +315,9 @@ TxalaInteractive{
 			});
 			mygap = pattern.last.time / (pattern.size-1);
 			strech = gap / mygap;
+
+			// adapt calibration to gap aperture here. raise as gap increases
+			//~listenparemeters.tempo.falltime = ;
 		});
 		this.imitation(defertime, pattern, strech, amp);
 	}
@@ -628,6 +631,8 @@ TxalaInteractive{
 		]);
 
 		win.front;
+
+		TxalaCalibration.new(this, basepath).close;// this is a hack to load the default preset
 	}
 
 
