@@ -61,7 +61,7 @@ TxalaLang{
 	["show score","línea de tiempo", "denbora-lerroa"],
 	["scope","scope", "scope"],
 	["meter","niveles", "mailak"],
-	["Answer mode","Modo de respuesta", "Erantzuteko modua"],
+	["answer mode","modo de respuesta", "erantzuteko modua"],
 	["imitation","imitación", "kopiatu"],
 	["percentage","porcentaje", "ehunekoa"],
 	["memory","memoria", "memoria"],
