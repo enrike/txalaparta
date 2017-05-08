@@ -3,6 +3,7 @@ digital txalaparta. by ixi-audio.net
 info@ixi-audio.net
 license: GNU GPL
 
+What is the txalaparta?
 https://en.wikipedia.org/wiki/Txalaparta
 
 Txalaparta video tutorial
@@ -60,8 +61,7 @@ w.onClose = {
 	data.put(\lang, ~txl.lang);
 	data.writeArchive(dir ++ "/" ++ filename);
 
-	helpwin.close;
-
+	if (helpwin.isNil.not, {helpwin.close});
 	if (ti.isNil.not, {ti.kill});
 	if (ta.isNil.not, {ta.kill});
 	AppClock.clear;
@@ -81,7 +81,7 @@ Button(w, Rect(140,140, 150,25))
 	if (~txl.lang==0, {langst = "_en"});
 	if (~txl.lang==1, {langst = "_es"});
 	file = dir++"/documentation/index"++langst++".html";
-	file.postln;
+	//file.postln;
 	helpwin = WebView().front.url_(file)
 });
 
