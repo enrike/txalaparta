@@ -70,6 +70,7 @@ TxalaLang{
 	["changing to answer mode:","cambiando modo de respuesta:", "erantzuteko modua aldatzen"],
 	["lick from memory","memoria", "memoriatik"],
 	["volume","volumen", "bolumena"],
+	["gain","ganancia", "ganantzia"],
 	["swing","variación", "bariazioa"],
 	["latency","latencia", "latentzia"],
 	["HIT","GOLPE", "KOLPEA"],
