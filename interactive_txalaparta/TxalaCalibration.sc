@@ -46,7 +46,7 @@ TxalaCalibration{
 		// ~gain
 		guielements.add(\gain-> EZSlider( win,
 			Rect(20,yloc+(gap*yindex),370,20),
-			~txl.do("gain in"),
+			~txl.do("gain"),
 			ControlSpec(0, 5, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~listenparemeters.gain = ez.value.asFloat;
@@ -74,6 +74,7 @@ TxalaCalibration{
 						ez.value.asFloat.postln;
 						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
 					});
+					ez.value.asFloat.postln;
 					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.comp_thres,

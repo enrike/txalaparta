@@ -77,8 +77,8 @@ TxalaInteractive{
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
 
 		// this is to keep all the values of the listening synths in one place
-		~listenparemeters = ().add(\in->0).add(\gain->1);
-		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.18).add(\checkrate->30).add(\comp_thres->0.3);
+		~listenparemeters = ().add(\in->0).add(\gain->1.3);
+		~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.2).add(\checkrate->30).add(\comp_thres->0.1);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
 
 		lastPattern = nil;
@@ -317,7 +317,9 @@ TxalaInteractive{
 			strech = gap / mygap;
 
 			// adapt calibration to gap aperture here. raise as gap increases
-			//~listenparemeters.tempo.falltime = ;
+			//[this.averageamp()*5, gap*4].postln;
+			//~listenparemeters.tempo.falltime = gap * 4;
+			//~listenparemeters.tempo.threshold = this.averageamp() * 5;
 		});
 		this.imitation(defertime, pattern, strech, amp);
 	}
@@ -395,9 +397,7 @@ TxalaInteractive{
 
 	// manually calculate how long should be the gap between hits for the current situation
 	calcgap { arg numhits;
-		var val;
-		val = (( 60 / ~bpm ) / 2 ) / numhits;
-		val.postln;
+		var val = (( 60 / ~bpm ) / 2 ) / numhits;
 		^val;
 	}
 
@@ -557,7 +557,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(10,yloc+(gap*yindex),340,20),
 			~txl.do("volume"),
-			ControlSpec(0, 2, \lin, 0.01, 1, ""),
+			ControlSpec(0, 3, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
@@ -783,6 +783,7 @@ TxalaInteractive{
 			data = Object.readArchive(basepath ++ "/presets_chroma/" ++ menu.item);
 
 			if (data.isNil.not, { ~plankdata = data[\plankdata] });
+			this.updateTxalaScoreNumPlanks();
 		});
 
 		popup.mouseDown;// force creating the menu list
@@ -828,6 +829,7 @@ TxalaInteractive{
 		} )
 		.action_({ arg menu;
 			this.loadsampleset(menu.item);
+			this.updateTxalaScoreNumPlanks();
 		});
 
 		popup.mouseDown;// force creating the menu list

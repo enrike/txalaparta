@@ -138,8 +138,8 @@ TxalaSilenceDetection{
 			}, {
 				if ( hutsunetimeout.isNil.not, {
 					this.checkhutsune();
-				}, {
-					this.checkreset();
+				//}, {
+				//	this.checkreset();
 				});
 			});
 		});
