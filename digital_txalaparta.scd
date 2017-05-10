@@ -77,11 +77,25 @@ Button(w, Rect(140,140, 150,25))
 	[~txl.do("About / Help"), Color.white, Color.grey],
 ])
 .action_({ arg butt;
-	var langst = "", file; // eu
+	var langst = "", file, path; // eu
 	if (~txl.lang==0, {langst = "_en"});
 	if (~txl.lang==1, {langst = "_es"});
-	file = dir++"/documentation/index"++langst++".html";
-	//file.postln;
+
+		Platform.case(
+			\linux,   { path = dir },
+			\osx,     { path = "cwd".unixCmdGetStdOut;
+		                path = path[..path.size-2];// get rid char return
+		              },
+			\windows, {
+			            path = "ECHO %CD%".unixCmdGetStdOut;
+		                path = path[..path.size-2];// get rid of char return
+		               }
+	);
+
+	file = path +/+ "documentation" +/+ "index" ++langst++ ".html";
+
+	//file = dir++"/documentation/index"++langst++".html";
+
 	helpwin = WebView().front.url_(file)
 });
 
