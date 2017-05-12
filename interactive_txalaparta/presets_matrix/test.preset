@@ -1,11 +1,60 @@
 var o, p;
 o = [
 	Dictionary.prNew,  Array.prNew(32),  Array.prNew(5),  Array.prNew(5),  
-	Array.prNew(5),  Array.prNew(5),  Array.prNew(5),  Array.prNew(5)
+	Array.prNew(5),  Array.prNew(5),  Array.prNew(5),  Array.prNew(5),  
+	Array.prNew(4),  Array.prNew,  Array.prNew(1),  Event.prNew,  
+	Array.prNew(16),  "01",  Array.prNew(2),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Array.prNew,  
+	Array.prNew(15),  Event.prNew,  Array.prNew(16),  "1100",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "0011",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1111",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1101",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1100",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "0001",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1101",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1100",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "0001",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1111",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1101",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1111",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1111",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1121",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  "1100",  
+	Array.prNew(4),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16),  Event.prNew,  Array.prNew(16),  Event.prNew,  
+	Array.prNew(16)
 ];
 p = [
 	// Dictionary
-	0, [ array: o[1],  size: 1 ],  
+	0, [ array: o[1],  size: 2 ],  
 	// Array
 	1, [ nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
@@ -14,7 +63,7 @@ p = [
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil,  
-		nil,  nil,  nil,  nil ],  
+		'patterndata',  o[8],  nil,  nil ],  
 	// Array
 	2, [ o[3],  o[4],  o[5],  o[6],  
 		o[7] ],  
@@ -32,6 +81,749 @@ p = [
 		0 ],  
 	// Array
 	7, [ 0,  0,  0,  0,  
-		1 ]
+		1 ],  
+	// Array
+	8, [ o[9],  o[10],  o[19],  o[20] ],  
+	// Array
+	10, [ o[11] ],  
+	// Event
+	11, [ array: o[12],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	12, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[13],  'pattern',  o[14],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	14, [ o[15],  o[17] ],  
+	// Event
+	15, [ array: o[16],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	16, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.095424 ],  
+	// Event
+	17, [ array: o[18],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	18, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.189244 ],  
+	// Array
+	20, [ o[21],  o[33],  o[45],  o[57],  
+		o[69],  o[81],  o[93],  o[105],  
+		o[117],  o[129],  o[141],  o[153],  
+		o[165],  o[177],  o[189] ],  
+	// Event
+	21, [ array: o[22],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	22, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[23],  'pattern',  o[24],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	24, [ o[25],  o[27],  o[29],  o[31] ],  
+	// Event
+	25, [ array: o[26],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	26, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.003201 ],  
+	// Event
+	27, [ array: o[28],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	28, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.484038,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.165953 ],  
+	// Event
+	29, [ array: o[30],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	30, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.772931,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.165833 ],  
+	// Event
+	31, [ array: o[32],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	32, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.018052 ],  
+	// Event
+	33, [ array: o[34],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	34, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[35],  'pattern',  o[36],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	36, [ o[37],  o[39],  o[41],  o[43] ],  
+	// Event
+	37, [ array: o[38],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	38, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.002676 ],  
+	// Event
+	39, [ array: o[40],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	40, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.485755,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.003630 ],  
+	// Event
+	41, [ array: o[42],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	42, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.787339,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.208888 ],  
+	// Event
+	43, [ array: o[44],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	44, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.018263 ],  
+	// Event
+	45, [ array: o[46],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	46, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[47],  'pattern',  o[48],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	48, [ o[49],  o[51],  o[53],  o[55] ],  
+	// Event
+	49, [ array: o[50],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	50, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002534 ],  
+	// Event
+	51, [ array: o[52],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	52, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.457540,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002561 ],  
+	// Event
+	53, [ array: o[54],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	54, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.667149,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.185563 ],  
+	// Event
+	55, [ array: o[56],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	56, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.219261 ],  
+	// Event
+	57, [ array: o[58],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	58, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[59],  'pattern',  o[60],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	60, [ o[61],  o[63],  o[65],  o[67] ],  
+	// Event
+	61, [ array: o[62],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	62, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.005568 ],  
+	// Event
+	63, [ array: o[64],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	64, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.367862,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002828 ],  
+	// Event
+	65, [ array: o[66],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	66, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.734437,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.148146 ],  
+	// Event
+	67, [ array: o[68],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	68, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.292689 ],  
+	// Event
+	69, [ array: o[70],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	70, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[71],  'pattern',  o[72],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	72, [ o[73],  o[75],  o[77],  o[79] ],  
+	// Event
+	73, [ array: o[74],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	74, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.003247 ],  
+	// Event
+	75, [ array: o[76],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	76, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.342317,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.118103 ],  
+	// Event
+	77, [ array: o[78],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	78, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.591563,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.197561 ],  
+	// Event
+	79, [ array: o[80],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	80, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.012447 ],  
+	// Event
+	81, [ array: o[82],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	82, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[83],  'pattern',  o[84],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	84, [ o[85],  o[87],  o[89],  o[91] ],  
+	// Event
+	85, [ array: o[86],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	86, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.002371 ],  
+	// Event
+	87, [ array: o[88],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	88, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.653605,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.130276 ],  
+	// Event
+	89, [ array: o[90],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	90, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.816039,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.024032 ],  
+	// Event
+	91, [ array: o[92],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	92, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.169210 ],  
+	// Event
+	93, [ array: o[94],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	94, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[95],  'pattern',  o[96],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	96, [ o[97],  o[99],  o[101],  o[103] ],  
+	// Event
+	97, [ array: o[98],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	98, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.004669 ],  
+	// Event
+	99, [ array: o[100],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	100, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.366416,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002330 ],  
+	// Event
+	101, [ array: o[102],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	102, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.734960,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.162992 ],  
+	// Event
+	103, [ array: o[104],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	104, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.164565 ],  
+	// Event
+	105, [ array: o[106],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	106, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[107],  'pattern',  o[108],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	108, [ o[109],  o[111],  o[113],  o[115] ],  
+	// Event
+	109, [ array: o[110],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	110, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002588 ],  
+	// Event
+	111, [ array: o[112],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	112, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.457414,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.110983 ],  
+	// Event
+	113, [ array: o[114],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	114, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.750775,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.138307 ],  
+	// Event
+	115, [ array: o[116],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	116, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.161412 ],  
+	// Event
+	117, [ array: o[118],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	118, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[119],  'pattern',  o[120],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	120, [ o[121],  o[123],  o[125],  o[127] ],  
+	// Event
+	121, [ array: o[122],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	122, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.002875 ],  
+	// Event
+	123, [ array: o[124],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	124, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.390506,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.003006 ],  
+	// Event
+	125, [ array: o[126],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	126, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.614313,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.135322 ],  
+	// Event
+	127, [ array: o[128],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	128, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.241234 ],  
+	// Event
+	129, [ array: o[130],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	130, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[131],  'pattern',  o[132],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	132, [ o[133],  o[135],  o[137],  o[139] ],  
+	// Event
+	133, [ array: o[134],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	134, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002864 ],  
+	// Event
+	135, [ array: o[136],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	136, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.294693,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.012663 ],  
+	// Event
+	137, [ array: o[138],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	138, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.690241,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.117819 ],  
+	// Event
+	139, [ array: o[140],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	140, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.196157 ],  
+	// Event
+	141, [ array: o[142],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	142, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[143],  'pattern',  o[144],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	144, [ o[145],  o[147],  o[149],  o[151] ],  
+	// Event
+	145, [ array: o[146],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	146, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.003592 ],  
+	// Event
+	147, [ array: o[148],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	148, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.466865,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002370 ],  
+	// Event
+	149, [ array: o[150],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	150, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.659608,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.206157 ],  
+	// Event
+	151, [ array: o[152],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	152, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.207025 ],  
+	// Event
+	153, [ array: o[154],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	154, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[155],  'pattern',  o[156],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	156, [ o[157],  o[159],  o[161],  o[163] ],  
+	// Event
+	157, [ array: o[158],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	158, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.004118 ],  
+	// Event
+	159, [ array: o[160],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	160, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.357834,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002211 ],  
+	// Event
+	161, [ array: o[162],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	162, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.728924,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.162754 ],  
+	// Event
+	163, [ array: o[164],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	164, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.132682 ],  
+	// Event
+	165, [ array: o[166],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	166, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[167],  'pattern',  o[168],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	168, [ o[169],  o[171],  o[173],  o[175] ],  
+	// Event
+	169, [ array: o[170],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	170, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002760 ],  
+	// Event
+	171, [ array: o[172],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	172, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.416896,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.223017 ],  
+	// Event
+	173, [ array: o[174],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	174, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.709936,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.161993 ],  
+	// Event
+	175, [ array: o[176],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	176, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.218963 ],  
+	// Event
+	177, [ array: o[178],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	178, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[179],  'pattern',  o[180],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	180, [ o[181],  o[183],  o[185],  o[187] ],  
+	// Event
+	181, [ array: o[182],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	182, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.002703 ],  
+	// Event
+	183, [ array: o[184],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	184, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.218968,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.228908 ],  
+	// Event
+	185, [ array: o[186],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	186, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.504655,  
+		'plank',  2,  nil,  nil,  
+		'player',  1,  'amp',  0.268153 ],  
+	// Event
+	187, [ array: o[188],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	188, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.012100 ],  
+	// Event
+	189, [ array: o[190],  size: 3,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	190, [ 'numtimes',  1,  nil,  nil,  
+		'blueprint',  o[191],  'pattern',  o[192],  
+		nil,  nil,  nil,  nil,  
+		nil,  nil,  nil,  nil ],  
+	// Array
+	192, [ o[193],  o[195],  o[197],  o[199] ],  
+	// Event
+	193, [ array: o[194],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	194, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.000000,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.005038 ],  
+	// Event
+	195, [ array: o[196],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	196, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.428233,  
+		'plank',  1,  nil,  nil,  
+		'player',  1,  'amp',  0.126852 ],  
+	// Event
+	197, [ array: o[198],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	198, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  0.768637,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.177158 ],  
+	// Event
+	199, [ array: o[200],  size: 4,  
+		proto: nil,  parent: nil,  
+		know: true ],  
+	// Array
+	200, [ nil,  nil,  nil,  nil,  
+		nil,  nil,  'time',  1.000000,  
+		'plank',  0,  nil,  nil,  
+		'player',  1,  'amp',  0.203722 ]
 ];
 prUnarchive(o,p);

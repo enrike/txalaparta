@@ -47,6 +47,7 @@ TxalaSilenceDetection{
 		SynthDef(\txalatempo, {| in=0, gain=1, threshold=0.45, falltime=0.15, checkrate=20, comp_thres=0.3 |
 			var detected, signal;
 			signal = SoundIn.ar(in)*gain;
+			signal = HPF.ar(signal, 180);
 			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
 				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
 				slopeBelow: 1.9, // almost noise gate
