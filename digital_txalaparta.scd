@@ -83,15 +83,16 @@ Button(w, Rect(140,140, 150,25))
 
 		Platform.case(
 			\linux,   { path = dir },
-			\osx,     { path = "cwd".unixCmdGetStdOut;
-		                path = path[..path.size-2];// get rid char return
+			\osx,     { path = "pwd".unixCmdGetStdOut;
+			               path = path[..path.size-2];// get rid char return
+			               path = path +/+ "SCClassLibrary" +/+"txalaparta-master";
 		              },
 			\windows, {
 			            path = "ECHO %CD%".unixCmdGetStdOut;
 		                path = path[..path.size-2];// get rid of char return
 		               }
 	);
-
+	//path.postln;
 	file = path +/+ "documentation" +/+ "index" ++langst++ ".html";
 
 	//file = dir++"/documentation/index"++langst++".html";
