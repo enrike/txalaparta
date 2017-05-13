@@ -572,7 +572,7 @@ TxalaInteractive{
 		guielements.add(\latency-> EZSlider( win,
 			Rect(10,yloc+(gap*yindex),340,20),
 			~txl.do("latency"),
-			ControlSpec(0, 0.2, \lin, 0.001, 0, ""),
+			ControlSpec(0, 0.5, \lin, 0.001, 0, ""),
 			{ arg ez;
 				~latencycorrection = ez.value.asFloat;
 			},

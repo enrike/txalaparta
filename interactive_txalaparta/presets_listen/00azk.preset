@@ -22,14 +22,14 @@ p = [
 	// Array
 	3, [ 'onset',  o[4],  nil,  nil,  
 		nil,  nil,  'tempo',  o[6],  
-		'in',  0,  'gain',  0.980000,  
+		'in',  0,  'gain',  1.000000,  
 		'amp',  1.000000,  nil,  nil ],  
 	// Event
 	4, [ array: o[5],  size: 4,  
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	5, [ 'threshold',  0.380000,  'relaxtime',  0.002400,  
+	5, [ 'threshold',  0.140000,  'relaxtime',  0.002400,  
 		nil,  nil,  nil,  nil,  
 		'floor',  0.069000,  'mingap',  1.000000,  
 		nil,  nil,  nil,  nil ],  
@@ -38,8 +38,8 @@ p = [
 		proto: nil,  parent: nil,  
 		know: true ],  
 	// Array
-	7, [ 'threshold',  0.130653,  'checkrate',  30,  
-		'falltime',  0.240000,  'comp_thres',  1.000000,  
+	7, [ 'threshold',  0.160804,  'checkrate',  30,  
+		'falltime',  0.214047,  'comp_thres',  0.090000,  
 		nil,  nil,  nil,  nil,  
 		nil,  nil,  nil,  nil ]
 ];
