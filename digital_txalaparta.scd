@@ -104,6 +104,4 @@ Button(w, Rect(140,140, 150,25))
 w.userCanClose = False;
 s.boot;
 w.front;
-
-s.scope(2,2, bufsize: 4096*5)
 )
