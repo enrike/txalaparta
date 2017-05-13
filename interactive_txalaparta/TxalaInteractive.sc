@@ -232,11 +232,11 @@ TxalaInteractive{
 	/////////////////////////////////////////////////////////////////////////////
 
 	// activates/deactivates answerpriority if to tight to answer with priority
-	doautoanswerpriority {
+	/*doautoanswerpriority {
 		var defertime = tempocalc.lasttime + (60/~bpm/(100/~timedivision)) - SystemClock.seconds;
 		~answerpriority = defertime > 0;
 		{ prioritybutton.value = ~answerpriority.asInt }.defer;
-	}
+	}*/
 
 	stop {
 		{listeningDisplay.string = ~txl.do("stoping...")}.defer;
