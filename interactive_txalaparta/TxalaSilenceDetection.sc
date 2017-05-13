@@ -47,6 +47,7 @@ TxalaSilenceDetection{
 		SynthDef(\txalatempo, {| in=0, gain=1, threshold=0.45, falltime=0.15, checkrate=20, comp_thres=0.3 |
 			var detected, signal;
 			signal = SoundIn.ar(in)*gain;
+			signal = HPF.ar(signal, 180); // kill long low freqs in long planks
 			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
 				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
 				slopeBelow: 1.9, // almost noise gate
@@ -73,7 +74,18 @@ TxalaSilenceDetection{
 		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
 
-	updatethreshold { arg value;
+	updatethreshold {arg value; // this is because DetectSilence cannot be updated on realtime :(
+		~listenparemeters.tempo.threshold = value;
+		this.updatesynth();
+	}
+
+	updatefalltime {arg value; // this is because DetectSilence cannot be updated on realtime :(
+		~listenparemeters.tempo.falltime = value;
+		this.updatesynth();
+	}
+
+
+	updatesynth {
 		// supercollider does not allow to update the DetectSilence's amp parameter on the fly
 		// so we need to kill and instantiate the synth again and again. Only on slider mouseUP, otherwise we get into troubble
 		// because sometimes too many instances stay in the server memory causing mess
@@ -83,7 +95,7 @@ TxalaSilenceDetection{
 			synth = Synth(\txalatempo, [
 				\in, ~listenparemeters.in,
 				\amp, ~listenparemeters.amp,
-				\threshold, value,
+				\threshold, ~listenparemeters.tempo.threshold,
 				\falltime, ~listenparemeters.tempo.falltime,
 				\checktime, ~listenparemeters.tempo.checkrate,
 			])

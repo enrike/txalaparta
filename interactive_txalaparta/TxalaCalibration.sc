@@ -74,7 +74,7 @@ TxalaCalibration{
 						ez.value.asFloat.postln;
 						parent.txalasilence.synth.set(\comp_thres, ez.value.asFloat);
 					});
-					ez.value.asFloat.postln;
+					//ez.value.asFloat.postln;
 					~listenparemeters.tempo.comp_thres = ez.value.asFloat;
 				},
 				initVal: ~listenparemeters.tempo.comp_thres,
@@ -94,18 +94,17 @@ TxalaCalibration{
 			EZSlider( win,
 				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("threshold"),// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
-				ControlSpec(0.01, 2, \lin, 0.01, 0.2, ""),
+				ControlSpec(0.01, 2, \lin, 0.01, ~listenparemeters.tempo.threshold, ""),
 				nil,
 				initVal: ~listenparemeters.tempo.threshold,
 				labelWidth: labelwidth
-			).action_({arg ez;
-				//[~listenparemeters.tempo.threshold, ez.value.asFloat].postln;
+			).sliderView.mouseUpAction_({arg ez; //***MUST*** *only* happen on mouseup, otherwise it is too much for the synth
 				if (parent.txalasilence.isNil.not, {
 					parent.txalasilence.updatethreshold(ez.value.asFloat);
 				});
 				~listenparemeters.tempo.threshold = ez.value.asFloat;
-			});
-		);
+		}));
+
 
 		yindex = yindex + 1;
 
@@ -114,15 +113,15 @@ TxalaCalibration{
 				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("falltime"),
 				ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
-				{ arg ez;
-					if (parent.txalasilence.isNil.not, {
-						parent.txalasilence.synth.set(\falltime, ez.value.asFloat);
-					});
-					~listenparemeters.tempo.falltime = ez.value.asFloat;
-				},
+				nil,
 				initVal: ~listenparemeters.tempo.falltime,
 				labelWidth: labelwidth
-		));
+		).sliderView.mouseUpAction_({arg ez; //***MUST*** *only* happen on mouseup, otherwise it is too much for the synth
+					if (parent.txalasilence.isNil.not, {
+					    parent.txalasilence.updatefalltime(ez.value.asFloat);
+					});
+					~listenparemeters.tempo.falltime = ez.value.asFloat;
+		}));
 
 		yindex = yindex + 1;
 
@@ -277,6 +276,7 @@ yindex = yindex + 1.5;
 					//guielements.floor.value = ~listenparemeters.onset.floor;
 					//guielements.mingap.value = ~listenparemeters.onset.mingap;
 				//});
+				["loading parameters from file", ~listenparemeters].postln;
 			});
 		});
 
@@ -326,7 +326,7 @@ yindex = yindex + 1.5;
 		});*/
 
 
-		Button( win, Rect(320,yloc+(gap*yindex),70,25))
+		/*Button( win, Rect(320,yloc+(gap*yindex),70,25))
 		.states_([
 			[~txl.do("help"), Color.white, Color.black],
 		])
@@ -338,8 +338,7 @@ yindex = yindex + 1.5;
 			file = path++"documentation/index"++langst++".html";
 			[file, path].postln;
 			helpwin = WebView().front.url_(file)
-		});
-
+		});*/
 		win.front; // Finally
 	}
 }

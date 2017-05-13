@@ -77,8 +77,10 @@ TxalaInteractive{
 		drawingSet = [Array.fill(8, {[-1, 0, false, 10]}), Array.fill(8, {[-1, 0, false, 10]})];
 
 		// this is to keep all the values of the listening synths in one place
-		~listenparemeters = ().add(\in->0).add(\gain->1.3);
-		~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.2).add(\checkrate->30).add(\comp_thres->0.1);
+		~listenparemeters = ().add(\in->0).add(\gain->1);
+		~listenparemeters.tempo = ().add(\threshold->0.5).add(\falltime->0.18).add(\checkrate->30).add(\comp_thres->0.3);
+		//~listenparemeters = ().add(\in->0).add(\gain->1.3);
+		//~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.2).add(\checkrate->30).add(\comp_thres->0.1);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
 
 		lastPattern = nil;
