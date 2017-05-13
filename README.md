@@ -8,6 +8,9 @@ An app to research the txalaparta rhythms by implementing them into a digital sy
 
 what is the txalaparta? >> https://en.wikipedia.org/wiki/Txalaparta
 
+Standalone apps here
+www.ixi-audio.net/txalaparta/digital
+
 There are two apps :
 
 - Autotxalaparta : a program that generates txalaparta-like rhythms that can be controlled from a GUI
@@ -41,14 +44,6 @@ http://www.ixi-audio.net/txalaparta
 - Euskal Herriko Unibersitatea / University of the Basque Country
 - University of Sussex
 - Rainer Schuetz and the Supercollider list
-
-
-To do:
-- implement some short of neural network to produce more interesting output
-# - produce an easy to run and install package for mac and windows
-# - translate interface to basque and spanish
-# - improve rhythm detection
-# - improve learning and answering system
 
 
 Doctoral research here

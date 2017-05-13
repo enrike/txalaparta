@@ -51,7 +51,7 @@ TxalaSilenceDetection{
 			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
 				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
 				slopeBelow: 1.9, // almost noise gate
-				slopeAbove: 1.1, // >1 to get expansion
+				slopeAbove: 1.8, // >1 to get expansion
 				clampTime: 0.005,
 				relaxTime: 0.01
 			);

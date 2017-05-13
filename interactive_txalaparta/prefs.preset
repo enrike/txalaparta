@@ -4,13 +4,13 @@ o = [
 ];
 p = [
 	// Dictionary
-	0, [ array: o[1],  size: 7 ],  
+	0, [ array: o[1],  size: 6 ],  
 	// Array
 	1, [ nil,  nil,  nil,  nil,  
-		nil,  nil,  'phrasemode',  1,  
 		nil,  nil,  nil,  nil,  
-		'amp',  1.000000,  'answermode',  4,  
-		'learning',  true,  'latencycorrection',  0.064000,  
+		nil,  nil,  nil,  nil,  
+		'amp',  2.450000,  'answermode',  1,  
+		'learning',  true,  'latencycorrection',  0.076000,  
 		nil,  nil,  nil,  nil,  
 		'timedivision',  50.000000,  'hutsune',  0,  
 		nil,  nil,  nil,  nil ]
