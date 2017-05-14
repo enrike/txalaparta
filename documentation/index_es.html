@@ -55,10 +55,10 @@ Demo del sistema de detecci&oacute;n de tablas (Chroma) http://www.youtu.be/Ji1q
         - <a href="#calib">Calibración rítmica</a><br/>
         - <a href="#oholak">Gestor de tablas</a><br/>        
         - <a href="#hutsune">Detección de hutsunes</a><br/>
-        - <a href="#latencia">Correcci&oacute;n de latencia:</a><br/>
+        - <a href="#latencia">Correcci&oacute;n de latencia</a><br/>
 - <a href="#soinuak">Introducir los sonidos de tus tablas a mano (grabándolos por tu cuenta)</a><br/>
 - <a href="#win">Notas para usuarios de Windows</a><br/>
-
+- <a href="#mac">Notas para usuarios de Mac</a><br/>
 
 <p><a name="autotxalaparta">++ Autotxalaparta ++</a><br/>
 Este programa genera las dos partes del ritmo de txalaparta automáticamente. Sus caracter&iacute;sticas pueden ser controladas 
@@ -70,10 +70,9 @@ desde el interfaz de control. Puedes apagar la parte de uno de los int&eacute;rp
   
 <p>
 <p><a name="inter">++ Txalaparta Interactiva ++</a><br/>
-Escucha el toque de txalaparta de un solo int&eacute;rprete de txalaparta por el micrófono y responde con la parte del segundo 
-int&eacute;rprete con patrones que aprende a partir de lo que que escucha. Por esto necesitas un micrófono conectado a tu ordenador. 
-Los micrófonos de los portátiles no suelen funcionar muy bien porque están alejados de las tablas y suelen recoger ruido de 
-los ventiladores del ordenador.
+Escucha el toque de txalaparta de un solo int&eacute;rprete de txalaparta mediante el micrófono y responde con la parte del segundo 
+int&eacute;rprete con patrones que aprende a partir de lo que que escucha. Por esto necesitas un micrófono conectado a tu ordenador 
+(en portatiles puede valer el que llevan incorporado).
 <p>
 <img src="main_interactive_es.png" alt="">
 <p>
@@ -83,15 +82,14 @@ los ventiladores del ordenador.
 <p>  
 <p><a name="intro">+ Cómo funciona:</a><br/>
 Conecta el micrófono y en las preferencias del sistema de tu ordenador asigna la entrada de audio para que grabe desde el 
-micrófono. Si todo es correcto deberías de ver en el programa en el control INPUTS como el volumen sube si golpeas o hablas
- en el micrófono. La señal tiene que ser fuerte y llegar casi hasta arriba sin llegar a ponerse rojo. Ahora, pulsa el botón
-  ESCUCHAR y al golpear la txalaparta tienes que ver en la parte derecha del programa que los botones parpadean cuando los 
-  golpes son detectados. También veras el numero de golpes de cada frase, el numero de vueltas y el tempo (BPM). Si abres 
-  el Score con el botón ABRE SCORE puedes ver una representación de los que estas tocando mas detallada. Comprueba en el 
+micrófono. Si todo es correcto deberías de ver en el programa en el control INPUTS c&oacute;mo el volumen sube si golpeas o hablas
+ en el micrófono. La señal tiene que ser fuerte y llegar casi hasta arriba del control INPUTS pero sin llegar a ponerse rojo. Al golpear la txalaparta 
+ tienes que ver en la parte derecha del programa que los indicadores GOLPE y FRASE parpadean cuando los golpes son detectados. También ver&aacute;s el 
+ n&uacute;mero de golpes de cada frase, el n&uacute;mero de vueltas (compases) y el tempo (BPM). Si abres 
+  el Score con el botón ABRE SCORE puedes ver una representación de los que est&aacute;s tocando m&aacute;s detallada. Comprueba en el 
   score que lo que el ordenador muestra corresponde con lo que tocas. Si todo es correcto pulsa el botón RESPONDER y en 
-  un par de vueltas el ordenador comenzara a responder a tu toque. En el interfaz tus golpes están marcados en rojo y los
-   del ordenador en azul. Si el programa no recibe sonido durante mas de cuatro segundos resetea el sistema de escucha. 
-   Esto es útil si el programa se empieza a equivocar por alguna razón.
+  un par de vueltas el ordenador comenzar&aacute; a responder a tu toque. En el interfaz tus golpes están marcados en rojo y los
+   del ordenador en azul.
 <p>
 <img src="main_interactive_score_es.png" alt=""> 
 <p>
@@ -100,7 +98,7 @@ micrófono. Si todo es correcto deberías de ver en el programa en el control IN
 <p><a name="respuesta">+ Modo de respuesta y Memoria:</a><br/>
 El programa aprende de lo que escucha y memoriza los patrones que tocas. El modo de respuesta ofrece diferentes niveles de 
 aprendizaje (Imitación, Memoria, Memoria 1 compás y Memoria 2 compases). Imitación simplemente intenta repetir exactamente lo que tu tocas, 
-Memoria recuerda las secuencias que tocas y usa las combinaciones que mas se repiten, cuanto más larga es la secuencia que memoriza, 
+Memoria recuerda las secuencias que tocas y usa las combinaciones que m&aacute;s se repiten, cuanto más larga es la secuencia que memoriza, 
 más compleja es la respuesta, pero también tarda más tiempo en aprender. Además el programa te 
 responde usando frases que tu has tocado y que ha ido almacenado en la memoria, esto produce respuestas más &quot;humanas&quot;.
 
@@ -110,23 +108,23 @@ El sistema de gestión de memorias permite guardar las memorias en archivos de t
 cuenta que en cada modo de respuesta solo puedes cargar memorias creadas en ese mismo modo. Esto permite &quot;entrenar&quot; al 
 programa en un cierto tipo de toque y guardar la memoria (por ejemplo txalaparta zaharra), para posteriormente desactivar el botón
  &quot;aprender&quot; y cargar esa memoria que hemos guardado. El programa debería responder en estilo txalaparta zaharra pero tu 
- puedes tocar en el estilo que quieras si que el programa aprenda de lo que estas tocando ahora.
+ puedes tocar en el estilo que quieras sin que el programa aprenda de lo que est&aacute;s tocando ahora.
 
 
 <p><a name="chroma">+ Control de Chroma:</a><br/>
 Es un sistema de calibración tímbrica para poder distinguir cada una de las tablas por su sonido (&quot;Control de chroma&quot;).
 Para configurarlo con tu txalaparta, aprieta primero en botón &quot;C&quot; para resetear el sistema de chroma. Ahora aprieta el 
 botón 1 (se pone en rojo), entonces  golpea en la primera tabla (el botón vuelve a ser negro tras el golpe). Repite esto con cada 
-numero y tabla (2,3,4...). Intenta que el golpe sea en una zona representativa del sonido de toda la tabla. Si aun así el programa 
+n&uacute;mero y tabla (2,3,4...). Intenta que el golpe sea en una zona representativa del sonido de toda la tabla. Si aun así el programa 
 confunde dos tablas prueba a repetir el proceso con las tablas que confunde. Las memorias tímbricas de chroma pueden
 guardarse en un archivo de texto para poder cargar la configuración txalapartas diferentes.
 
 
 <p><a name="calib">+ Calibración rítmica:</a><br/>
 La calibración rítmica es compleja y normalmente no hay que tocar casi ningún parámetro. En caso de tocar ritmos con ttakun 
-abierto (tipo lauko) es conveniente bajar el valor del &quot;limite&quot; de Detección de tempo para que entienda que los 
-golpes van a agrupados. Si tocas con ttakun cerrado (tradicional) es mejor subir ese valor de nuevo porque permite tocar 
-con tempos mas rápidos sin errores.
+abierto (tipo lauko) es conveniente aumentar el valor del &quot;tiempo&quot; de Detección de tempo para que entienda que los 
+golpes van a agrupados. Si tocas con ttakun cerrado (tradicional) es mejor bajar ese valor de nuevo porque permite tocar 
+con tempos m&aacute;s rápidos sin errores.
 
 <p> La mejor forma de comprobar que las calibraciones son correctas es activar el modo de Imitaci&oacute;n en el menu "Modo de respuesta". 
 Si el programa responde exactamente lo mismo que tocamos, entonces la calibración es correcta.
@@ -138,11 +136,11 @@ Si el programa responde exactamente lo mismo que tocamos, entonces la calibraci�
 
 <p>
 <p><a name="aholak">+ Gestor de tablas:</a><br/>
-(Experimental, no siempre funciona bien)<br>
+(Aviso: Experimental, no siempre funciona bien)<br>
 La txalaparta interactiva usa un sistema de samples (grabaciones de audio) con varios sonidos por cada tabla de txalaparta 
-(hasta seis tablas) para producir un resultado mas rico y realista. Si solo hubiera un sonido el resultado seria mas mecánico. 
+(hasta seis tablas) para producir un resultado m&aacute;s rico y realista. Si solo hubiera un sonido el resultado ser&iacute;a m&aacute;s mecánico. 
 Para esto el programa divide cada tabla en cinco zonas (ABCDE) y dentro de cada zona puede haber varios sonidos normalmente con 
-diferentes amplitudes incrementando de amplitud (0 seria el mas bajo y 5 el mas alto).
+diferentes amplitudes incrementando de amplitud (0 ser&iacute;a el m&aacute;s bajo y 5 el m&aacute;s alto).
 <br/>
 Los sonidos se agrupan por tablas, zonas dentro de esa tabla, y finalmente en cada zona hay varios golpes normalmente de 
 diferentes amplitudes. Si miras dentro del programa puedes ver como están organizados y escucharlos. Son simplemente archivos 
@@ -160,7 +158,7 @@ por el exterior y acabar en el centro de la tabla) de la primera tabla. Al acaba
 los corta, normaliza y guarda con el nombre adecuado en la carpeta sounds. Los golpes tienen que ser claros y hay que dejar espacio 
 para que la cola del sonido no se junte con el siguiente golpe. De lo contrario el programa puede equivocarse al cortar los sonidos. 
 Repite esta operación para cada zona de cada tabla. No hace falta que uses todas las zonas de cada tabla. El mínimo es un sonido en 
-una zona de cada tabla, pero recuerda que cuantos mas sonidos metas mas rico sera el resultado a nivel tímbrico.
+una zona de cada tabla, pero recuerda que cuantos m&aacute;s sonidos metas m&aacute;s rico sera el resultado a nivel tímbrico.
 <br/>
 Este sistema de grabación no siempre funciona bien y a veces es necesario grabar los sonidos en otro programa (Audacity, Audition ...) 
 e introducirlos a mano en la Txalaparta Interactiva y la Autotxalaparta, como explicamos a continuación.
@@ -180,7 +178,7 @@ Pulsa este botón si vas a hacer hutsunes. Ten en cuenta que la detección de hu
 <p><a name="latencia">+ Correcci&oacute;n de latencia:</a><br/>
 El bot&oacute;n "Latencia" sirve para corregir la latencia que el sistema operativo y el programa al analizar el sonido genera. La latencia 
 es tiempo que tarda el ordenador en procesar el audio. Por culpa de la latencia el ordenador siempre lleva un peque&ntilde;o retraso,
-que a veces no es tan peque&ntilde;o. Cuando notes que el ordenador se retrasa sistem&aacute;ticamente el sus respuestas cambia este valor
+que a veces no es tan peque&ntilde;o. Cuando notes que el ordenador se retrasa sistem&aacute;ticamente en sus respuestas cambia este valor
 hasta que vaya a tiempo.
 
 
@@ -213,10 +211,10 @@ segunda tabla / primera zona: plank100.wav, plank101.wav...<br/>
 segunda tabla / segunda zona: plank110.wav, plank111.wav...<br/>
 etc...
 
-<p>así hasta cubrir un máximo de seis tablas y diez zonas (de 0 a 9). Idealmente los sonidos de cada zona van de menos a mas 
-volumen. El programa entiende que plank000.wav es un golpe mas suave que plank001.wav y que los golpes son mas intensos según 
-sube el ultimo numero del nombre. A la hora de responder el programa analiza tu toque y elige el sonido con el que responder 
-dependiendo de la intensidad que estés usando al tocar.
+<p>así hasta cubrir un máximo de seis tablas y diez zonas (de 0 a 9). Idealmente los sonidos de cada zona van de menos a m&aacute;s 
+volumen. El programa entiende que plank000.wav es un golpe m&aacute;s suave que plank001.wav y que los golpes son m&aacute;s intensos según 
+sube el &uacute;ltimo n&uacute;mero del nombre. A la hora de responder el programa analiza tu toque y elige el sonido con el que responder 
+dependiendo de la intensidad con la que estés tocando.
 
 <p><a name="win">+ Notas para usuarios de Windows:</a><br/>
 Al ejecutar por primera vez la Txalaparta Digital en Windows el sistema pide permiso para que los procesos scsynth y sclang se 
@@ -225,7 +223,11 @@ comuniquen por red. Esto es normal y hay que darle permiso para poder hacerlo, d
 Si el programa no tiene sonido o tiene un comportamiento raro hay que mirar si el motor de sonido esta funcionando y que solo haya 
 una copia en marcha. Para hacer esto abrimos el gestor de procesos de Windows con CONTROL+ALT+DELETE, y buscamos el proceso llamado 
 scsynth.exe para apagarlo. A veces si el programa ha tenido algún problema el motor de sonido se queda en marcha y al volver a abrir 
-el programa no funciona correctamente porque hay mas de una copia o porque la que hay no funciona bien.
+el programa no funciona correctamente porque hay m&aacute;s de una copia o porque la que hay no funciona bien.
+
+<p><a name="mac">+ Notas para usuarios de Mac:</a><br/>
+Al abrir el programa aparecen dos iconos. Al cerrar el programa hay que cerrar los dos iconos. Si cierras el principal (el de color naranja y blanco)
+el otro se cierra tambi&eacute;n. 
 
 </body>
 </html>

@@ -76,7 +76,9 @@ duzun horretara egokituko.
 <p><a name="inter">++ Txalaparta Interaktiboa ++</a><br/>
 Txalaparta-jotzaile bakar baten joaldia mikrofonotik entzuten du, eta bigarren interpretatzailearen partea eginez 
 erantzuten du, entzundakoa abiaburutzat hartuta ikasitako patroiak erabiliz. Horretarako, mikrofono bat konektatu 
-beharko diozu ordenagailuari. Eramangarrien mikrofonoek normalean ez dute ondo funtzionatzen, tauletatik urruti 
+beharko diozu ordenagailuari. Eramangarriek edukitzen duten mikrofonoak balio du.
+
+ Eramangarrien mikrofonoek normalean ez dute ondo funtzionatzen, tauletatik urruti 
 egoten direlako eta ordenagailuko haizagailuen hotsa ere jasotzen dutelako.
 <p>
 <img src="main_interactive_eu.png" alt="">
@@ -86,7 +88,14 @@ egoten direlako eta ordenagailuko haizagailuen hotsa ere jasotzen dutelako.
 
 <p>  
 <p><a name="intro">+ Nola funtzionatzen duen:</a><br/>
-Konektatu mikrofonoa, eta esleitu audioaren sarrera zure ordenagailuko sistemako hobespenetan, grabazioa mikrofonotik egin dezan. Dena ondo bidean, INPUTen kontrolean ikusgai izango duzu nola igotzen den bolumena, kolpeak jotzen edo mikrofonoan hitz egiten duzunean. Seinaleak indartsua behar du, ia goraino iritsi behar du, baina gorri jarri gabe. Orain, sakatu ENTZUN botoia. Txalaparta jotzean, programaren eskuinaldean ikusiko duzu botoiak dirdirka hasten direla kolpeak hautematen dituztenean. Horrez gain, esaldi bakoitzeko kolpe-kopurua, bira-kopurua eta tempoa (BPM) izango dituzu ikusgai. SCOREA IREKI botoiarekin score-a zabalduz gero, jotzen ari zarenaren errepresentazio zehatzago bat ikusiko duzu. Egiaztatu score-an ordenagailuak erakusten duena bat datorrela jotzen duzunarekin. Dena zuzen badago, sakatu ERANTZUN botoia. Bira-pare bat egindakoan, ordenagailua zure joaldiari erantzuten hasiko da. Interfazean, zure kolpeak gorriz ageriko dira, eta ordenagailuarenak, berriz, urdinez. Programak lau segundoz edo gehiagoz soinurik jasotzen ez badu, egin reset entzuteko sisteman. Hori nahiko erabilgarria da, edozer dela-eta erroreren bat bada. 
+Konektatu mikrofonoa, eta esleitu audioaren sarrera zure ordenagailuko sistemako hobespenetan, grabazioa mikrofonotik egin 
+dezan. Dena ondo bidean, INPUTen kontrolean ikusgai izango duzu nola igotzen den bolumena, kolpeak jotzen edo mikrofonoan hitz 
+egiten duzunean. Seinaleak indartsua behar du, ia goraino iritsi behar du, baina gorri jarri gabe. Txalaparta jotzean, programaren eskuinaldean ikusiko duzu botoiak dirdirka hasten direla kolpeak hautematen dituztenean. Horrez 
+gain, esaldi bakoitzeko kolpe-kopurua, bira-kopurua eta tempoa (BPM) izango dituzu ikusgai. SCOREA IREKI botoiarekin score-a 
+zabalduz gero, jotzen ari zarenaren errepresentazio zehatzago bat ikusiko duzu. Egiaztatu score-an ordenagailuak erakusten duena 
+bat datorrela jotzen duzunarekin. Dena zuzen badago, sakatu ERANTZUN botoia. Bira-pare bat egindakoan, ordenagailua zure joaldiari 
+erantzuten hasiko da. Interfazean, zure kolpeak gorriz ageriko dira, eta ordenagailuarenak, berriz, urdinez.
+
 <p>
 <img src="main_interactive_score_eu.png" alt=""> 
 <p>
@@ -107,7 +116,9 @@ Tinbrea kalibratzeko sistema honek aukera ematen digu taulak soinuaren arabera b
 
 
 <p><a name="calib">+ Erritmoaren kalibrazioa:</a><br/>
-Erritmoaren kalibrazioa konplexua izaten da, eta normalean ez da parametrorik ukitu behar. Ttakun irekiko erritmoak joz gero (lauko motakoak), hobe da tempoa hautemateko "mugaren" balioa jaistea, kolpeak multzokatuta doazela uler dezan. Ttakun itxia jotzen baduzu (tradiziozkoa), hobe duzu balio hori berriro igotzea, tempo arinagoekin jotzeko aukera ematen duelako, eta errorerik egin gabe. 
+Erritmoaren kalibrazioa konplexua izaten da, eta normalean ez da parametrorik ukitu behar. Ttakun irekiko erritmoak joz gero (lauko motakoak), 
+hobe da tempoa hautemateko "erortzeko denbora" balioa igotzea, kolpeak multzokatuta doazela uler dezan. Ttakun itxia jotzen baduzu (tradiziozkoa), 
+hobe duzu balio hori berriro jaistea, tempo arinagoekin jotzeko aukera ematen duelako, eta errorerik egin gabe. 
 
 <p>Kalibrazioak zuzenak direla egiaztatzeko, Imitazio modua aktibatuko dugu "Erantzuteko modua" menuan. Programak guk jo dugun gauza bera erantzuten badu, horrek esan nahi du kalibrazioa zuzena dela. 
 
@@ -119,7 +130,7 @@ Erritmoaren kalibrazioa konplexua izaten da, eta normalean ez da parametrorik uk
 
 <p>
 <p><a name="aholak">+ Taulen kudeatzailea:</a><br/>
-(Esperimentala, ez beti ondo funtzionatzen)<br>
+(Oharra: Esperimentala, ez beti ondo funtzionatzen)<br>
 Txalaparta interaktiboa sample-en (audio-grabazioen) sistema bat erabiltzen du, txalaparta-taula bakoitzean (gehienez sei taulatan) hainbat soinu dituena, emaitza aberatsagoa eta errealagoa izan dadin. Soinu bakarra egonez gero, emaitza mekanikoagoa litzateke. Hori lortzeko, programak bost gunetan banatzen du taula bakoitza (ABCDE). Gune bakoitzean, zenbait soinu egon daitezke, normalean anplitude desberdinetakoak, anplitudea igo egiten baita (0 litzateke baxuena eta 5 altuena). 
 Soinuak taulaka multzokatzen dira, eta taula barruko guneetan ere bai, eta, azkenik, gune bakoitzean hainbat kolpe izaten dira, normalean anplitude desberdinetakoak. Programaren barruan begiratuz gero, argi ikusiko duzu nola dauden antolatuta, eta entzun ahal izango dituzu, Wav artxibo soilak dira, eta bakoitzak txalaparta-joaldi bat du. 
 GRABATU BERRIA botoiari sakatu, eta taulen kudeatzaileak aukera emango digu edozein txalapartako taulen soinuak sartzeko. Bestalde, edozein grabazio-programarekin graba ditzakegu soinuak, adibidez, Audacity edo Audition programekin, edota Zoom motatako grabagailu batekin. Gero, soinuak programaren barruan jar ditzakegu, jarraian azalduko dugun teknikaren bidez. 
