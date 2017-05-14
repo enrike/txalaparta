@@ -4,7 +4,8 @@ license: GNU GPL
 www.ixi-audio.net/txalaparta
 
 Description
-An app to research the txalaparta rhythms by implementing them into a digital system. It is part of the Doctoral research by Enrike Hurtado.
+An app to research the txalaparta rhythms by implementing them into a digital system. It is part of the Doctoral research by Enrike Hurtado. 
+http://www.ixi-audio.net/txalaparta
 
 what is the txalaparta? >> https://en.wikipedia.org/wiki/Txalaparta
 
@@ -25,18 +26,21 @@ There are some videos here explaining how to use the calibration systems. http:/
 
 
 * How to run:
-(at some point we have to produce a more easy to run and install version)
+Standalone apps here www.ixi-audio.net/txalaparta/digital
+
+Running the source code: 
 Both programs are created with Supercollider. You need to install Supercollider to run them. Supercollider is free software. It also requieres Chromagram and WAmp extensions, which are part of the SC3plugins for Supercollider.
 http://doc.sccode.org/Classes/Chromagram.html
 http://doc.sccode.org/Classes/WAmp.html
 
+- open with Supercollider the digital_txalaparta.scd file
+- select all the text in the file
+- hit CTRL + Return, or Apple + Return on Mac
+
+
 * How to use:
 Some video demos explaning the functionality can be found here
 http://www.ixi-audio.net/txalaparta
-
-- open with Supercollider the digital_txalaparta.scd
-- select all the text in the file
-- hit CTRL + Return, or Apple + Return on Mac
 
 
 * THANKS TO
@@ -46,6 +50,4 @@ http://www.ixi-audio.net/txalaparta
 - Rainer Schuetz and the Supercollider list
 
 
-Doctoral research here
-http://www.ixi-audio.net/txalaparta
 
