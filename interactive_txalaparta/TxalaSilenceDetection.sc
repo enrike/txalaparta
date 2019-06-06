@@ -76,16 +76,18 @@ TxalaSilenceDetection{
 
 	updatethreshold {arg value; // this is because DetectSilence cannot be updated on realtime :(
 		~listenparemeters.tempo.threshold = value;
-		this.updatesynth();
+		synth.set(\threshold, value);
+		//this.updatesynth();
 	}
 
 	updatefalltime {arg value; // this is because DetectSilence cannot be updated on realtime :(
 		~listenparemeters.tempo.falltime = value;
-		this.updatesynth();
+		synth.set(\falltime, value);
+		//this.updatesynth();
 	}
 
 
-	updatesynth {
+/*	updatesynth {
 		// supercollider does not allow to update the DetectSilence's amp parameter on the fly
 		// so we need to kill and instantiate the synth again and again. Only on slider mouseUP, otherwise we get into troubble
 		// because sometimes too many instances stay in the server memory causing mess
@@ -100,7 +102,7 @@ TxalaSilenceDetection{
 				\checktime, ~listenparemeters.tempo.checkrate,
 			])
 		}.defer(0.2);// to make sure the SynthDef is ready to instantiate?
-	}
+	}*/
 
 	groupstart {
 		groupst = SystemClock.seconds;
@@ -142,18 +144,20 @@ TxalaSilenceDetection{
 	// calculates tempo and schedules answer in time with tempo. it tries to find out hutsunes
 	// and resets the system if no input for longer than resettime secs
 	process {arg value;
-		if (value == 0, { // there is signal
-			if (hitflag.not, { this.groupstart() }) // a new group of hits just started
-		}, { // there is silence
-			if (hitflag, {
-				this.groupend();
-			}, {
-				if ( hutsunetimeout.isNil.not, {
-					this.checkhutsune();
-				//}, {
-				//	this.checkreset();
+		//if (~listening, {
+			if (value == 0, { // there is signal
+				if (hitflag.not, { this.groupstart() }) // a new group of hits just started
+			}, { // there is silence
+				if (hitflag, {
+					this.groupend();
+				}, {
+					if ( hutsunetimeout.isNil.not, {
+						this.checkhutsune();
+						//}, {
+						//	this.checkreset();
+					});
 				});
 			});
-		});
+		//})
 	}
 }
