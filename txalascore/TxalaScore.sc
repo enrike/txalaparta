@@ -1,5 +1,4 @@
 
-
 TxalaScore {
 
 	var win, view, sndview, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
@@ -110,6 +109,9 @@ TxalaScore {
 
 					Pen.color = Color.black;
 					Pen.stringAtPoint( (event.plank+1).asString, Point(time+8, posy));
+					if (event.stick.isNil.not, {
+						Pen.stringAtPoint( (event.stick).asString, Point(time+8, posy+12))
+					});
 
 					Pen.width = 1; //back to normal
 				});
