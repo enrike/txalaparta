@@ -36,6 +36,8 @@ Txalaparta{
 
 		~buffersATXND = Array.fillND([numplanks, plankresolution], { [] }); // NDimensions sound space 6*5
 
+		~txalasetregister=List();
+
 		//netadd = NetAddr("127.0.0.1", 6666);// which port to use?
 
 		scoreArray = scoreArray.add( // just add an empty event
@@ -69,6 +71,8 @@ Txalaparta{
 		MIDIIn.connectAll;
 		~midiout = MIDIOut(0, MIDIClient.destinations.at(0).uid);*/
 
+		~osc = NetAddr("127.0.0.1", 7400); // loopba
+
 		~buffersenabled = [Array.fill(numplanks, {false}), Array.fill(numplanks, {false})]; // [enabledtxakun, enablederrena]
 
 		SynthDef(\playBuf, {arg outbus = 0, amp = 1, freq=1, bufnum = 0;
@@ -90,7 +94,7 @@ Txalaparta{
 
 				outarray = outarray.add([1, ("is txakun?" + txakun)]);
 
-				beats =	~allowedbeats[txakun.not.asInt]; // take the ones for this player
+				beats =	~allowedbeats[txakun.not.asInteger]; // take the ones for this player
 
 				deviation = idealtempo - localtemposwing;  // how far we are from ideal time
 				idealtempo = 60/(~tempo*2); // ideal position /2* because it is a binary rhythm. TO DO: check this. why *2?
@@ -189,6 +193,7 @@ Txalaparta{
 
 	loadsampleset{ arg presetfilename;
 		var foldername = presetfilename.split($.)[0];// get rid of the file extension
+		presetfilename.postln;
 		("load sampleset"+foldername).postln;
 		~buffersATXND = Array.fillND([numplanks, plankresolution], { [] }); // clean first
 		~buffersATXND.do({arg plank, indexplank;
@@ -246,7 +251,7 @@ Txalaparta{
 	*/
 	schedulehits {arg delaytime=0, txakun, localamp, localstep, intermakilaswing, numbeats;
 
-		var flagindex=txakun.not.asInt, outarray=Array.new, emph, drawingSet = Array.fill(numplanks, {[-1, 0, false, 10]});
+		var flagindex=txakun.not.asInteger, outarray=Array.new, emph, drawingSet = Array.fill(numplanks, {[-1, 0, false, 10]});
 		var positions, choices, amp, plankamp, plankpos, plank, ranges;
 
 		if (~buffersenabled[1].indexOf(true).isNil.not, {
@@ -302,9 +307,16 @@ Txalaparta{
 				hittime = delaytime + (localstep * index);
 				if (index > 0, { hittime = hittime + rand(intermakilaswing) });
 
-				~txalascoreAuto.hit(Main.elapsedTime + hittime , hitamp, (flagindex + 1), plank);
-				{ // deferred function
+				try { // avoid error if not there
+					~txalascoreAuto.hit(Main.elapsedTime + hittime , hitamp, (flagindex + 1), plank);
+				};
+					{ // deferred function
 					Synth(\playBuf, [\amp, hitamp, \freq, hitfreq, \bufnum, actualplank.bufnum]);
+					// here send OSC info
+					~osc.sendMsg("/newhit", Main.elapsedTime + hittime, hitamp, (flagindex + 1), plank, 0); //chroma
+					if (flagindex==0, {	~stateA = 1 }, { ~stateB = 1 });
+
+					~txalasetregister.add([Main.elapsedTime + hittime, hitamp, (flagindex + 1), plank]);
 
 					if (~makilaanims.isNil.not, {
 						~makilaanims.makilaF(txakun.not.asInteger, index, 0.2);//slider animation

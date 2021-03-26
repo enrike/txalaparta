@@ -299,7 +299,7 @@ TxalaAuto{
 			//try { //bckwads compatible
 			beatButtons.do({arg playerbuttons, index;
 				playerbuttons.do({arg but, subindex;
-					but.value = ~allowedbeats[index][subindex].asBoolean.asInt; // 0 or 1
+					but.value = ~allowedbeats[index][subindex].asBoolean.asInteger; // 0 or 1
 				});
 			});
 	/*		} {|error|
@@ -309,7 +309,7 @@ TxalaAuto{
 
 			~lastemphasis = data[\emphasis];
 			try {
-				emphasisBut.value = ~lastemphasis.asInt;
+				emphasisBut.value = ~lastemphasis.asInteger;
 			} {|error|
 				~lastemphasis = data[\emphasis][1]; //bkwds compatibility
 			};
@@ -339,14 +339,14 @@ TxalaAuto{
 
 			plankcontrols.planksMenus.do({arg plank, i;
 				try {
-					plank[0].valueAction = data[\buffers][0][i].asInt;
+					plank[0].valueAction = data[\buffers][0][i].asInteger;
 				} {|error|
 					plank[0].valueAction = 0;
 					["catch plank0 error", error, i].postln;
 				};
 
 				try {
-					plank[1].valueAction = data[\buffers][1][i].asInt;// set er button
+					plank[1].valueAction = data[\buffers][1][i].asInteger;// set er button
 				} {|error|
 					plank[1].valueAction = 0;
 					["catch plank1 error", error, i].postln;
