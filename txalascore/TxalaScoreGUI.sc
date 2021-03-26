@@ -1,20 +1,29 @@
 // license GPL
 // by www.ixi-audio.net
 
+
+
+
 /*
+usage:
+
 n = 3;
 w = TxalaScoreGUI.new;
 w.doTxalaScore();
 w.updateNumPlanks(n);
 p = true;
 
+//w.mark(tempocalc.lasttime, SystemClock.seconds, txalasilence.compass, lastPattern.size)
+
+
 fork{
 	inf.do({arg i;
 		p = p.not;
-		w.hit(SystemClock.seconds, rrand(0.2, 1), p.asInt, n.rand);
+		w.hit(SystemClock.seconds, rrand(0.2, 1), p.asInt, n.rand); // time, amp, player, plank
 		0.2.wait;
 	});
 };
+w.close
 */
 
 TxalaScoreGUI{
@@ -46,7 +55,7 @@ TxalaScoreGUI{
 	}
 
 
-	hit { arg hittime, amp, player, freq;
+	hit { arg hittime, amp, player, freq=nil, stick=nil;
 		var hitdata, plank;
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
@@ -54,7 +63,8 @@ TxalaScoreGUI{
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
 					    .add(\player -> player) //always 1 in this case
-					    .add(\plank -> plank);// here needs to match mgs[5] against existing samples freq
+					    .add(\plank -> plank)// here needs to match mgs[5] against existing samples freq
+					    .add(\stick -> stick);
 			txalascoreevents = txalascoreevents.add(hitdata);
 			txalascore.events = txalascoreevents;
 		});
