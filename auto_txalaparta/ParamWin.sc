@@ -30,7 +30,11 @@ ParamWin {
 		index = 0;
 
 		size = width / 6;
-		lwin = Window(~txl.do("Control") + varStr,  Rect(0, 0, width, height))
+		if (varStr == "", {
+			lwin = Window(varStr,  Rect(0, 0, width, height))
+		}, {
+			lwin = Window(~txl.do("Control") + varStr,  Rect(0, 0, width, height))
+		})
 		.onClose_({
 			lloopf.stop;
 		});
@@ -69,7 +73,7 @@ ParamWin {
 					lmsl.index_(index%lmsl.size); //next step
 					index = index + 1;
 				});
-				(lfield.value.asInt/lmsl.size).wait; // each cycle takes as many secs as the lfield says
+				(lfield.value.asInteger/lmsl.size).wait; // each cycle takes as many secs as the lfield says
 			});
 		};
 
