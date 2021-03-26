@@ -41,7 +41,7 @@ TxalaSliderAnim {
 		var steps, stepvalue, gap=0.05, loopF, sl;
 
 		sl = makilasliders.wrapAt(makilaindex);
-		steps = (time/gap).asInt;
+		steps = (time/gap).asInteger;
 		stepvalue = 1/steps;
 
 		sl.value = 1;
