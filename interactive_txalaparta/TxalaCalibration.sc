@@ -95,15 +95,20 @@ TxalaCalibration{
 				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("threshold"),// we use mouseUpAction because bug in DetectSilence class. cannot RT update this parameter
 				ControlSpec(0.01, 2, \lin, 0.01, ~listenparemeters.tempo.threshold, ""),
-				nil,
-				initVal: ~listenparemeters.tempo.threshold,
-				labelWidth: labelwidth
-			).sliderView.mouseUpAction_({arg ez; //***MUST*** *only* happen on mouseup, otherwise it is too much for the synth
+				{arg ez; //***MUST*** *only* happen on mouseup, otherwise it is too much for the synth
 				if (parent.txalasilence.isNil.not, {
 					parent.txalasilence.updatethreshold(ez.value.asFloat);
 				});
 				~listenparemeters.tempo.threshold = ez.value.asFloat;
-		}));
+		},
+				initVal: ~listenparemeters.tempo.threshold,
+				labelWidth: labelwidth
+		));/*.sliderView.mouseUpAction_({arg ez;
+				if (parent.txalasilence.isNil.not, {
+					parent.txalasilence.updatethreshold(ez.value.asFloat);
+				});
+				~listenparemeters.tempo.threshold = ez.value.asFloat;
+		}));*/
 
 
 		yindex = yindex + 1;
@@ -113,15 +118,20 @@ TxalaCalibration{
 				Rect(20,yloc+(gap*yindex),370,20),
 				~txl.do("falltime"),
 				ControlSpec(0.01, 3, \lin, 0.01, 0.1, "Ms"),
-				nil,
-				initVal: ~listenparemeters.tempo.falltime,
-				labelWidth: labelwidth
-		).sliderView.mouseUpAction_({arg ez; //***MUST*** *only* happen on mouseup, otherwise it is too much for the synth
+				{arg ez;
 					if (parent.txalasilence.isNil.not, {
 					    parent.txalasilence.updatefalltime(ez.value.asFloat);
 					});
 					~listenparemeters.tempo.falltime = ez.value.asFloat;
-		}));
+		},
+				initVal: ~listenparemeters.tempo.falltime,
+				labelWidth: labelwidth
+	));/*.sliderView.mouseUpAction_({arg ez;
+					if (parent.txalasilence.isNil.not, {
+					    parent.txalasilence.updatefalltime(ez.value.asFloat);
+					});
+					~listenparemeters.tempo.falltime = ez.value.asFloat;
+		}));*/
 
 		yindex = yindex + 1;
 
