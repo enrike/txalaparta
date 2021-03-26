@@ -63,6 +63,7 @@ TxalaInteractive{
 		~amp = 1;
 		~answer = false;
 		~answerpriority = false; // true if answer on group end (sooner), false if answer from group start (later)
+		~listening = true;
 		~autoanswerpriority = true;
 		~answermode = 1; //0,1,3: imitation, wchoose, ...
 		~timedivision = 50; // %
@@ -82,6 +83,9 @@ TxalaInteractive{
 		//~listenparemeters = ().add(\in->0).add(\gain->1.3);
 		//~listenparemeters.tempo = ().add(\threshold->0.1).add(\falltime->0.2).add(\checkrate->30).add(\comp_thres->0.1);
 		~listenparemeters.onset = ().add(\threshold->0.4).add(\relaxtime->0.01).add(\floor->0.05).add(\mingap->1);
+
+		~osc = nil; // netaddress for broadcasting onset's data
+		this.initOSC("127.0.0.1", NetAddr.langPort); //10.107.7.214
 
 		lastPattern = nil;
 		//phrasemode = 0; // make up a new phrase or imitate a stored one?
@@ -120,6 +124,11 @@ TxalaInteractive{
 
 		this.loadprefsauto();
 		{ this.reset() }.defer(0.2); //start listening
+	}
+
+
+	initOSC {|add="127.0.0.1", port=57120|
+		~osc = NetAddr(add, port); // loopback
 	}
 
 
@@ -216,15 +225,33 @@ TxalaInteractive{
 			});
 			{numbeatslabel.string = ~txl.do("Beats:") + lastPattern.size}.defer;
 			{compassbutton.value = 0}.defer; // display now
+
+			if (~osc.isNil.not , {
+				~osc.sendMsg("/groupend", lastPattern.size);
+				/*var stuff=Array(25);
+				lastPattern.do({|i|
+					stuff.add(i.time);
+					stuff.add(i.plank);
+					stuff.add(i.amp);
+				});
+				~osc.sendMsg("/groupend", stuff);*/
+			});
 		});
 		this.updateGUIstrings();
 	}
 
-	newonset { arg hittime, amp, player, plank;
+	newonset { arg hittime, amp, player, plank, chroma;
 		if (~txalascore.isNil.not, { ~txalascore.hit(hittime, amp, player, plank) });
 
 		if (((txalaonset.curPattern.size-1) < drawingSet[0].size), { // stop drawing if they pile up
 			drawingSet[0][txalaonset.curPattern.size-1] = [0, hittime-txalaonset.patternsttime, true, amp] // new red hit
+		});
+
+		if (~osc.isNil.not , {
+			//bufs[plank][plankpos][plankamp]]
+			~osc.sendMsg("/onset", hittime, amp, player, plank, chroma);
+			//~osc.sendMsg("/onset", SystemClock.seconds, amp, 0, plank, plankpos, plankamp);
+			 //SystemClock.seconds, 1, 0, 3.rand, 5.rand, 3.rand
 		});
 
 		{hitbutton.value = 1}.defer; // short flash
@@ -278,6 +305,7 @@ TxalaInteractive{
 			});
 
 			if (defertime.isNaN.not, {
+				//{~listening=false}.defer(defertime);
 				switch (~answermode,
 					0, { this.imitation(defertime, lastPattern) }, // imitation
 				//	1, { this.next(defertime, 1) }, // average. not used any longer
@@ -293,11 +321,14 @@ TxalaInteractive{
 	imitation { arg defertime, pattern, strech = 1, amp=1;
 		pattern.do({arg hit, index;
 			{
+				//["hit amp * amp", hit.amp, amp].postln;
 				this.playhit(hit.amp*amp, 0, index, pattern.size, hit.plank);
 				makilaanims.makilaF(index, 0.15); // prepare anim
 			}.defer(defertime + (hit.time*strech));
 			drawingSet[1][index] = [0, hit.time*strech, false, hit.amp]; // new blue hit
 		});
+
+		{~listening=true}.defer(defertime+pattern.last.time*strech);
 
 		{circleanim.scheduleDraw(drawingSet[1], 1)}.defer(defertime); // render blue when they are about to play
 	}
@@ -425,7 +456,8 @@ TxalaInteractive{
 					~txalascore.mark(last, (SystemClock.seconds+defertime), txalasilence.compass, lastPattern.size)
 				});
 				{hutsunebutton.value = 1}.defer; // flash button
-				{hutsunebutton.value = 0}.defer(0.2)
+				{hutsunebutton.value = 0}.defer(0.2);
+				~listening = true;
 			}.defer(defertime)
 		}, {
 			if ( defertime < 0, { "answering late!".postln});
@@ -443,9 +475,11 @@ TxalaInteractive{
 	playhit { arg amp=0, player=0, index=0, total=0, plank;
 		var actualplank, plankpos, plankamp, ranges, positions, choices;
 
+		if (amp>1, {amp=1}); // avoid unexpected bursts
+
 		positions = ~buffersND[plank].copy.takeThese({ arg item; item.size==0 }); // get rid of empty slots. this is not the best way
 
-		choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available
+		choices = [ [1], [0.50, 0.50], [0.2, 0.65, 0.15], [0.15, 0.35, 0.35, 0.15], [0.15, 0.15, 0.3, 0.3, 0.1]]; // chances to play in different areas of the plank according to samples available. hardwired atm
 
 		// the wchoose needs to be a distribution with more posibilites to happen on center and right
 		plankpos = Array.fill(positions.size, {arg n=0; n}).wchoose(choices[positions.size-1]);
@@ -460,8 +494,12 @@ TxalaInteractive{
 		Synth(\playBuf, [\amp, amp, \freq, (1+rrand(-0.003, 0.003)), \bufnum, actualplank.bufnum]);
 		if (~txalascore.isNil.not, { ~txalascore.hit(SystemClock.seconds, amp, 0, plank) });
 
+		if (~osc.isNil.not , {
+			~osc.sendMsg("/onset", SystemClock.seconds, amp, 0, plank);
+			//[amp, 0, plank, plankpos, plankamp].postln;
+		});
+
 		//~midiout.noteOn(player, plank.bufnum, amp*127);
-		// if OSC flag then send OSC out messages here
 	}
 
 
@@ -543,7 +581,7 @@ TxalaInteractive{
 			])
 			.action_({ arg menu;
 				try{ // bacwrds comp
-					~answermode = menu.value.asInt;
+					~answermode = menu.value.asInteger;
 					(~txl.do("changing to answer mode:") + menu.item + menu.value).postln;
 				}{|err|
 					~answermode = 1;
@@ -559,7 +597,7 @@ TxalaInteractive{
 		guielements.add(\amp-> EZSlider( win,
 			Rect(10,yloc+(gap*yindex),340,20),
 			~txl.do("volume"),
-			ControlSpec(0, 3, \lin, 0.01, 1, ""),
+			ControlSpec(0, 50, \lin, 0.01, 1, ""),
 			{ arg ez;
 				~amp = ez.value.asFloat;
 			},
