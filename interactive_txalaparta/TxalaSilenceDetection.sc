@@ -10,7 +10,7 @@ third argument is answer mode. it sets the answer schedule time to groupdetect o
 TxalaSilenceDetection{
 
 	var server, parent, <>compass, hitflag, >hutsunetimeout, groupst;
-	var resettime, <>answerposition;
+	var resettime, <>answerposition, silencedefOSC;
 	var <synth;
 
 	*new {| aparent, aserver, ananswerposition = true |
@@ -37,8 +37,8 @@ TxalaSilenceDetection{
 	kill {
 		synth.free;
 		synth = nil;
-		OSCdef(\txalasilenceOSCdef).clear;
-		OSCdef(\txalasilenceOSCdef).free;
+		silencedefOSC.clear;
+		silencedefOSC.free;
 	}
 
 	doAudio {
@@ -71,7 +71,7 @@ TxalaSilenceDetection{
 			]);
 		}.defer(0.5);// to make sure the SynthDef is ready to instantiate
 
-		OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
+		silencedefOSC = OSCdef(\txalasilenceOSCdef, {|msg, time, addr, recvPort| this.process(msg[3])}, '/txalasil', server.addr);
 	}
 
 	updatethreshold {arg value; // this is because DetectSilence cannot be updated on realtime :(

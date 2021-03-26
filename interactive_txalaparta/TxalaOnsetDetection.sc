@@ -9,7 +9,7 @@ to do: improve detected amplitude range and values, plank detection
 TxalaOnsetDetection{
 
 	var server, parent, <curPattern, <synth, synthOSCcb, >processflag, <patternsttime, sttime;
-	var features;
+	var features, onsetdefOSC;
 
 	*new {| aparent=nil, aserver |
 		^super.new.initTxalaOnsetDetection(aparent, aserver);
@@ -33,8 +33,8 @@ TxalaOnsetDetection{
 	kill {
 		synth.free;
 		synth = nil;
-		OSCdef(\txalaonsetOSCdef).clear;
-		OSCdef(\txalaonsetOSCdef).free;
+		onsetdefOSC.clear;
+		onsetdefOSC.free;
 	}
 
 	closegroup { // group ended detected by silence detector. must return info about the pattern played and clear local data.
@@ -55,18 +55,18 @@ TxalaOnsetDetection{
 		here the problem is that in the one hand we need to know the time of the onset asap but on the other hand we cannot get
 		meaningful data from the sound until 0.04 millisecs are gone because of the chaotic nature of the sound in the start area
 		*/
-		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.6, relaxtime=2.1, floor=0.1, mingap=1, offset=0.04, comp_thres=0.3|
-		 	var fft, fft2, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
-		 	signal = SoundIn.ar(in)*gain;
+		SynthDef(\txalaonsetlistener, { |in=0, gain=1, threshold=0.22, relaxtime=0.05, floor=0.1, mingap=1, offset=0.04, comp_thres=0.3|
+			var fft, fft2, onset, chroma, keyt, signal, level=0, freq=0, hasfreq=false, del;
+			signal = SoundIn.ar(in)*gain;
 			level = WAmp.kr(signal, offset);
-			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
-				thresh: comp_thres,// THIS IS CRUCIAL. in RMS
-				slopeBelow: 1.9, // almost noise gate
-				slopeAbove: 1.1, // >1 to get expansion
-				clampTime: 0.005,
-				relaxTime: 0.01
-			);
-		 	fft = FFT(LocalBuf(2048), signal, wintype:1);
+			/*			signal = Compander.ar(signal, signal, // expand loud sounds and get rid of low ones
+			thresh: comp_thres,// THIS IS CRUCIAL. in RMS
+			slopeBelow: 1.9, // almost noise gate
+			slopeAbove: 1.1, // >1 to get expansion
+			clampTime: 0.005,
+			relaxTime: 0.01
+			);*/
+			fft = FFT(LocalBuf(2048), signal, wintype:1);
 			fft2 = FFT(LocalBuf(2048), HPF.ar(signal, 100), wintype:1); // get rid of low freqs for chromagram
 			chroma = Chromagram.kr(fft2, 2048,
 				n: 12,
@@ -77,12 +77,13 @@ TxalaOnsetDetection{
 				octaveratio: 2,
 				perframenormalize: 1
 			);
-		 	onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
+			onset = Onsets.kr(fft, threshold, \rcomplex, relaxtime, floor, mingap, medianspan:11, whtype:1, rawodf:0);
 
 			del = DelayN.kr(onset, offset, offset); // CRUCIAL. percussive sounds are too chaotic at the beggining
+			//del = TDelay.kr(onset, offset); //TRY WITH THIS
 
 			SendReply.kr(del, '/txalaonset', (chroma++[level]));
-		 }).add;
+		}).add;
 
 		{
 			synth = Synth(\txalaonsetlistener, [
@@ -96,12 +97,13 @@ TxalaOnsetDetection{
 			]);
 		}.defer(0.5);
 
-		OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg)}, '/txalaonset', server.addr);
+		onsetdefOSC = OSCdef(\txalaonsetOSCdef, {|msg, time, addr, recvPort| this.process(msg)}, '/txalaonset', server.addr);
 	}
 
 	process { arg msg;
 		var hitdata, hittime, localtime, plank=0, chroma, level, off, data = ();
 
+		//if (~listening, {
 		localtime = SystemClock.seconds;
 
 		msg = msg[3..]; // remove OSC data
@@ -128,10 +130,15 @@ TxalaOnsetDetection{
 		hitdata = ().add(\time   -> hittime)
 		.add(\amp    -> level)
 		.add(\player -> 1) // here always 1 for errena player
-		.add(\plank  -> plank);
+		.add(\plank  -> plank)
+		.add(\chroma -> chroma);
+
+		// which stick?
+		// sensors data?
 		curPattern = curPattern.add(hitdata);
 
-		parent.newonset( localtime, level, 1, plank );
+		parent.newonset( localtime, level, 1, plank, chroma );
+		//})
 	}
 
 	matchplank {arg data;
